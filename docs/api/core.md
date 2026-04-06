@@ -2,7 +2,8 @@
 
 Foundational dates, prices, yields, ids, calendars, and day-count primitives.
 
-```{automodule} fuggers_py.core
-:members:
-:member-order: bysource
+```{eval-rst}
+.. automodule:: fuggers_py.core
+   :members:
+   :member-order: bysource
 ```

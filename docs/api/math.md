@@ -2,7 +2,8 @@
 
 Numerical infrastructure used by the pricing and analytics layers.
 
-```{automodule} fuggers_py.math
-:members:
-:member-order: bysource
+```{eval-rst}
+.. automodule:: fuggers_py.math
+   :members:
+   :member-order: bysource
 ```

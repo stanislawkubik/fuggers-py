@@ -2,7 +2,8 @@
 
 Pricing routers, shared output DTOs, orchestration, and runtime wiring.
 
-```{automodule} fuggers_py.calc
-:members:
-:member-order: bysource
+```{eval-rst}
+.. automodule:: fuggers_py.calc
+   :members:
+   :member-order: bysource
 ```

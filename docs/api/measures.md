@@ -2,7 +2,8 @@
 
 User-facing analytics, report-oriented helpers, and desk measures.
 
-```{automodule} fuggers_py.measures
-:members:
-:member-order: bysource
+```{eval-rst}
+.. automodule:: fuggers_py.measures
+   :members:
+   :member-order: bysource
 ```

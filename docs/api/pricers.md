@@ -2,7 +2,8 @@
 
 Valuation engines and low-level pricing/risk algorithms.
 
-```{automodule} fuggers_py.pricers
-:members:
-:member-order: bysource
+```{eval-rst}
+.. automodule:: fuggers_py.pricers
+   :members:
+   :member-order: bysource
 ```

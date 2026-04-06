@@ -13,7 +13,8 @@ Canonical market modules:
 - `fuggers_py.market.sources`
   - source protocols, in-memory sources, and `MarketDataProvider`
 
-```{automodule} fuggers_py.market
-:members:
-:member-order: bysource
+```{eval-rst}
+.. automodule:: fuggers_py.market
+   :members:
+   :member-order: bysource
 ```
