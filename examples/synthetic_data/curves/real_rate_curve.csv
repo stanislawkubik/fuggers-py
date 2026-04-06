@@ -1,0 +1,7 @@
+as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_2Y,2Y,USD,zero_rate,0.0185,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_5Y,5Y,USD,zero_rate,0.0165,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_7Y,7Y,USD,zero_rate,0.0168,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_10Y,10Y,USD,zero_rate,0.0176,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_20Y,20Y,USD,zero_rate,0.0188,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_30Y,30Y,USD,zero_rate,0.0192,decimal,Real curve anchor

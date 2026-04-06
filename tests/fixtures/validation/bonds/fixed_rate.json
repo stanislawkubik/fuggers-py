@@ -1,0 +1,33 @@
+{
+  "closed_form_semianual_bullet": {
+    "source": "Closed-form semi-annual bullet bond at a coupon date.",
+    "issue_date": "2024-01-01",
+    "maturity_date": "2029-01-01",
+    "settlement_date": "2024-01-01",
+    "coupon_rate": "0.05",
+    "yield_rate": "0.0425",
+    "frequency": "SEMI_ANNUAL",
+    "compounding": "SEMI_ANNUAL",
+    "notional": "100",
+    "periods_per_year": 2,
+    "periods": 10,
+    "expected_clean_price": "103.34654513809218",
+    "expected_modified_duration": "4.402019672271301",
+    "expected_macaulay_duration": "4.49556236609508",
+    "expected_convexity": "22.845133701390072"
+  },
+  "treasury_regression": {
+    "source": "Deterministic treasury-like regression case used as a representative Convex-equivalent output.",
+    "issue_date": "2021-02-15",
+    "maturity_date": "2031-02-15",
+    "settlement_date": "2026-03-14",
+    "coupon_rate": "0.0375",
+    "frequency": "SEMI_ANNUAL",
+    "notional": "100",
+    "clean_price": "99.125",
+    "expected_ytm": "0.039466946925887925",
+    "expected_modified_duration": "4.441197762001207",
+    "expected_convexity": "22.97629744670685",
+    "expected_accrued_interest": "0.2796961325966850828729281768"
+  }
+}

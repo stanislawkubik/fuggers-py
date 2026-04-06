@@ -1,0 +1,3 @@
+instrument_id,bond_type,issuer_type,issue_date,maturity_date,currency,notional,coupon_rate,frequency,floating_index_name,floating_spread,floating_reset_frequency,current_reference_rate,call_schedule,put_schedule,issuer_name,sector,rating
+US1234567890,FIXED_RATE,CORPORATE,2024-01-15,2031-01-15,USD,100,0.0450,SEMI_ANNUAL,,,,,,,Example Corp,Industrials,A
+US0987654321,CALLABLE,CORPORATE,2023-01-15,2033-01-15,USD,100,0.0500,SEMI_ANNUAL,,,,,"[{""exercise_date"": ""2029-01-15"", ""price"": ""100.00""}]",,Callable Inc,Utilities,BBB

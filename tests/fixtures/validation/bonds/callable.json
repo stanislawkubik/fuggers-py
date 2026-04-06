@@ -1,0 +1,11 @@
+{
+  "scenario_b_regression": {
+    "source": "Callable-bond scenario aligned to the deterministic engine regression setup.",
+    "market_price": "102.50",
+    "mean_reversion": "0.03",
+    "volatility": "0.01",
+    "expected_oas": "-0.00911378870537117",
+    "expected_effective_duration": "1.4237533188225182",
+    "expected_effective_convexity": "2.1062084958492635"
+  }
+}

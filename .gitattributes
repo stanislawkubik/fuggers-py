@@ -1,0 +1,14 @@
+* text=auto eol=lf
+
+.github/ export-ignore
+.gitignore export-ignore
+.pre-commit-config.yaml export-ignore
+AGENTS.md export-ignore
+build/ export-ignore
+dist/ export-ignore
+docs/_build/ export-ignore
+refactor/ export-ignore
+private/ export-ignore
+__MACOSX/ export-ignore
+__pycache__/ export-ignore
+.DS_Store export-ignore

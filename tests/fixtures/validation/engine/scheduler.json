@@ -1,0 +1,13 @@
+{
+  "scheduler_reference": {
+    "source": "Deterministic interval and end-of-day scheduler timestamps.",
+    "interval_node_id": "price:ABC",
+    "interval_timestamp": "2026-03-14T09:00:00+00:00",
+    "expected_interval_source": "INTERVAL",
+    "eod_node_id": "nav:portfolio",
+    "eod_first_run": "2026-03-14T17:00:00+00:00",
+    "eod_second_run": "2026-03-14T17:01:00+00:00",
+    "expected_eod_first_count": 1,
+    "expected_eod_second_count": 0
+  }
+}

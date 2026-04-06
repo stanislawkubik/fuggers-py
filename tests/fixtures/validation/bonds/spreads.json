@@ -1,0 +1,14 @@
+{
+  "scenario_a_corporate_curve_case": {
+    "source": "Deterministic scenario aligned to the fixed-income pricing router and spread analytics.",
+    "market_price": "101.25",
+    "frn_instrument_id": "SCENARIO-C-FRN",
+    "frn_market_price": "100.15",
+    "expected_z_spread": "0.0021019276358698",
+    "expected_g_spread": "0.005196581753112895",
+    "expected_i_spread": "0.003396910520236185",
+    "expected_asset_swap_par_par": "0.002927259378656068254293179190375309629019995206134",
+    "expected_asset_swap_proceeds": "0.0028911203739813019795488189534570959298962915616138",
+    "expected_floating_discount_margin": "0.011396719301261201"
+  }
+}

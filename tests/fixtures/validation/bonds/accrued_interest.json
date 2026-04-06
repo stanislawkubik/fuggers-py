@@ -1,0 +1,37 @@
+{
+  "basic_half_coupon": {
+    "source": "Basic fixed-rate accrued-interest reference on a regular period.",
+    "issue_date": "2024-01-01",
+    "maturity_date": "2025-01-01",
+    "coupon_rate": "0.06",
+    "frequency": "SEMI_ANNUAL",
+    "settlement_date": "2024-04-01",
+    "boundary_start": "2024-01-01",
+    "boundary_coupon": "2024-07-01",
+    "expected_accrued": "1.5"
+  },
+  "ex_dividend_gilt": {
+    "source": "UK gilt ex-dividend case with the full coupon stripped during the ex window.",
+    "settlement_date": "2024-01-08",
+    "accrual_start": "2023-07-15",
+    "accrual_end": "2024-01-15",
+    "coupon_amount": "2.0",
+    "coupon_date": "2024-01-15",
+    "full_coupon_amount": "2.0",
+    "period_start": "2023-07-15",
+    "period_end": "2024-01-15",
+    "expected_standard": "1.923913043478260869565217391",
+    "expected_ex_dividend": "-0.076086956521739130434782609"
+  },
+  "front_stub_us_treasury": {
+    "source": "Front-stub US Treasury case that relies on the ICMA reference period.",
+    "issue_date": "2024-01-15",
+    "maturity_date": "2025-01-15",
+    "coupon_rate": "0.04",
+    "frequency": "QUARTERLY",
+    "periods_per_year": 4,
+    "first_regular_date": "2024-02-15",
+    "settlement_date": "2024-02-01",
+    "expected_accrued": "0.5483870967741935483870967743"
+  }
+}

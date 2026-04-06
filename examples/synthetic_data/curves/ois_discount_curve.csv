@@ -1,0 +1,13 @@
+as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_1W,1W,USD,zero_rate,0.0439,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_1M,1M,USD,zero_rate,0.0434,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_3M,3M,USD,zero_rate,0.0427,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_6M,6M,USD,zero_rate,0.0419,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_1Y,1Y,USD,zero_rate,0.0408,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_2Y,2Y,USD,zero_rate,0.0393,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_3Y,3Y,USD,zero_rate,0.0384,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_5Y,5Y,USD,zero_rate,0.0376,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_7Y,7Y,USD,zero_rate,0.0379,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_10Y,10Y,USD,zero_rate,0.0388,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_20Y,20Y,USD,zero_rate,0.0406,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_30Y,30Y,USD,zero_rate,0.0411,decimal,SOFR discount anchor

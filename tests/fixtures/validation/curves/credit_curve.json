@@ -1,0 +1,19 @@
+{
+  "flat_hazard_curve": {
+    "source": "Flat hazard-rate reference curve.",
+    "reference_date": "2026-01-15",
+    "hazard_rate": "0.02",
+    "recovery_rate": "0.4",
+    "tenor": "5.0",
+    "expected_survival_probability": "0.9048374180359595",
+    "expected_credit_spread": "0.012"
+  },
+  "flat_survival_curve": {
+    "source": "Flat survival-probability reference curve.",
+    "reference_date": "2026-01-15",
+    "survival_probability": "0.9277434863285529",
+    "recovery_rate": "0.4",
+    "tenor": "3.0",
+    "expected_hazard_rate": "0.025"
+  }
+}

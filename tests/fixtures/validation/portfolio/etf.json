@@ -1,0 +1,62 @@
+{
+  "simple_etf_case": {
+    "source": "ETF wrapper checks over the deterministic portfolio helper.",
+    "reference_date": "2024-01-01",
+    "shares_outstanding": "1000",
+    "market_price": "30.00",
+    "net_investment_income": "2.40",
+    "average_shares_outstanding": "10.00",
+    "max_offering_price": "120.00",
+    "gross_expenses": "0.90",
+    "fee_waivers": "0.40",
+    "expected_nav": "29.85",
+    "expected_premium_discount_bps": "50.25125628140703517587939698",
+    "expected_sec_30_day_yield": "0.024120320480384128",
+    "expected_unsubsidized_yield": "0.020083518750154363854595340",
+    "expected_basket": {
+      "num_positions": 3,
+      "sector_counts": {
+        "GOVERNMENT": 1,
+        "CORPORATE": 1,
+        "INDUSTRIALS": 1
+      },
+      "total_quantity": "300"
+    }
+  },
+  "creation_basket_case": {
+    "source": "Creation basket, holdings-yield, and arbitrage wrappers over the deterministic portfolio plus a cash sleeve.",
+    "reference_date": "2024-01-01",
+    "shares_outstanding": "1000",
+    "creation_unit_shares": "100",
+    "cash_amount": "50",
+    "liabilities": "20",
+    "market_price": "30.00",
+    "gross_expense_ratio": "0.0020",
+    "fee_waiver_ratio": "0.0005",
+    "expected_basket_summary": {
+      "component_count": 3,
+      "total_quantity": "30.0",
+      "securities_market_value": "2985.00",
+      "total_basket_value": "2988.00",
+      "basket_per_share": "29.88"
+    },
+    "expected_first_component": {
+      "quantity": "10.0",
+      "weight": "0.3333333333333333333333333333",
+      "sector": "GOVERNMENT"
+    },
+    "expected_arbitrage": {
+      "nav_per_share": "29.88",
+      "estimated_edge_per_share": "0.12",
+      "premium_discount_bps": "40.16064257028112449799196787",
+      "direction": "create",
+      "is_actionable": true
+    },
+    "expected_yield": {
+      "gross_yield": "0.04951931763999607737458193981",
+      "net_yield": "0.04801931763999607737458193981",
+      "annual_income_estimate": "1480.627597435882713500000000",
+      "annual_expense_amount": "44.85000"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+prune .git
+prune __MACOSX
+prune build
+prune dist
+prune .hypothesis
+prune .mypy_cache
+prune .pytest_cache
+prune .ruff_cache
+
+global-exclude .DS_Store
+global-exclude *.py[cod]
+global-exclude __pycache__

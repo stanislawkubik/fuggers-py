@@ -1,0 +1,3 @@
+instrument_id,label,family_id,currency,delivery_month,first_delivery_date,last_delivery_date,final_delivery_date,contract_size,tick_size,standard_coupon_rate,coupon_frequency,exchange,ctd_hint
+TYM6,CBOT 10Y Note Jun 2026,CBOT_TY,USD,2026-06,2026-06-01,2026-06-30,2026-06-30,100000,0.015625,0.06,SEMI_ANNUAL,CBOT,UST_7Y_2033
+TYU6,CBOT 10Y Note Sep 2026,CBOT_TY,USD,2026-09,2026-09-01,2026-09-30,2026-09-30,100000,0.015625,0.06,SEMI_ANNUAL,CBOT,UST_7Y_2033

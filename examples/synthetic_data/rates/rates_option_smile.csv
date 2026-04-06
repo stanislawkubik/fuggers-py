@@ -1,0 +1,4 @@
+as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
+2026-01-15,rates_option_smile,cbot.ty.option.smile,TYM6C110,2M,USD,lognormal_vol,0.1920,decimal,Jun TY call smile lower strike
+2026-01-15,rates_option_smile,cbot.ty.option.smile,TYM6C112,2M,USD,lognormal_vol,0.1850,decimal,Jun TY call smile at the money
+2026-01-15,rates_option_smile,cbot.ty.option.smile,TYM6C114,2M,USD,lognormal_vol,0.1790,decimal,Jun TY call smile upper strike

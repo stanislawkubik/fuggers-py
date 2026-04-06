@@ -1,0 +1,598 @@
+{
+  "source": {
+    "repository": "https://github.com/sujitn/convex",
+    "branch": "main",
+    "pinned_commit": "6ba6b323eed2b1a24e131d1e170afb09f062a773",
+    "generated_on": "2026-03-15",
+    "generator": "cargo run --manifest-path /tmp/convex-golden-harness/Cargo.toml"
+  },
+  "cases": [
+    {
+      "id": "fixed_rate_bullet",
+      "rust_case_id": "candidate_simple_fixed_bullet",
+      "crate": "convex-analytics",
+      "description": "Stable price-from-yield bullet bond anchor for direct cross-language comparison.",
+      "inputs": {
+        "issue_date": "2024-06-15",
+        "maturity_date": "2030-06-15",
+        "coupon_rate": "0.05",
+        "frequency": "SEMI_ANNUAL",
+        "convention": "us_treasury",
+        "yield_to_maturity": "0.05",
+        "settlement_date": "2025-01-15"
+      },
+      "expected": {
+        "clean_price_from_yield": "99.98883649475779060429596317",
+        "dirty_price_from_yield": "100.41466067058196642847178735"
+      },
+      "tolerances": {
+        "clean_price_from_yield": "0.01",
+        "dirty_price_from_yield": "0.01"
+      },
+      "notes": "The original treasury solver case is retained elsewhere in local regression tests; this simpler bullet case is used here because it is the higher-signal comparison anchor against the pinned Rust revision."
+    },
+    {
+      "id": "zero_coupon",
+      "rust_case_id": "candidate_zero_coupon_curve",
+      "crate": "convex-curves",
+      "description": "Zero-coupon bond priced from a pinned discount-curve surface.",
+      "inputs": {
+        "issue_date": "2024-06-15",
+        "maturity_date": "2025-06-15",
+        "reference_date": "2024-06-15",
+        "discount_curve_pillars": [
+          {
+            "tenor_years": "0.5",
+            "discount_factor": "0.975"
+          },
+          {
+            "tenor_years": "1.0",
+            "discount_factor": "0.951884771678961"
+          }
+        ]
+      },
+      "expected": {
+        "clean_price_from_curve": "95.188477167896095921"
+      },
+      "tolerances": {
+        "clean_price_from_curve": "1e-12"
+      },
+      "notes": "This corpus uses curve pricing, not the Rust zero-coupon yield helper path, because the curve representation is the stable reference target across both implementations."
+    },
+    {
+      "id": "accrued_interest_ex_dividend",
+      "rust_case_id": "candidate_accrued_interest_ex_dividend",
+      "crate": "convex-analytics",
+      "description": "UK gilt ex-dividend accrued-interest edge case with the full coupon stripped inside the ex window.",
+      "inputs": {
+        "convention": "uk_gilt",
+        "frequency": "SEMI_ANNUAL",
+        "settlement_date": "2024-01-08",
+        "accrual_start": "2023-07-15",
+        "accrual_end": "2024-01-15",
+        "coupon_amount": "2.0",
+        "coupon_date": "2024-01-15",
+        "full_coupon_amount": "2.0",
+        "period_start": "2023-07-15",
+        "period_end": "2024-01-15"
+      },
+      "expected": {
+        "standard_accrued_interest": "1.923913043478260869565217391",
+        "ex_dividend_accrued_interest": "-0.076086956521739130434782609"
+      },
+      "tolerances": {
+        "standard_accrued_interest": "1e-24",
+        "ex_dividend_accrued_interest": "1e-24"
+      },
+      "notes": "This case is pinned to a deterministic gilt ex-dividend reference and is intended to catch accrual-window regressions rather than broaden the Python API toward a Rust-only helper shape."
+    },
+    {
+      "id": "callable_oas_effective_duration",
+      "rust_case_id": "callable_oas",
+      "crate": "convex-analytics",
+      "description": "Callable bond OAS scenario with a pinned Hull-White setup and American-style call schedule.",
+      "inputs": {
+        "issue_date": "2020-01-15",
+        "maturity_date": "2029-01-15",
+        "coupon_rate": "0.05",
+        "frequency": "SEMI_ANNUAL",
+        "convention": "us_corporate",
+        "call_type": "AMERICAN",
+        "call_schedule": [
+          {
+            "call_date": "2025-01-15",
+            "call_price": "102.0"
+          },
+          {
+            "call_date": "2027-01-15",
+            "call_price": "101.0"
+          },
+          {
+            "call_date": "2028-01-15",
+            "call_price": "100.0"
+          }
+        ],
+        "curve_reference_date": "2024-01-15",
+        "flat_zero_rate": "0.05",
+        "settlement_date": "2024-01-17",
+        "mean_reversion": "0.03",
+        "volatility": "0.01",
+        "oas_decimal": "0.005000000000000000"
+      },
+      "expected": {
+        "market_dirty_price": "95.594596122926930093",
+        "effective_duration": "3.520994847509724135"
+      },
+      "tolerances": {
+        "market_dirty_price": "4.0",
+        "effective_duration": "0.25"
+      },
+      "accepted_divergence_reason": "Current Python OAS pricing is internally coherent but does not model the Rust American-call exercise path identically; the reference target for this case is a bounded price and duration band, not exact equality.",
+      "notes": "This remains a direct Rust-derived scenario from the pinned Convex revision, but the tolerance bands are intentionally explicit because exact OAS equivalence is not currently the project goal."
+    },
+    {
+      "id": "floating_rate_note_discount_margin",
+      "rust_case_id": "candidate_floating_rate_discount_margin_local_shape",
+      "crate": "convex-analytics",
+      "description": "Floating-rate note discount-margin case aligned to the local Python FRN shape for audit-friendly comparison.",
+      "inputs": {
+        "issue_date": "2024-01-01",
+        "maturity_date": "2026-01-01",
+        "index": "SOFR",
+        "quoted_spread": "0.0025",
+        "current_reference_rate": "0.03",
+        "frequency": "QUARTERLY",
+        "convention": "us_corporate",
+        "discount_curve_reference_date": "2024-01-01",
+        "discount_curve_zero_rates": [
+          {
+            "tenor_years": "0.25",
+            "zero_rate": "0.03"
+          },
+          {
+            "tenor_years": "5.0",
+            "zero_rate": "0.03"
+          }
+        ],
+        "forward_tenor_months": 3,
+        "settlement_date": "2024-01-01",
+        "discount_margin_decimal": "0.005000000000000000"
+      },
+      "expected": {
+        "market_dirty_price": "99.970385448020635977",
+        "spread_duration": "1.943055557762109018811179"
+      },
+      "tolerances": {
+        "market_dirty_price": "0.55",
+        "spread_duration": "0.01"
+      },
+      "accepted_divergence_reason": "Current Python discount-margin analytics do not target exact inverse-solve equivalence with the Rust implementation; this corpus only enforces bounded agreement on price-at-DM and spread duration for the pinned case.",
+      "notes": "The inverse-solved discount margin itself is intentionally not compared because the current solver and convention details are accepted as different."
+    },
+    {
+      "id": "callable_workout_behavior",
+      "rust_case_id": "candidate_callable_workout_behavior",
+      "crate": "convex-bonds",
+      "description": "Callable/puttable workout ordering case that exercises the Python callable surface on a non-coupon call date.",
+      "inputs": {
+        "issue_date": "2024-01-01",
+        "maturity_date": "2030-01-01",
+        "coupon_rate": "0.05",
+        "frequency": "ANNUAL",
+        "convention": "us_corporate",
+        "settlement_date": "2024-06-01",
+        "clean_price": "100",
+        "call_flow_date": "2026-06-01",
+        "call_schedule": [
+          {
+            "call_date": "2026-06-01",
+            "call_price": "101"
+          }
+        ],
+        "put_schedule": [
+          {
+            "put_date": "2026-01-01",
+            "put_price": "102",
+            "put_type": "EUROPEAN"
+          }
+        ]
+      },
+      "expected": {
+        "yield_to_first_workout": "0.030859248038760684",
+        "call_terminal_amount": "101",
+        "workout_count": "3"
+      },
+      "tolerances": {
+        "yield_to_first_workout": "1e-15",
+        "call_terminal_amount": "1e-24",
+        "workout_count": "0"
+      },
+      "notes": "The target here is the internally coherent Python workout surface: first-workout selection, non-coupon redemption flow synthesis, and embedded-option date ordering."
+    },
+    {
+      "id": "frn_fixing_lookback_coupon",
+      "rust_case_id": "candidate_frn_fixing_lookback_coupon",
+      "crate": "convex-bonds",
+      "description": "SOFR FRN coupon case with explicit overnight fixings, 2-day lookback, and 2-day lockout.",
+      "inputs": {
+        "issue_date": "2025-10-15",
+        "maturity_date": "2027-10-15",
+        "settlement_date": "2026-01-15",
+        "as_of": "2026-01-14",
+        "period_start": "2025-10-15",
+        "period_end": "2026-01-15",
+        "index": "SOFR",
+        "quoted_spread": "0.0125",
+        "current_reference_rate": "0.0460",
+        "frequency": "QUARTERLY",
+        "convention": "us_treasury",
+        "notional": "100",
+        "conventions": {
+          "overnight_compounding": "COMPOUNDED",
+          "lookback_days": 2,
+          "shift_type": "LOOKBACK",
+          "lockout_days": 2
+        },
+        "projection_curve_zero_rates": [
+          {
+            "tenor_years": "0.25",
+            "zero_rate": "0.044"
+          },
+          {
+            "tenor_years": "1.0",
+            "zero_rate": "0.0435"
+          },
+          {
+            "tenor_years": "2.0",
+            "zero_rate": "0.0430"
+          }
+        ],
+        "fixings": {
+          "2025-10-10": "0.0410",
+          "2025-10-13": "0.0411",
+          "2025-10-14": "0.0412",
+          "2025-10-15": "0.0413",
+          "2025-10-16": "0.0414",
+          "2025-10-17": "0.0415",
+          "2025-10-20": "0.0416",
+          "2025-10-21": "0.0417",
+          "2025-10-22": "0.0418",
+          "2025-10-23": "0.0419",
+          "2025-10-24": "0.0420",
+          "2025-10-27": "0.0421",
+          "2025-10-28": "0.0422",
+          "2025-10-29": "0.0423",
+          "2025-10-30": "0.0424",
+          "2025-10-31": "0.0425",
+          "2025-11-03": "0.0426",
+          "2025-11-04": "0.0427",
+          "2025-11-05": "0.0428",
+          "2025-11-06": "0.0429",
+          "2025-11-07": "0.0430",
+          "2025-11-10": "0.0431",
+          "2025-11-11": "0.0432",
+          "2025-11-12": "0.0433",
+          "2025-11-13": "0.0434",
+          "2025-11-14": "0.0435",
+          "2025-11-17": "0.0436",
+          "2025-11-18": "0.0437",
+          "2025-11-19": "0.0438",
+          "2025-11-20": "0.0439",
+          "2025-11-21": "0.0440",
+          "2025-11-24": "0.0441",
+          "2025-11-25": "0.0442",
+          "2025-11-26": "0.0443",
+          "2025-11-27": "0.0443",
+          "2025-11-28": "0.0444",
+          "2025-12-01": "0.0445",
+          "2025-12-02": "0.0446",
+          "2025-12-03": "0.0447",
+          "2025-12-04": "0.0448",
+          "2025-12-05": "0.0449",
+          "2025-12-08": "0.0450",
+          "2025-12-09": "0.0451",
+          "2025-12-10": "0.0452",
+          "2025-12-11": "0.0453",
+          "2025-12-12": "0.0454",
+          "2025-12-15": "0.0455",
+          "2025-12-16": "0.0456",
+          "2025-12-17": "0.0457",
+          "2025-12-18": "0.0458",
+          "2025-12-19": "0.0459",
+          "2025-12-22": "0.0460",
+          "2025-12-23": "0.0461",
+          "2025-12-24": "0.0462",
+          "2025-12-25": "0.0462",
+          "2025-12-26": "0.0463",
+          "2025-12-29": "0.0464",
+          "2025-12-30": "0.0465",
+          "2025-12-31": "0.0466",
+          "2026-01-01": "0.0466",
+          "2026-01-02": "0.0467",
+          "2026-01-05": "0.0468",
+          "2026-01-06": "0.0469",
+          "2026-01-07": "0.0470",
+          "2026-01-08": "0.0471",
+          "2026-01-09": "0.0472",
+          "2026-01-12": "0.0473",
+          "2026-01-13": "0.0474",
+          "2026-01-14": "0.0475"
+        }
+      },
+      "expected": {
+        "required_fixings_count": "62",
+        "period_coupon": "1.424565534886613599595646369"
+      },
+      "tolerances": {
+        "required_fixings_count": "0",
+        "period_coupon": "1e-24"
+      },
+      "notes": "This case extends the FRN corpus beyond discount-margin pricing to the fixing-window mechanics that matter in research workflows."
+    },
+    {
+      "id": "curve_conversion_interpolation",
+      "rust_case_id": "curve_conversion_interpolation",
+      "crate": "convex-curves",
+      "description": "Discount-curve interpolation and value-conversion identity checks at a pinned curve snapshot.",
+      "inputs": {
+        "reference_date": "2025-06-15",
+        "discount_curve_pillars": [
+          {
+            "tenor_years": "0.25",
+            "discount_factor": "0.9875"
+          },
+          {
+            "tenor_years": "0.5",
+            "discount_factor": "0.975"
+          },
+          {
+            "tenor_years": "1.0",
+            "discount_factor": "0.95"
+          },
+          {
+            "tenor_years": "2.0",
+            "discount_factor": "0.90"
+          },
+          {
+            "tenor_years": "5.0",
+            "discount_factor": "0.78"
+          }
+        ],
+        "interpolation": "LOG_LINEAR",
+        "query_tenor_years": "0.75",
+        "forward_start_years": "0.5",
+        "forward_end_years": "1.5",
+        "convert_rate": "0.03",
+        "convert_from": "CONTINUOUS",
+        "convert_to": "ANNUAL"
+      },
+      "expected": {
+        "discount_factor_at_query_tenor": "0.962418827746007843",
+        "zero_rate_annual_at_query_tenor": "0.052400839882776218",
+        "forward_rate_continuous": "0.053009097038398525",
+        "converted_rate": "0.030454533953516938"
+      },
+      "tolerances": {
+        "discount_factor_at_query_tenor": "1e-12",
+        "zero_rate_annual_at_query_tenor": "1e-12",
+        "forward_rate_continuous": "1e-12",
+        "converted_rate": "1e-12"
+      },
+      "notes": "This is a direct exact-match target for the pinned Convex rate-conversion surface."
+    },
+    {
+      "id": "curve_global_fit_nelson_siegel",
+      "rust_case_id": "candidate_curve_global_fit_nelson_siegel",
+      "crate": "convex-curves",
+      "description": "Synthetic Nelson-Siegel calibration case that checks parameter recovery and the fitted 4Y zero rate.",
+      "inputs": {
+        "reference_date": "2026-01-15",
+        "tenors": ["0.5", "1.0", "2.0", "3.0", "5.0", "7.0", "10.0"],
+        "true_parameters": ["0.035", "-0.01", "0.02", "2.5"],
+        "query_tenor_years": "4.0"
+      },
+      "expected": {
+        "beta0": "0.035000000000112864",
+        "beta1": "-0.010000000000128906",
+        "beta2": "0.019999999999702697",
+        "tau": "2.499999999973004",
+        "objective_value": "6.056635600159814e-29",
+        "zero_rate_4y": "0.03595021640263829"
+      },
+      "tolerances": {
+        "beta0": "1e-9",
+        "beta1": "1e-9",
+        "beta2": "1e-9",
+        "tau": "1e-9",
+        "objective_value": "1e-20",
+        "zero_rate_4y": "1e-12"
+      },
+      "notes": "The global-fit path is deterministic on this synthetic surface, so the expected parameters are frozen directly rather than treated as loose regression bands."
+    },
+    {
+      "id": "portfolio_weighted_metrics",
+      "rust_case_id": "portfolio_weighted_metrics",
+      "crate": "convex-engine",
+      "description": "Portfolio weighted-duration, weighted-convexity, and aggregate-DV01 reference case.",
+      "inputs": {
+        "portfolio_id": "TEST_PORT",
+        "positions": [
+          {
+            "instrument_id": "BOND_A",
+            "notional": "1000000"
+          },
+          {
+            "instrument_id": "BOND_B",
+            "notional": "2000000"
+          },
+          {
+            "instrument_id": "BOND_C",
+            "notional": "500000"
+          }
+        ],
+        "quotes": [
+          {
+            "instrument_id": "BOND_A",
+            "clean_price": "99.00",
+            "dirty_price": "100.00",
+            "yield_to_maturity": "0.05",
+            "modified_duration": "5.0",
+            "convexity": "30",
+            "dv01": "0.05"
+          },
+          {
+            "instrument_id": "BOND_B",
+            "clean_price": "101.00",
+            "dirty_price": "102.00",
+            "yield_to_maturity": "0.045",
+            "modified_duration": "7.0",
+            "convexity": "55",
+            "dv01": "0.071"
+          },
+          {
+            "instrument_id": "BOND_C",
+            "clean_price": "98.00",
+            "dirty_price": "99.00",
+            "yield_to_maturity": "0.055",
+            "modified_duration": "3.0",
+            "convexity": "12",
+            "dv01": "0.03"
+          }
+        ],
+        "reference_data": {
+          "BOND_A": {
+            "sector": "Technology",
+            "rating": "A"
+          },
+          "BOND_B": {
+            "sector": "Healthcare",
+            "rating": "BBB"
+          },
+          "BOND_C": {
+            "sector": "Technology",
+            "rating": "A"
+          }
+        }
+      },
+      "expected": {
+        "weighted_duration": "5.8741159830268741159830268741",
+        "weighted_convexity": "41.906647807637906647807637907",
+        "aggregate_dv01": "2070"
+      },
+      "tolerances": {
+        "weighted_duration": "1e-24",
+        "weighted_convexity": "1e-24",
+        "aggregate_dv01": "1e-24"
+      },
+      "notes": "Only the weighted metrics are direct comparison targets here. Total-value fields, KRD aggregation, and sector/rating breakdown normalization are intentionally outside this corpus because the Python API is already internally coherent without mirroring every Rust detail."
+    },
+    {
+      "id": "portfolio_benchmark_attribution",
+      "rust_case_id": "candidate_portfolio_benchmark_attribution",
+      "crate": "convex-portfolio",
+      "description": "Benchmark-comparison and return-decomposition case aligned to the Python portfolio architecture.",
+      "inputs": {
+        "reference_date": "2024-01-01",
+        "curve_zero_rates": [
+          {
+            "tenor_years": "0.5",
+            "zero_rate": "0.03"
+          },
+          {
+            "tenor_years": "2.0",
+            "zero_rate": "0.0325"
+          },
+          {
+            "tenor_years": "5.0",
+            "zero_rate": "0.0350"
+          },
+          {
+            "tenor_years": "10.0",
+            "zero_rate": "0.04"
+          }
+        ],
+        "portfolio_holdings": [
+          {
+            "label": "gov_short",
+            "years": "2",
+            "coupon_rate": "0.035",
+            "frequency": "ANNUAL",
+            "convention": "us_corporate",
+            "quantity": "100",
+            "clean_price": "99.5",
+            "sector": "GOVERNMENT",
+            "rating": "AA"
+          },
+          {
+            "label": "corp_bbb",
+            "years": "5",
+            "coupon_rate": "0.05",
+            "frequency": "ANNUAL",
+            "convention": "us_corporate",
+            "quantity": "100",
+            "clean_price": "101.0",
+            "sector": "CORPORATE",
+            "rating": "BBB"
+          },
+          {
+            "label": "corp_bb",
+            "years": "8",
+            "coupon_rate": "0.0625",
+            "frequency": "ANNUAL",
+            "convention": "us_corporate",
+            "quantity": "100",
+            "clean_price": "98.0",
+            "sector": "INDUSTRIALS",
+            "rating": "BB"
+          }
+        ],
+        "benchmark_holdings": [
+          {
+            "label": "bench_gov",
+            "years": "3",
+            "coupon_rate": "0.03",
+            "frequency": "ANNUAL",
+            "convention": "us_corporate",
+            "quantity": "100",
+            "clean_price": "100.5",
+            "sector": "GOVERNMENT",
+            "rating": "A"
+          },
+          {
+            "label": "bench_corp",
+            "years": "6",
+            "coupon_rate": "0.045",
+            "frequency": "ANNUAL",
+            "convention": "us_corporate",
+            "quantity": "100",
+            "clean_price": "100.0",
+            "sector": "CORPORATE",
+            "rating": "BBB"
+          }
+        ],
+        "assumptions": {
+          "income_horizon_years": "0.5",
+          "rate_change_bps": "15",
+          "spread_change_bps": "20"
+        }
+      },
+      "expected": {
+        "active_duration": "0.146685757086324091459375014",
+        "active_z_spread": "0.012735355464434825994885065393467754399595650739149",
+        "active_total_return": "0.0054902256266278065238507567449677243950425443927873",
+        "income_return": "0.024706867671691792294807370184254606365159128978225",
+        "rate_return": "-0.006333490692499103425508381497",
+        "spread_return": "-0.008444654256665466739028475712"
+      },
+      "tolerances": {
+        "active_duration": "1e-24",
+        "active_z_spread": "1e-24",
+        "active_total_return": "1e-24",
+        "income_return": "1e-24",
+        "rate_return": "1e-24",
+        "spread_return": "1e-24"
+      },
+      "notes": "This is intentionally Python-surface-aligned rather than a cosmetic Rust shim. It freezes a realistic benchmark/attribution workflow without requiring the portfolio layer to mirror upstream crate roots 1:1."
+    }
+  ]
+}

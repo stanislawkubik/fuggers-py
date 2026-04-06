@@ -1,0 +1,28 @@
+{
+  "compounding_roundtrip": {
+    "source": "Closed-form zero/discount conversion under semi-annual compounding.",
+    "zero_rate": "0.041",
+    "tenor": "3.5",
+    "compounding": "SEMI_ANNUAL",
+    "expected_discount_factor": "0.8675788109984972",
+    "expected_zero_roundtrip": "0.040999999999999925"
+  },
+  "forward_from_zeros": {
+    "source": "Forward rate implied by two continuously compounded zero rates.",
+    "reference_date": "2026-01-15",
+    "tenor1": "2.0",
+    "tenor2": "5.0",
+    "zero1": "0.035",
+    "zero2": "0.04",
+    "date1": "2028-01-15",
+    "date2": "2031-01-15",
+    "expected_forward_rate": "0.043333333333333335"
+  },
+  "hazard_survival": {
+    "source": "Flat-hazard survival conversion identity.",
+    "hazard_rate": "0.02",
+    "tenor": "5.0",
+    "expected_survival_probability": "0.9048374180359595",
+    "expected_hazard_roundtrip": "0.02000000000000001"
+  }
+}

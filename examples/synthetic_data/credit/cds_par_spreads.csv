@@ -1,0 +1,6 @@
+as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_1Y,1Y,USD,par_spread,0.0074,decimal,Front end Acme single name CDS spread
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_3Y,3Y,USD,par_spread,0.0105,decimal,3Y Acme single name CDS spread
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_5Y,5Y,USD,par_spread,0.0132,decimal,5Y Acme single name CDS spread
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_7Y,7Y,USD,par_spread,0.0154,decimal,7Y Acme single name CDS spread
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_10Y,10Y,USD,par_spread,0.0181,decimal,10Y Acme single name CDS spread

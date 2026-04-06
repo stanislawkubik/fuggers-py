@@ -1,0 +1,157 @@
+[build-system]
+requires = ["setuptools>=72", "setuptools-scm[toml]>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fuggers-py"
+dynamic = ["version"]
+description = "Fixed-income analytics library with responsibility-first package boundaries."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{name = "Stanislaw Kubik", email = "stanislaw.kubik@proton.me"}]
+keywords = [
+    "fixed-income",
+    "bonds",
+    "yield-curves",
+    "quant-finance",
+    "credit",
+    "analytics",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Typing :: Typed",
+]
+dependencies = ["numpy>=1.26"]
+
+[project.urls]
+Homepage = "https://github.com/stanislawkubik/fuggers-py"
+Repository = "https://github.com/stanislawkubik/fuggers-py"
+Documentation = "https://github.com/stanislawkubik/fuggers-py/tree/main/docs"
+Issues = "https://github.com/stanislawkubik/fuggers-py/issues"
+Changelog = "https://github.com/stanislawkubik/fuggers-py/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+    "build>=1",
+    "coverage[toml]>=7",
+    "hypothesis>=6",
+    "jupytext>=1.16",
+    "mypy>=1.14",
+    "nbformat>=5.10",
+    "pre-commit>=4",
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5",
+    "ruff>=0.15.6,<0.16",
+    "twine>=6",
+]
+engine = ["croniter>=2"]
+examples = [
+    "jupyterlab>=4",
+    "jupytext>=1.16",
+    "matplotlib>=3.9",
+    "nbclient>=0.10",
+    "nbformat>=5.10",
+    "pandas>=2.2",
+]
+docs = [
+    "furo",
+    "myst-parser",
+    "sphinx>=8",
+    "sphinx-autodoc-typehints",
+    "sphinx-copybutton",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+fuggers_py = ["py.typed"]
+
+[tool.setuptools_scm]
+fallback_version = "0.2.dev0"
+tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+(?:(?:a|b|rc)\\d+)?)$"
+version_file = "src/fuggers_py/_version.py"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+markers = [
+    "feature_slug(slug): tag a test with the add-feature workflow slug",
+    "feature_category(name): tag a test with the add-feature workflow category",
+]
+
+[tool.ruff]
+src = ["src", "tests", "tools", "typecheck"]
+target-version = "py311"
+extend-exclude = [".hypothesis"]
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]
+
+[tool.mypy]
+files = [
+    "typecheck/public_api.py",
+    "src/fuggers_py/core",
+    "src/fuggers_py/math/numerical.py",
+    "src/fuggers_py/market/curves/conversion.py",
+    "src/fuggers_py/market/curves/value_type.py",
+    "src/fuggers_py/market/curves/term_structure.py",
+    "src/fuggers_py/market/curves/wrappers/credit_curve.py",
+    "src/fuggers_py/market/curves/wrappers/rate_curve.py",
+    "src/fuggers_py/measures/cashflows/irregular.py",
+    "src/fuggers_py/measures/cashflows/settlement.py",
+    "src/fuggers_py/measures/spreads/government_curve.py",
+    "src/fuggers_py/measures/yas/invoice.py",
+    "src/fuggers_py/measures/yields",
+    "src/fuggers_py/products/bonds/traits/bond.py",
+    "src/fuggers_py/products/bonds/instruments/callable.py",
+    "src/fuggers_py/portfolio/risk/__init__.py",
+]
+mypy_path = "src"
+python_version = "3.11"
+follow_imports = "silent"
+strict = true
+warn_unused_ignores = true
+
+[tool.coverage.run]
+branch = true
+source = ["src/fuggers_py"]
+omit = ["tests/*", "examples/*", "docs/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+precision = 2
+
+[tool.fuggers_source_coverage]
+source = ["src/fuggers_py"]
+measured_packages = [
+    "adapters",
+    "calc",
+    "core",
+    "market",
+    "math",
+    "measures",
+    "portfolio",
+    "pricers",
+    "products",
+    "reference",
+]
+overall_min = 85.0
+package_min = 80.0
+omit_globs = ["tests/*", "examples/*", "docs/*"]

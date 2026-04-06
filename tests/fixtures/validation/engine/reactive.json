@@ -1,0 +1,22 @@
+{
+  "reactive_fixed_bond_case": {
+    "source": "Deterministic reactive-engine quote-to-price flow for a fixed-rate bond.",
+    "instrument_id": "REACTIVE-FIXED",
+    "issue_date": "2024-01-15",
+    "maturity_date": "2031-01-15",
+    "coupon_rate": "0.0450",
+    "settlement_date": "2026-03-14",
+    "curve_id": "usd.discount",
+    "curve_points": [
+      {"tenor": "1.0", "rate": "0.0425"},
+      {"tenor": "5.0", "rate": "0.0390"}
+    ],
+    "pricing_node_id": "price:REACTIVE-FIXED",
+    "market_price": "101.25",
+    "quote_timestamp": "2026-03-14T09:00:00+00:00",
+    "expected_processed_updates": 3,
+    "expected_first_published_node": "quote:REACTIVE-FIXED",
+    "expected_clean_price": "101.25",
+    "expected_yield_to_maturity": "0.04210049572901988"
+  }
+}

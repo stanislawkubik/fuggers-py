@@ -1,0 +1,77 @@
+as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_1M,1M,USD,zero_rate,0.0435,decimal,Front bill anchor
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_3M,3M,USD,zero_rate,0.0432,decimal,Front bill anchor
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_6M,6M,USD,zero_rate,0.0426,decimal,Front bill anchor
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_1Y,1Y,USD,zero_rate,0.0417,decimal,1Y Treasury term point
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_2Y,2Y,USD,zero_rate,0.0402,decimal,2Y Treasury term point
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_3Y,3Y,USD,zero_rate,0.0391,decimal,3Y Treasury term point
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_5Y,5Y,USD,zero_rate,0.0381,decimal,5Y Treasury term point
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_7Y,7Y,USD,zero_rate,0.0384,decimal,7Y Treasury term point
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_10Y,10Y,USD,zero_rate,0.0392,decimal,10Y Treasury term point
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_20Y,20Y,USD,zero_rate,0.0410,decimal,20Y Treasury term point
+2026-01-15,nominal_government_curve,usd.gov.nominal,USD_GOV_30Y,30Y,USD,zero_rate,0.0415,decimal,30Y Treasury term point
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_1W,1W,USD,zero_rate,0.0439,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_1M,1M,USD,zero_rate,0.0434,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_3M,3M,USD,zero_rate,0.0427,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_6M,6M,USD,zero_rate,0.0419,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_1Y,1Y,USD,zero_rate,0.0408,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_2Y,2Y,USD,zero_rate,0.0393,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_3Y,3Y,USD,zero_rate,0.0384,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_5Y,5Y,USD,zero_rate,0.0376,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_7Y,7Y,USD,zero_rate,0.0379,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_10Y,10Y,USD,zero_rate,0.0388,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_20Y,20Y,USD,zero_rate,0.0406,decimal,SOFR discount anchor
+2026-01-15,ois_discount_curve,usd.ois.discount,USD_OIS_30Y,30Y,USD,zero_rate,0.0411,decimal,SOFR discount anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_2Y,2Y,USD,zero_rate,0.0185,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_5Y,5Y,USD,zero_rate,0.0165,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_7Y,7Y,USD,zero_rate,0.0168,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_10Y,10Y,USD,zero_rate,0.0176,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_20Y,20Y,USD,zero_rate,0.0188,decimal,Real curve anchor
+2026-01-15,real_rate_curve,usd.tips.real,USD_REAL_30Y,30Y,USD,zero_rate,0.0192,decimal,Real curve anchor
+2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_1Y,1Y,USD,inflation_swap_rate,0.0222,decimal,1Y zero coupon inflation swap
+2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_2Y,2Y,USD,inflation_swap_rate,0.0219,decimal,2Y zero coupon inflation swap
+2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_3Y,3Y,USD,inflation_swap_rate,0.0217,decimal,3Y zero coupon inflation swap
+2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_5Y,5Y,USD,inflation_swap_rate,0.0215,decimal,5Y zero coupon inflation swap
+2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_7Y,7Y,USD,inflation_swap_rate,0.0216,decimal,7Y zero coupon inflation swap
+2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_10Y,10Y,USD,inflation_swap_rate,0.0217,decimal,10Y zero coupon inflation swap
+2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_20Y,20Y,USD,inflation_swap_rate,0.0215,decimal,20Y zero coupon inflation swap
+2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_30Y,30Y,USD,inflation_swap_rate,0.0213,decimal,30Y zero coupon inflation swap
+2026-01-15,cash_breakeven_markers,usd.cpi.cash_breakeven,USD_BEI_2Y,2Y,USD,breakeven_rate,0.0212,decimal,2Y TIPS cash breakeven marker
+2026-01-15,cash_breakeven_markers,usd.cpi.cash_breakeven,USD_BEI_5Y,5Y,USD,breakeven_rate,0.0218,decimal,5Y TIPS cash breakeven marker
+2026-01-15,cash_breakeven_markers,usd.cpi.cash_breakeven,USD_BEI_10Y,10Y,USD,breakeven_rate,0.0220,decimal,10Y TIPS cash breakeven marker
+2026-01-15,cash_breakeven_markers,usd.cpi.cash_breakeven,USD_BEI_30Y,30Y,USD,breakeven_rate,0.0216,decimal,30Y TIPS cash breakeven marker
+2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_1W,1W,USD,zero_rate,0.0424,decimal,General collateral repo anchor
+2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_1M,1M,USD,zero_rate,0.0420,decimal,General collateral repo anchor
+2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_3M,3M,USD,zero_rate,0.0413,decimal,General collateral repo anchor
+2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_6M,6M,USD,zero_rate,0.0404,decimal,General collateral repo anchor
+2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_1Y,1Y,USD,zero_rate,0.0394,decimal,General collateral repo anchor
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_1Y,1Y,USD,par_spread,0.0074,decimal,Front end Acme single name CDS spread
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_3Y,3Y,USD,par_spread,0.0105,decimal,3Y Acme single name CDS spread
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_5Y,5Y,USD,par_spread,0.0132,decimal,5Y Acme single name CDS spread
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_7Y,7Y,USD,par_spread,0.0154,decimal,7Y Acme single name CDS spread
+2026-01-15,cds_par_spreads,acme.cds.snrfor,ACME_CDS_10Y,10Y,USD,par_spread,0.0181,decimal,10Y Acme single name CDS spread
+2026-01-15,cross_currency_basis,eurusd.3m_basis,EURUSD_BASIS_1Y,1Y,USD,basis_spread,-0.0010,decimal,EUR funded USD swap basis
+2026-01-15,cross_currency_basis,eurusd.3m_basis,EURUSD_BASIS_2Y,2Y,USD,basis_spread,-0.0012,decimal,EUR funded USD swap basis
+2026-01-15,cross_currency_basis,eurusd.3m_basis,EURUSD_BASIS_3Y,3Y,USD,basis_spread,-0.0013,decimal,EUR funded USD swap basis
+2026-01-15,cross_currency_basis,eurusd.3m_basis,EURUSD_BASIS_5Y,5Y,USD,basis_spread,-0.0016,decimal,EUR funded USD swap basis
+2026-01-15,cross_currency_basis,eurusd.3m_basis,EURUSD_BASIS_7Y,7Y,USD,basis_spread,-0.0018,decimal,EUR funded USD swap basis
+2026-01-15,cross_currency_basis,eurusd.3m_basis,EURUSD_BASIS_10Y,10Y,USD,basis_spread,-0.0020,decimal,EUR funded USD swap basis
+2026-01-15,rates_future_chain,cbot.ty.futures,TYM6,10Y,USD,futures_price,109.85,percent_of_par,Jun 2026 10Y Treasury note future
+2026-01-15,rates_future_chain,cbot.ty.futures,TYU6,10Y,USD,futures_price,109.12,percent_of_par,Sep 2026 10Y Treasury note future
+2026-01-15,rates_option_smile,cbot.ty.option.smile,TYM6C110,2M,USD,lognormal_vol,0.1920,decimal,Jun TY call smile lower strike
+2026-01-15,rates_option_smile,cbot.ty.option.smile,TYM6C112,2M,USD,lognormal_vol,0.1850,decimal,Jun TY call smile at the money
+2026-01-15,rates_option_smile,cbot.ty.option.smile,TYM6C114,2M,USD,lognormal_vol,0.1790,decimal,Jun TY call smile upper strike
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,UST_2Y_2028,2Y,USD,clean_price,99.88,percent_of_par,2Y Treasury cash level
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,UST_5Y_2031,5Y,USD,clean_price,99.14,percent_of_par,5Y Treasury benchmark cash level
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,UST_7Y_2033,7Y,USD,clean_price,101.42,percent_of_par,7Y Treasury deliverable cash level
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,UST_10Y_2036,10Y,USD,clean_price,101.08,percent_of_par,10Y Treasury cash level
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,TIPS_5Y_2031,5Y,USD,clean_price,103.45,percent_of_par,5Y TIPS cash level
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,TIPS_10Y_2036,10Y,USD,clean_price,102.64,percent_of_par,10Y TIPS cash level
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,ACME_5Y_2031,5Y,USD,clean_price,101.12,percent_of_par,BBB industrial cash bond
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,METRO_4Y_2030,4Y,USD,clean_price,100.48,percent_of_par,A rated financial bond
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,RIVER_8Y_2034,8Y,USD,clean_price,98.20,percent_of_par,BB utility bond
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,HARBOR_10Y_2036,10Y,USD,clean_price,96.40,percent_of_par,BBB utility bond
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,NOVA_12Y_2038,12Y,USD,clean_price,102.15,percent_of_par,A industrial long bond
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,FLOATCO_3M_2029,3Y,USD,dirty_price,100.09,percent_of_par,SOFR FRN dirty price
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,CALLCO_6Y_2032,6Y,USD,clean_price,100.35,percent_of_par,Callable industrial cash bond
+2026-01-15,cash_bond_market_levels,usd.cash.market_levels,SINKCO_7Y_2033,7Y,USD,clean_price,99.55,percent_of_par,Amortizing utility bond

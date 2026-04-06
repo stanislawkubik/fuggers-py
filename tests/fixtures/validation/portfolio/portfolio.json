@@ -1,0 +1,52 @@
+{
+  "benchmark_and_risk_case": {
+    "source": "Deterministic portfolio helper case used for benchmark, contribution, and liquidity validation.",
+    "reference_date": "2024-01-01",
+    "expected_active_duration": "0.146685757086324091459375014",
+    "expected_active_dv01": "4.431985528724168814009420004",
+    "expected_net_active_weight": "0",
+    "expected_tracking_error": "0.011479592926327675740588635195929773556059599744358",
+    "expected_sector_active_weights": {
+      "CORPORATE": "-0.1603946582455085067899764826",
+      "GOVERNMENT": "-0.1679135494596841230257689111",
+      "INDUSTRIALS": "0.3283082077051926298157453936"
+    },
+    "expected_duration_contribution_total": "4.222327128332733369514237856",
+    "expected_dv01_contribution_total": "12.60364647807321581676167918",
+    "expected_cs01_contribution_total": "12.603646478073209108",
+    "expected_attribution_duration_total": "4.222327128332733369514237856",
+    "expected_liquidity_score": "0.8499999999999999999999999999",
+    "expected_days_to_liquidate": "2.350000000000000000000000001",
+    "expected_distribution": {
+      "high": {"weight": "1", "dirty_pv": "29850.0", "holding_count": 3},
+      "medium": {"weight": "0", "dirty_pv": "0", "holding_count": 0},
+      "limited": {"weight": "0", "dirty_pv": "0", "holding_count": 0},
+      "illiquid": {"weight": "0", "dirty_pv": "0", "holding_count": 0}
+    }
+  },
+  "stress_case": {
+    "source": "Standard-scenario portfolio stress summary.",
+    "reference_date": "2024-01-01",
+    "expected_aggregate_change": "-339.7663821149600652000000000",
+    "expected_worst_loss": "-315.091161951830227700",
+    "expected_best_gain": "126.0364647807321581676167918",
+    "expected_scenarios": {
+      "+10bps parallel": {
+        "actual_change": "-126.0364647807321581676167918",
+        "stressed_dirty_pv": "29723.96353521926784183238321"
+      },
+      "-10bps parallel": {
+        "actual_change": "126.0364647807321581676167918",
+        "stressed_dirty_pv": "29976.03646478073215816761679"
+      },
+      "+25bps spread widening": {
+        "actual_change": "-315.091161951830227700",
+        "stressed_dirty_pv": "29534.908838048169772300"
+      },
+      "2s10s steepener": {
+        "actual_change": "-24.67522016312983750000",
+        "stressed_dirty_pv": "29825.32477983687016250000"
+      }
+    }
+  }
+}

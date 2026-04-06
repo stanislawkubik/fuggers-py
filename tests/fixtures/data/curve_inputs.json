@@ -1,0 +1,30 @@
+{
+  "curves": [
+    {
+      "curve_id": "usd.discount",
+      "reference_date": "2026-03-13",
+      "interpolation": "linear",
+      "curve_kind": "zero",
+      "source": "fixture",
+      "points": [
+        {
+          "tenor": "1.0",
+          "value": "0.0425"
+        },
+        {
+          "tenor": "5.0",
+          "value": "0.0390"
+        }
+      ],
+      "instruments": [
+        {
+          "instrument_type": "bond",
+          "instrument_id": "US1234567890",
+          "tenor": "5.0",
+          "rate": "0.0390",
+          "label": "5Y on-the-run"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine pytest
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Build wheel through pip path
+        run: python -m pip wheel . --no-deps -w /tmp/fuggers-pip-wheel-check
+
+      - name: Install package for version-provenance checks
+        run: python -m pip install -e . --no-deps
+
+      - name: Check distribution metadata
+        run: python -m twine check dist/*
+
+      - name: Verify exact tagged release version
+        env:
+          EXPECTED_RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          export EXPECTED_RELEASE_VERSION="${EXPECTED_RELEASE_VERSION#v}"
+          pytest -q tests/contracts/packaging/test_packaging_version_consistency.py
+
+      - name: Smoke test installed wheel without engine extra
+        env:
+          EXPECTED_RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          export EXPECTED_RELEASE_VERSION="${EXPECTED_RELEASE_VERSION#v}"
+          python -m venv /tmp/fuggers-wheel-venv
+          /tmp/fuggers-wheel-venv/bin/pip install --upgrade pip
+          WHEEL_PATH=$(ls dist/*.whl)
+          /tmp/fuggers-wheel-venv/bin/pip install "$WHEEL_PATH"
+          /tmp/fuggers-wheel-venv/bin/python tools/packaging/smoke_imports.py
+          /tmp/fuggers-wheel-venv/bin/python tools/packaging/smoke_optional_without_engine.py
+
+      - name: Smoke test installed wheel with engine extra
+        env:
+          EXPECTED_RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          export EXPECTED_RELEASE_VERSION="${EXPECTED_RELEASE_VERSION#v}"
+          python -m venv /tmp/fuggers-release-venv
+          /tmp/fuggers-release-venv/bin/pip install --upgrade pip
+          WHEEL_PATH=$(python -c "from pathlib import Path; print(next(Path('dist').glob('*.whl')).resolve())")
+          /tmp/fuggers-release-venv/bin/pip install "fuggers-py[engine] @ file://${WHEEL_PATH}"
+          /tmp/fuggers-release-venv/bin/python tools/packaging/smoke_imports.py
+          /tmp/fuggers-release-venv/bin/python tools/packaging/smoke_optional_with_engine.py
+
+      - name: Smoke test installed sdist metadata and runtime version
+        env:
+          EXPECTED_RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          export EXPECTED_RELEASE_VERSION="${EXPECTED_RELEASE_VERSION#v}"
+          python -m venv /tmp/fuggers-sdist-venv
+          /tmp/fuggers-sdist-venv/bin/pip install --upgrade pip
+          SDIST_PATH=$(python -c "from pathlib import Path; print(next(Path('dist').glob('*.tar.gz')).resolve())")
+          /tmp/fuggers-sdist-venv/bin/pip install "$SDIST_PATH"
+          /tmp/fuggers-sdist-venv/bin/python -c "import importlib.metadata, os, fuggers_py; version = importlib.metadata.version('fuggers-py'); assert version == fuggers_py.__version__; assert version == os.environ['EXPECTED_RELEASE_VERSION']"
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
