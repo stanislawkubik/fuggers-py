@@ -1,5 +1,3 @@
-:orphan:
-
 # Source Structure
 
 `src/fuggers_py/` is the canonical implementation root for the library.

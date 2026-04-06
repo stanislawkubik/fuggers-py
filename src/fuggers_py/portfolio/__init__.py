@@ -4,6 +4,15 @@ The package exposes the main portfolio container, typed holdings and
 classification helpers, and the analytics surfaces for risk, spreads, yield,
 liquidity, ETF, benchmark, contribution, bucketing, stress, and quote-output
 aggregation workflows.
+
+The main public groups are:
+
+- ``analytics`` for totals, weighted metrics, NAV, and key-rate profiles
+- ``benchmark`` for active-weight and tracking-error style comparisons
+- ``contribution`` for attribution and grouped risk splits
+- ``etf`` for basket, NAV, and compliance helpers
+- ``stress`` for parallel, spread, and key-rate scenario analysis
+
 Values are expressed using the library's fixed-income conventions: prices are
 typically percent-of-par, spreads and rates are raw decimals unless a
 ``*_bps`` or ``*_pct`` field states otherwise, and portfolio analytics are

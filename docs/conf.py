@@ -22,16 +22,7 @@ extensions = [
 ]
 
 templates_path = ["_templates"]
-exclude_patterns = [
-    "_build",
-    "Thumbs.db",
-    ".DS_Store",
-    "MODULE_REFERENCE.md",
-    "SRC_STRUCTURE.md",
-    "conventions.md",
-    "docstring_standard.md",
-    "validation_strategy.md",
-]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 source_suffix = {
     ".md": "markdown",
@@ -48,3 +39,4 @@ napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 autodoc_typehints = "description"
 autodoc_member_order = "bysource"
+suppress_warnings = ["ref.python", "sphinx_autodoc_typehints.forward_reference"]

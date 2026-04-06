@@ -128,58 +128,101 @@ def yield_to_maturity_with_convention(
 
 
 def dirty_price_from_yield(bond: Bond, ytm: Yield, settlement_date: Date) -> Price:
-    """Return dirty price from yield for settlement on ``settlement_date``.
+    """Return the dirty price implied by a yield.
 
-    The result is a percentage-of-par :class:`~fuggers_py.core.types.Price`.
+    Parameters
+    ----------
+    bond:
+        Bond to value.
+    ytm:
+        Yield to maturity as a raw decimal.
+    settlement_date:
+        Settlement date used for accrued-interest and cashflow filtering.
+
+    Returns
+    -------
+    Price
+        Dirty price in percent of par.
     """
 
     return BondPricer().price_from_yield(bond, ytm, settlement_date).dirty
 
 
 def clean_price_from_yield(bond: Bond, ytm: Yield, settlement_date: Date) -> Price:
-    """Return clean price from yield for settlement on ``settlement_date``.
+    """Return the clean price implied by a yield.
 
-    The result is a percentage-of-par :class:`~fuggers_py.core.types.Price`.
+    Parameters
+    ----------
+    bond:
+        Bond to value.
+    ytm:
+        Yield to maturity as a raw decimal.
+    settlement_date:
+        Settlement date used for accrued-interest and cashflow filtering.
+
+    Returns
+    -------
+    Price
+        Clean price in percent of par.
     """
 
     return BondPricer().price_from_yield(bond, ytm, settlement_date).clean
 
 
 def macaulay_duration(bond: Bond, ytm: Yield, settlement_date: Date) -> Decimal:
-    """Return settlement-relative Macaulay duration in years."""
+    """Return Macaulay duration for the bond.
+
+    The result is expressed in years and is measured off the settlement date.
+    """
 
     return _macaulay_duration(bond, ytm, settlement_date)
 
 
 def modified_duration(bond: Bond, ytm: Yield, settlement_date: Date) -> Decimal:
-    """Return settlement-relative modified duration per unit yield."""
+    """Return modified duration for the bond.
+
+    The result is a raw-year sensitivity per unit yield, measured off the
+    settlement date.
+    """
 
     return _modified_duration(bond, ytm, settlement_date)
 
 
 def effective_duration(bond: Bond, ytm: Yield, settlement_date: Date, *, bump: float = 1e-4) -> Decimal:
-    """Return settlement-relative effective duration using a finite yield bump."""
+    """Return effective duration using a finite yield bump.
+
+    The result is measured off the settlement date. ``bump`` is a raw decimal
+    yield shock, so ``1e-4`` means 1 bp.
+    """
 
     return _effective_duration(bond, ytm, settlement_date, bump=bump)
 
 
 def convexity(bond: Bond, ytm: Yield, settlement_date: Date) -> Decimal:
-    """Return settlement-relative analytical convexity."""
+    """Return analytical convexity for the bond.
+
+    The result is measured off the settlement date and is based on the
+    bond's yield/price relationship.
+    """
 
     return analytical_convexity(bond, ytm, settlement_date)
 
 
 def effective_convexity(bond: Bond, ytm: Yield, settlement_date: Date, *, bump: float = 1e-4) -> Decimal:
-    """Return settlement-relative effective convexity using a finite yield bump."""
+    """Return effective convexity using a finite yield bump.
+
+    The result is measured off the settlement date. ``bump`` is a raw decimal
+    yield shock, so ``1e-4`` means 1 bp.
+    """
 
     return _effective_convexity(bond, ytm, settlement_date, bump=bump)
 
 
 def dv01(bond: Bond, ytm: Yield, settlement_date: Date) -> Decimal:
-    """Return DV01 per 100 face using dirty price and modified duration.
+    """Return DV01 per 100 face.
 
-    The returned value is scaled to a 100 face amount and uses the dirty
-    price implied by ``ytm`` at ``settlement_date``.
+    The result uses the dirty price implied by ``ytm`` at ``settlement_date``.
+    It is signed positive when bond value rises as yield falls by 1 bp.
     """
 
     pricer = BondPricer()
@@ -215,7 +258,11 @@ def estimate_price_change(
     price_value: object,
     yield_change: object,
 ) -> Decimal:
-    """Estimate price change using a duration-plus-convexity approximation.
+    """Estimate price change using duration and convexity.
+
+    The estimate uses the standard second-order approximation around the
+    current price. ``yield_change`` is a raw decimal shock, so ``0.0001`` means
+    1 bp.
 
     Returns
     -------
@@ -231,7 +278,10 @@ def price_change_from_duration(
     price_value: object,
     yield_change: object,
 ) -> Decimal:
-    """Estimate first-order price change from modified duration only.
+    """Estimate first-order price change from modified duration.
+
+    ``yield_change`` is a raw decimal shock, so ``0.0001`` means 1 bp. The
+    return value is negative when yield rises and positive when yield falls.
 
     Returns
     -------
@@ -290,7 +340,11 @@ def parse_day_count(text: str) -> DayCountConvention:
 
 
 def calculate_accrued_interest(inputs: AccruedInterestInputs, *, rules: YieldCalculationRules) -> Decimal:
-    """Compatibility wrapper for the standard accrued-interest calculation."""
+    """Compatibility wrapper for the standard accrued-interest calculation.
+
+    The return value is accrued interest in raw currency units under
+    ``rules``.
+    """
 
     return AccruedInterestCalculator.standard(inputs, rules=rules)
 

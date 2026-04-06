@@ -1,5 +1,3 @@
-:orphan:
-
 # Docstring Standard
 
 This page defines the house style for docstrings in `fuggers-py`.

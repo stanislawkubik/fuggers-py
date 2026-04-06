@@ -2,19 +2,71 @@
 
 Market state, quotes, fixings, indices, and curve abstractions.
 
-Canonical market modules:
-
-- `fuggers_py.market.state`
-  - market state helpers such as `QuoteSide` and `AnalyticsCurves`
-- `fuggers_py.market.quotes`
-  - quote protocols and concrete quote families
-- `fuggers_py.market.snapshot`
-  - curve inputs, fixings, surfaces, ETF holdings, and `MarketDataSnapshot`
-- `fuggers_py.market.sources`
-  - source protocols, in-memory sources, and `MarketDataProvider`
-
 ```{eval-rst}
 .. automodule:: fuggers_py.market
    :members:
    :member-order: bysource
+```
+
+## `fuggers_py.market.state`
+
+```{eval-rst}
+.. automodule:: fuggers_py.market.state
+   :members:
+   :member-order: bysource
+   :no-index:
+```
+
+## `fuggers_py.market.quotes`
+
+```{eval-rst}
+.. automodule:: fuggers_py.market.quotes
+   :members:
+   :member-order: bysource
+   :no-index:
+```
+
+## `fuggers_py.market.snapshot`
+
+```{eval-rst}
+.. automodule:: fuggers_py.market.snapshot
+   :members:
+   :member-order: bysource
+   :no-index:
+```
+
+## `fuggers_py.market.sources`
+
+```{eval-rst}
+.. automodule:: fuggers_py.market.sources
+   :members:
+   :member-order: bysource
+   :no-index:
+```
+
+## `fuggers_py.market.curves`
+
+```{eval-rst}
+.. automodule:: fuggers_py.market.curves
+   :members:
+   :member-order: bysource
+   :no-index:
+```
+
+## `fuggers_py.market.indices`
+
+```{eval-rst}
+.. automodule:: fuggers_py.market.indices
+   :members:
+   :member-order: bysource
+   :no-index:
+```
+
+## `fuggers_py.market.vol_surfaces`
+
+```{eval-rst}
+.. automodule:: fuggers_py.market.vol_surfaces
+   :members:
+   :member-order: bysource
+   :no-index:
 ```

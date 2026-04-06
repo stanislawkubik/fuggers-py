@@ -90,10 +90,11 @@ def _coerce_business_day_convention(value: BusinessDayConvention | str) -> Busin
 class ProtectionSide(str, Enum):
     """Protection direction.
 
-    Sign convention:
-    - `BUY` means the holder buys protection, pays running premium, and profits
-      when the credit curve widens or defaults occur.
-    - `SELL` is the opposite economic position.
+    Notes
+    -----
+    - ``BUY`` means the holder buys protection, pays running premium, and
+      profits when the credit curve widens or defaults occur.
+    - ``SELL`` is the opposite economic position.
     """
 
     BUY = "BUY"

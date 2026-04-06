@@ -1,5 +1,3 @@
-:orphan:
-
 # Validation Strategy
 
 Validation is split into two layers.

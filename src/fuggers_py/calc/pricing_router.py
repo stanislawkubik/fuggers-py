@@ -283,6 +283,30 @@ class PricingRouter:
         anchor. When market data is supplied, the method can source the quote
         side requested by the pricing spec instead of requiring the caller to
         pre-resolve the market price.
+
+        Parameters
+        ----------
+        instrument:
+            Fixed-rate, zero-coupon, or callable bond to price on the fixed
+            bond path.
+        settlement_date:
+            Settlement date used for accrual, pricing, and risk measures.
+        market_price:
+            Optional market anchor. By default this is interpreted as a clean
+            price in percent of par.
+        pricing_spec:
+            Optional directives controlling risk, spread, and quote-side logic.
+        curves:
+            Optional curve bundle used for spread and key-rate calculations.
+        market_data:
+            Optional source of quotes and fixings when ``market_price`` is not
+            supplied directly.
+
+        Returns
+        -------
+        BondQuoteOutput
+            Structured output with clean and dirty prices, yield measures, and
+            optional risk and spread fields.
         """
         spec = pricing_spec or PricingSpec()
         active_curves = curves or AnalyticsCurves()
@@ -330,6 +354,13 @@ class PricingRouter:
         The pricing path uses inflation fixings from the provided market-data
         inputs when available and reports the projected next coupon in real
         terms.
+
+        Returns
+        -------
+        BondQuoteOutput
+            Structured output where ``yield_to_maturity`` is the real yield.
+            ``projected_next_coupon`` follows the inflation-linked coupon path
+            implied by the available fixings.
         """
 
         spec = pricing_spec or PricingSpec()
@@ -401,6 +432,13 @@ class PricingRouter:
         Callable bonds are priced through the Hull-White helper so option value,
         yield-to-worst, and callable spreads stay tied to the same pricing
         path.
+
+        Notes
+        -----
+        The base clean-price path is the same as :meth:`price_fixed`. When
+        ``route_callable_with_oas`` is enabled and a discount curve is
+        available, the router also fills ``oas``, ``effective_duration``,
+        ``effective_convexity``, and ``option_value``.
         """
         spec = pricing_spec or PricingSpec()
         base_output = self.price_fixed(
@@ -446,6 +484,13 @@ class PricingRouter:
 
         Floating notes can source market prices, curve inputs, and fixings from
         the supplied market-data bundle before the coupon path is evaluated.
+
+        Notes
+        -----
+        The output uses the floating-rate path conventions: ``discount_margin``
+        and ``spread_duration`` are only populated when both forward and
+        discount curves are available, and projected coupon/reset fields depend
+        on the available fixing history and forward curve.
         """
         spec = pricing_spec or PricingSpec()
         active_curves = curves or AnalyticsCurves()

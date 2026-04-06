@@ -4,6 +4,11 @@ The package groups the public analytics surface into yield, spread, risk,
 relative-value, options, credit, funding, cashflow, and YAS subpackages. Raw
 decimal units are used for rates and spreads unless a helper explicitly says
 otherwise.
+
+The top-level convenience entry points are the broad bond analytics helpers in
+``functions`` plus the simple yield helpers re-exported here. More specialized
+workflows live in the named subpackages such as ``risk``, ``spreads``, ``rv``,
+``funding``, ``yas``, and ``yields``.
 """
 
 from __future__ import annotations

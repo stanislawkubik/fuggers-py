@@ -66,6 +66,36 @@ class BondQuoteOutput:
     the shared signed convention. ``pv01`` is a compatibility alias of
     ``dv01``. Optional fields are left unset when the selected pricing path
     does not compute them.
+
+    Attributes
+    ----------
+    instrument_id:
+        Instrument identifier for the priced bond.
+    pricing_path:
+        Router label such as ``fixed``, ``callable``, ``floating_rate``, or
+        ``tips_real_yield``.
+    clean_price, dirty_price:
+        Bond price levels in percent of par.
+    accrued_interest:
+        Accrued coupon amount in currency units.
+    yield_to_maturity, yield_to_worst, current_yield, ytc:
+        Yield measures as raw decimals.
+    modified_duration, effective_duration, macaulay_duration, dv01, convexity,
+    effective_convexity:
+        First- and second-order risk outputs. ``dv01`` is per 100 face and
+        signed positive when value rises as yield falls.
+    z_spread, g_spread, i_spread, oas, discount_margin, spread_duration,
+    asset_swap_spread:
+        Optional spread and spread-risk fields, all as raw decimals.
+    key_rate_durations:
+        Tenor-keyed partial DV01 profile.
+    option_value, projected_next_coupon, next_reset_date:
+        Path-specific fields used by callable, inflation-linked, and
+        floating-rate pricing paths.
+    bid_price, mid_price, ask_price:
+        Optional side-specific price views in percent of par.
+    warnings, notes:
+        Extra path-specific messages for downstream consumers.
     """
 
     instrument_id: InstrumentId | None = None
@@ -167,6 +197,19 @@ class SwapQuoteOutput:
     The record captures the par rate, PV decomposition, annuity, and signed
     rate risk for fixed-float swaps and OIS instruments. ``pv01`` is a
     compatibility alias of ``dv01``.
+
+    Attributes
+    ----------
+    par_rate:
+        Fair fixed rate as a raw decimal.
+    present_value:
+        Signed swap PV in currency units.
+    fixed_leg_pv, floating_leg_pv:
+        Signed leg PV contributions in currency units.
+    annuity:
+        Fixed-leg annuity used by the pricer.
+    dv01:
+        Signed first-order PV change for a 1 bp move.
     """
 
     instrument_id: InstrumentId | None = None
@@ -216,6 +259,17 @@ class BasisSwapQuoteOutput:
     The basis spread is quoted as a raw decimal. The record preserves the pay
     and receive leg PVs so callers can inspect the leg contribution separately.
     ``pv01`` is a compatibility alias of ``dv01``.
+
+    Attributes
+    ----------
+    basis_spread:
+        Fair basis spread as a raw decimal.
+    present_value:
+        Signed total PV in currency units.
+    pay_leg_pv, receive_leg_pv:
+        Signed leg PV contributions in currency units.
+    dv01:
+        Signed first-order PV change for a 1 bp move.
     """
 
     instrument_id: InstrumentId | None = None
@@ -263,6 +317,21 @@ class FutureQuoteOutput:
     The record carries the futures price, implied repo, basis measures, and the
     cheapest-to-deliver reference instrument when one is resolved. ``pv01`` is
     a compatibility alias of ``dv01``.
+
+    Attributes
+    ----------
+    futures_price, fair_value:
+        Futures price levels in the contract quote convention.
+    implied_repo_rate:
+        Implied repo as a raw decimal.
+    net_basis, gross_basis:
+        Basis measures in the pricer's raw output units.
+    conversion_factor:
+        Delivery conversion factor for the CTD bond.
+    ctd_instrument_id:
+        Cheapest-to-deliver bond when the pricer resolved one.
+    dv01:
+        Signed first-order PV change for a 1 bp move.
     """
 
     instrument_id: InstrumentId | None = None
@@ -317,6 +386,19 @@ class RoutedFraPricingResult:
     The record keeps the forward rate, discount factor, year fraction, and the
     rate-sensitivity fields used by the calc layer. ``pv01`` is a
     compatibility alias of ``dv01``.
+
+    Attributes
+    ----------
+    forward_rate:
+        Fair FRA rate as a raw decimal.
+    present_value:
+        Signed FRA PV in currency units.
+    year_fraction:
+        Accrual fraction used by the FRA cash-settlement formula.
+    discount_factor:
+        Discount factor used for settlement.
+    dv01:
+        Signed first-order PV change for a 1 bp move.
     """
 
     instrument_id: InstrumentId | None = None
@@ -351,6 +433,23 @@ class CdsQuoteOutput:
 
     Par spread, upfront, PV, and PV01/CS01 are stored as raw decimals. Recovery
     rate is also kept as a raw decimal rather than a percentage.
+
+    Attributes
+    ----------
+    par_spread:
+        Fair CDS spread as a raw decimal.
+    upfront:
+        Fair upfront amount as a fraction of notional.
+    present_value:
+        Signed CDS PV in currency units.
+    pv01:
+        Premium-leg PV01 style sensitivity used by the CDS pricer.
+    cs01:
+        Signed spread sensitivity in currency units per 1 bp.
+    risky_duration:
+        Premium-leg risky duration style measure from the pricer.
+    recovery_rate:
+        Assumed recovery rate as a raw decimal.
     """
 
     instrument_id: InstrumentId | None = None
@@ -435,6 +534,23 @@ class EtfAnalyticsOutput:
     Market value, NAV, holdings-weighted risk, and spread metrics are stored as
     raw decimals. ``aggregate_dv01`` is the canonical field. ``pv01`` is a
     compatibility alias.
+
+    Attributes
+    ----------
+    gross_market_value, nav, inav:
+        ETF valuation fields in currency units.
+    shares_outstanding:
+        Share count used by per-share calculations.
+    weighted_duration, weighted_convexity:
+        Holdings-weighted risk measures.
+    aggregate_dv01:
+        Canonical ETF DV01 in currency units per 1 bp.
+    weighted_z_spread, weighted_g_spread, weighted_i_spread:
+        Holdings-weighted spread measures as raw decimals.
+    bid_price, mid_price, ask_price:
+        Optional ETF quote levels.
+    cs01:
+        Aggregate spread sensitivity in currency units per 1 bp.
     """
 
     etf_id: EtfId | None = None
@@ -499,6 +615,25 @@ class PortfolioAnalyticsOutput:
     key-rate, sector, and rating breakdowns used by portfolio analytics.
     ``aggregate_dv01`` is the canonical field. ``pv01`` is a compatibility
     alias.
+
+    Attributes
+    ----------
+    total_market_value, total_dirty_value:
+        Portfolio valuation totals in currency units.
+    weighted_duration, weighted_convexity:
+        Portfolio-level weighted interest-rate risk measures.
+    aggregate_dv01:
+        Canonical portfolio DV01 in currency units per 1 bp.
+    weighted_z_spread, weighted_g_spread, weighted_i_spread:
+        Portfolio-level spread measures as raw decimals.
+    key_rate_durations:
+        Tenor-keyed partial DV01 profile.
+    sector_breakdown, rating_breakdown:
+        Optional grouped analytics maps.
+    position_count, priced_count, fully_priced:
+        Coverage diagnostics for downstream reporting.
+    cs01:
+        Aggregate spread sensitivity in currency units per 1 bp.
     """
 
     portfolio_id: PortfolioId | None = None

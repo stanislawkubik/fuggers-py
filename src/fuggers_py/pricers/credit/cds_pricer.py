@@ -72,12 +72,13 @@ class CdsPricingResult:
 class CdsPricer:
     """Price CDS contracts under a midpoint default-timing approximation.
 
-    Conventions:
-    - `premium_leg` and `protection_leg` are positive magnitudes.
-    - `upfront` is the fair upfront fraction of notional paid by the
+    Notes
+    -----
+    - ``premium_leg`` and ``protection_leg`` are positive magnitudes.
+    - ``upfront`` is the fair upfront fraction of notional paid by the
       protection buyer.
-    - `present_value` and `cs01` are signed from the contract side:
-      `BUY` protection is positive when spreads widen.
+    - ``present_value`` and ``cs01`` are signed from the contract side:
+      ``BUY`` protection is positive when spreads widen.
     """
 
     default_timing_fraction: Decimal = Decimal("0.5")

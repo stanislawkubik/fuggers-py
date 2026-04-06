@@ -3,6 +3,15 @@
 This package exports the synchronous pricing facade, the reactive runtime
 components underneath it, the routing/specification helpers, the graph and
 scheduler primitives, and the typed output records used by the engine.
+
+The main public groups are:
+
+- pricing inputs and routing helpers such as ``PricingSpec`` and
+  ``PricingRouter``
+- typed outputs such as ``BondQuoteOutput`` and ``PortfolioAnalyticsOutput``
+- engine assembly/runtime helpers such as ``PricingEngineBuilder`` and
+  ``ReactiveEngine``
+- scheduling and coordination primitives used by the calc runtime
 """
 
 from __future__ import annotations

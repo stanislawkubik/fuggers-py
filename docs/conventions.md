@@ -1,5 +1,3 @@
-:orphan:
-
 # Conventions
 
 This page defines the shared public conventions used across `fuggers-py`.
@@ -26,8 +24,18 @@ This page defines the shared public conventions used across `fuggers-py`.
 - YAS is display-oriented, so YAS keeps quoted percentages and basis points in
   its output fields.
 
-## DV01
+## DV01, PV01, and BPV
 
 - `dv01` is the canonical first-order risk name across the library.
+- `pv01` remains a backward-compatible alias to `dv01`.
+- `bpv` remains a backward-compatible alias in the rates namespace.
 - Sign convention is signed and uniform: the value is positive when PV rises as
   rates or yields fall by 1 bp.
+
+## Methodology note
+
+- Bond `dv01` may be computed from a bond-yield or YTM-based bump path,
+  depending on the bond analytics being used.
+- Rates `dv01` is typically computed from a parallel curve bump.
+- The naming and sign convention stay aligned even when the underlying bump
+  methodology differs.
