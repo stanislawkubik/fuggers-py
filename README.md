@@ -1,11 +1,10 @@
 # fuggers-py
 
+[![Docs](https://img.shields.io/readthedocs/fuggers-py?label=docs)](https://fuggers-py.readthedocs.io/en/latest/)
+
 `fuggers-py` is a fixed-income analytics library organized by responsibility-first package boundaries.
 
-Docs start at [docs/index.md](docs/index.md). Shared unit and sign conventions
-for public APIs are documented in [docs/conventions.md](docs/conventions.md).
-Docstring expectations for generated API docs are documented in
-[docs/docstring_standard.md](docs/docstring_standard.md).
+Public docs: [fuggers-py.readthedocs.io](https://fuggers-py.readthedocs.io/en/latest/).
 Current feature readiness and the pre-`1.0` stability policy are documented in
 [docs/STATUS.md](docs/STATUS.md).
 
