@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+## 0.2.3
+
+First public release of `fuggers-py`.
+
+This release opens the repository to the public as a pre-`1.0` beta. The library already covers a broad fixed-income analytics surface, but some areas are still being refined and public APIs may still change before the first `1.x` release.
+
 ### Changed
 
+- made the GitHub repository and Read the Docs site public, and linked the live docs from the README and package metadata
+- expanded the published API docs so the main package pages now surface the real public submodules for `calc`, `market`, `measures`, `portfolio`, `pricers`, `products`, and `reference`
+- tightened public docstrings for calc outputs, pricing routers, measures, portfolio analytics, and credit/rates risk surfaces so the generated docs explain units, sign conventions, and path-specific fields more clearly
 - normalized public unsuffixed current yields, G-spreads, and I-spreads to raw decimal units and added explicit `_pct` and `_bps` display helpers
 - made `dv01` the canonical first-order risk name across shared outputs while keeping symmetric `pv01` aliases and rates-side `bpv` compatibility
 - corrected bond-router benchmark tenor handling, asset-swap spread scaling, and consolidated calc DTOs plus RTD/Sphinx documentation scaffolding
@@ -11,7 +20,7 @@
 
 ## 0.2.0
 
-First public inflation release for `fuggers-py`.
+Internal milestone focused on inflation analytics before the public repository launch.
 
 ### Added
 
@@ -28,7 +37,7 @@ First public inflation release for `fuggers-py`.
 
 ## 0.1.0
 
-First public release of `fuggers-py`.
+Internal milestone before the public repository launch.
 
 ### Changed
 
