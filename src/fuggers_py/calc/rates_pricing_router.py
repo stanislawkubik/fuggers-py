@@ -1,7 +1,7 @@
 """Rates-specific pricing router for calc-layer dispatch.
 
 The router keeps rates products on their own pricing path so the engine can
-reuse multicurve environments, PV01 helpers, and product-specific output
+reuse multicurve environments, DV01 helpers, and product-specific output
 records without routing them through the bond router. It produces the routed
 swap, FRA, basis-swap, and inflation-swap output records used by the calc
 layer.
@@ -23,11 +23,12 @@ class RatesPricingRouter:
     """Price swaps, FRAs, basis swaps, and OIS instruments.
 
     All methods expect an already-assembled :class:`AnalyticsCurves` bundle and
-    return typed output records with signed DV01/PV01 aliases.
+    return typed output records with signed DV01 fields. ``pv01`` remains a
+    compatibility alias on some output types.
     """
 
     def price_swap(self, instrument: FixedFloatSwap | Ois, *, curves: AnalyticsCurves) -> SwapQuoteOutput:
-        """Price a swap-style instrument and attach signed DV01/PV01.
+        """Price a swap-style instrument and attach signed DV01.
 
         The returned record keeps the par rate and leg PV split consistent with
         the shared swap pricer while adding the routed pricing-path label.
@@ -66,7 +67,7 @@ class RatesPricingRouter:
         )
 
     def price_basis_swap(self, instrument: BasisSwap, *, curves: AnalyticsCurves) -> BasisSwapQuoteOutput:
-        """Price a basis swap and attach signed DV01/PV01.
+        """Price a basis swap and attach signed DV01.
 
         The returned output carries the quoted basis spread together with the
         pay-leg and receive-leg PVs so callers can inspect the leg split.

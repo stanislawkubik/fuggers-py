@@ -131,7 +131,7 @@ def _analytical_risk_components(
 
 @dataclass(frozen=True, slots=True)
 class RiskMetrics:
-    """Duration, convexity, and signed DV01/PV01 measured off a bond yield.
+    """Duration, convexity, and signed DV01 measured off a bond yield.
 
     The measures are computed from the bond's dirty-price/yield relationship
     using the bond's configured compounding and settlement rules.
@@ -149,9 +149,9 @@ class RiskMetrics:
 
     @property
     def pv01(self) -> Decimal:
-        """Alias for DV01.
+        """Compatibility alias for DV01.
 
-        The sign convention follows the common market view that DV01/PV01 is
+        The sign convention follows the library DV01 rule: the value is
         positive when bond value rises as yield falls by 1 basis point.
         """
         return self.dv01
@@ -167,9 +167,10 @@ class RiskMetrics:
     ) -> "RiskMetrics":
         """Compute analytical and bumped risk measures for a bond.
 
-        Modified duration is reported per unit yield. DV01 and PV01 are the
+        Modified duration is reported per unit yield. DV01 is the
         percent-of-par price change per 1 basis point move in yield, signed
-        positive when bond value rises as yield falls by 1 bp.
+        positive when bond value rises as yield falls by 1 bp. ``pv01`` is a
+        compatibility alias of the same value.
         """
         return cls.from_projected_cashflows(
             bond.cash_flows(),

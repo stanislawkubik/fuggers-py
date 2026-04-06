@@ -4,8 +4,8 @@ Shared calc outputs keep units explicit:
 
 - bond ``clean_price`` and ``dirty_price`` stay in percent-of-par
 - unsuffixed yields, rates, and spreads are raw decimals
-- ``dv01``/``pv01`` use the signed convention that is positive when PV rises
-  as rates fall by 1 bp
+- ``dv01`` is the canonical first-order rate-risk field
+- ``pv01`` is kept only as a compatibility alias where it is still present
 
 The dataclasses in this module are the public result records that ReadTheDocs
 will surface for pricing, risk, and portfolio analytics.
@@ -62,9 +62,10 @@ class BondQuoteOutput:
     """Bond pricing output with explicit unit-bearing fields.
 
     ``clean_price`` and ``dirty_price`` are percent-of-par price levels,
-    unsuffixed yield and spread fields are raw decimals, and ``dv01``/``pv01``
-    use the shared signed convention. Optional fields are left unset when the
-    selected pricing path does not compute them.
+    unsuffixed yield and spread fields are raw decimals, and ``dv01`` follows
+    the shared signed convention. ``pv01`` is a compatibility alias of
+    ``dv01``. Optional fields are left unset when the selected pricing path
+    does not compute them.
     """
 
     instrument_id: InstrumentId | None = None
@@ -161,10 +162,11 @@ class BondQuoteOutput:
 
 @dataclass(frozen=True, slots=True)
 class SwapQuoteOutput:
-    """Swap pricing output with raw-decimal rates and signed DV01/PV01.
+    """Swap pricing output with raw-decimal rates and signed DV01.
 
     The record captures the par rate, PV decomposition, annuity, and signed
-    risk aliases for fixed-float swaps and OIS instruments.
+    rate risk for fixed-float swaps and OIS instruments. ``pv01`` is a
+    compatibility alias of ``dv01``.
     """
 
     instrument_id: InstrumentId | None = None
@@ -209,10 +211,11 @@ class SwapQuoteOutput:
 
 @dataclass(frozen=True, slots=True)
 class BasisSwapQuoteOutput:
-    """Basis-swap pricing output with raw decimals and signed DV01/PV01.
+    """Basis-swap pricing output with raw decimals and signed DV01.
 
     The basis spread is quoted as a raw decimal. The record preserves the pay
     and receive leg PVs so callers can inspect the leg contribution separately.
+    ``pv01`` is a compatibility alias of ``dv01``.
     """
 
     instrument_id: InstrumentId | None = None
@@ -255,10 +258,11 @@ class BasisSwapQuoteOutput:
 
 @dataclass(frozen=True, slots=True)
 class FutureQuoteOutput:
-    """Future pricing output with price levels and signed DV01/PV01.
+    """Future pricing output with price levels and signed DV01.
 
     The record carries the futures price, implied repo, basis measures, and the
-    cheapest-to-deliver reference instrument when one is resolved.
+    cheapest-to-deliver reference instrument when one is resolved. ``pv01`` is
+    a compatibility alias of ``dv01``.
     """
 
     instrument_id: InstrumentId | None = None
@@ -308,10 +312,11 @@ class FutureQuoteOutput:
 
 @dataclass(frozen=True, slots=True)
 class RoutedFraPricingResult:
-    """Structured FRA pricing output with signed DV01/PV01 aliases.
+    """Structured FRA pricing output with signed DV01.
 
     The record keeps the forward rate, discount factor, year fraction, and the
-    alias pair used by the rest of the calc layer for rate sensitivity.
+    rate-sensitivity fields used by the calc layer. ``pv01`` is a
+    compatibility alias of ``dv01``.
     """
 
     instrument_id: InstrumentId | None = None
@@ -425,10 +430,11 @@ class RvSignalOutput:
 
 @dataclass(frozen=True, slots=True)
 class EtfAnalyticsOutput:
-    """ETF analytics output with explicit units and signed risk aliases.
+    """ETF analytics output with explicit units and signed risk fields.
 
     Market value, NAV, holdings-weighted risk, and spread metrics are stored as
-    raw decimals. ``aggregate_dv01`` and ``pv01`` are treated as aliases.
+    raw decimals. ``aggregate_dv01`` is the canonical field. ``pv01`` is a
+    compatibility alias.
     """
 
     etf_id: EtfId | None = None
@@ -487,10 +493,12 @@ class EtfAnalyticsOutput:
 
 @dataclass(frozen=True, slots=True)
 class PortfolioAnalyticsOutput:
-    """Portfolio analytics output with explicit units and signed risk aliases.
+    """Portfolio analytics output with explicit units and signed risk fields.
 
     The record keeps market value, dirty value, weighted risk, and the optional
     key-rate, sector, and rating breakdowns used by portfolio analytics.
+    ``aggregate_dv01`` is the canonical field. ``pv01`` is a compatibility
+    alias.
     """
 
     portfolio_id: PortfolioId | None = None

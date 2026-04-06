@@ -38,7 +38,7 @@ class BondAnalytics:
         return BondPricer().yield_from_price(self, clean_price, settlement_date)
 
     def risk_metrics(self: Bond, ytm: Yield, settlement_date: Date) -> "RiskMetrics":
-        """Return duration, convexity, and DV01/PV01 for the bond."""
+        """Return duration, convexity, and DV01 for the bond."""
         from fuggers_py.pricers.bonds.risk import RiskMetrics
 
         return RiskMetrics.from_bond(self, ytm, settlement_date)

@@ -1,3 +1,5 @@
+:orphan:
+
 # Module Reference
 
 This document inventories the Python modules under `src/fuggers_py/` from the live source tree.
