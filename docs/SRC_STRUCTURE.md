@@ -9,18 +9,9 @@ stability policy, see [STATUS.md](STATUS.md).
 For the complete file-by-file module inventory, see [MODULE_REFERENCE.md](MODULE_REFERENCE.md).
 
 ```python
-from fuggers_py import (
-    adapters,
-    calc,
-    core,
-    market,
-    math,
-    measures,
-    portfolio,
-    pricers,
-    products,
-    reference,
-)
+import fuggers_py
+from fuggers_py import core, market, products
+from fuggers_py.market.curves import CurveSpec
 from fuggers_py.products.bonds import FixedBondBuilder
 ```
 
@@ -65,6 +56,7 @@ from fuggers_py.products.bonds import FixedBondBuilder
 - `snapshot.py`: immutable market-data snapshots that bundle fixings, FX rates, ETF records, and volatility surfaces.
 - `sources.py`: market-data provider protocols and in-memory source implementations for quotes, fixings, FX, inflation, and ETFs.
 - `state.py`: runtime market-state bundles passed into pricing and measures.
+- `curves/`: the current rates curve skeleton. The root package exports only `CurveSpec`, `CurveType`, `ExtrapolationPolicy`, `RateSpace`, and `RatesTermStructure`. `rates/spec.py` holds the curve identity record. `rates/base.py` defines the public root where `rate_at(tenor)` returns the rate at a tenor in the curve's `rate_space`, `max_t()` gives the last supported tenor, and `validate_rate(tenor)` enforces the domain and finite-value rules. `conversion.py` and `errors.py` are shared helpers. `multicurve/` currently holds identifiers such as `RateIndex` and `CurrencyPair`.
 - `indices/`: fixing stores, index conventions, overnight compounding helpers, and bond-index wrappers.
 - `vol_surfaces/`: volatility surface records, quote conventions, and in-memory volatility surface sources. This is the canonical volatility namespace now, but it is still an early-scope package rather than a full smile or cube modeling stack.
 
@@ -124,6 +116,17 @@ from fuggers_py.products.bonds import FixedBondBuilder
 ### `market/indices/`
 
 - Bond-index and fixing-store infrastructure plus overnight index conventions.
+
+### `market/curves/`
+
+- The curves package is intentionally narrow right now.
+- The public API is rates-specific. It starts with `RatesTermStructure`, not a generic term-structure type.
+- `CurveSpec` identifies one curve snapshot by name, reference date, day-count rule, currency, economic curve type, optional reference label, and extrapolation policy.
+- `RateSpace` tells you what `rate_at(tenor)` means. For example, the returned rate may be a zero rate, an instantaneous forward rate, a par yield, or a spread.
+- `RatesTermStructure.rate_at(tenor)` returns the rate at a given tenor in the curve's `rate_space`.
+- `RatesTermStructure.validate_rate(tenor)` checks the tenor domain and makes sure the returned rate is finite.
+- `multicurve/index.py` is separate from the public curve class tree. It only defines stable identifiers such as `RateIndex` and `CurrencyPair`.
+- The rebuilt package does not yet include discounting-style curve subclasses, calibrators, or kernels. Those are planned next.
 
 ### `market/vol_surfaces/`
 
