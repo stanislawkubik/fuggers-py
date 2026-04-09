@@ -71,8 +71,8 @@ def test_delegated_curve_falls_back_out_of_range() -> None:
     )
     delegated = DelegatedCurve(primary=primary, fallback=fallback)
 
-    assert delegated.value_at(1.0) == pytest.approx(primary.value_at(1.0))
-    assert delegated.value_at(5.0) == pytest.approx(fallback.value_at(5.0))
+    assert delegated.value_at_tenor(1.0) == pytest.approx(primary.value_at_tenor(1.0))
+    assert delegated.value_at_tenor(5.0) == pytest.approx(fallback.value_at_tenor(5.0))
 
 
 def test_derived_curve_applies_parallel_shift() -> None:

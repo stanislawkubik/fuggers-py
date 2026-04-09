@@ -9,6 +9,7 @@ exposures, pricing adapters, and the curve families used by the fitter.
 
 from __future__ import annotations
 
+from .bond_curve import BondCurve
 from .fair_value import (
     BondFairValueRequest,
     BondFairValueResult,
@@ -18,18 +19,16 @@ from .fair_value import (
     fair_value_from_fit,
 )
 from .model import (
-    BondCurveFitDiagnostics,
+    BondCurveDiagnostics,
+    BondCurvePoint,
     CubicSplineZeroRateCurve,
     CubicSplineZeroRateCurveModel,
     ExponentialSplineCurveModel,
-    ExponentialSplineDiscountCurve,
+    ExponentialSplineZeroRateCurve,
     FittedBondCurveFamily,
-    FittedBondCurveModel,
-    FittedBondCurve,
-    FittedBondObjective,
 )
 from .notional_benchmarks import BenchmarkComponent, NotionalBenchmark, build_notional_benchmark
-from .optimization import FittedBondCurveFitter
+from .optimization import BondCurveFitter
 from .par_curve import FittedParYieldCurve, ParCurveSpec
 from .pricing_adapters import (
     BondCurvePricingAdapter,
@@ -39,21 +38,20 @@ from .pricing_adapters import (
 
 __all__ = [
     "BenchmarkComponent",
+    "BondCurve",
     "BondFairValueRequest",
     "BondFairValueResult",
+    "BondCurveDiagnostics",
+    "BondCurvePoint",
     "BondCurvePricingAdapter",
-    "BondCurveFitDiagnostics",
     "NominalGovernmentBondPricingAdapter",
     "TipsRealBondPricingAdapter",
     "CubicSplineZeroRateCurve",
     "CubicSplineZeroRateCurveModel",
     "ExponentialSplineCurveModel",
-    "ExponentialSplineDiscountCurve",
+    "ExponentialSplineZeroRateCurve",
     "FittedBondCurveFamily",
-    "FittedBondCurveFitter",
-    "FittedBondCurveModel",
-    "FittedBondCurve",
-    "FittedBondObjective",
+    "BondCurveFitter",
     "FittedParYieldCurve",
     "NotionalBenchmark",
     "ParCurveSpec",

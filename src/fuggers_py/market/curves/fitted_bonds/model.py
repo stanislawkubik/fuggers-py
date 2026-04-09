@@ -1,37 +1,28 @@
-"""Fitted bond-curve models and immutable result records.
+"""Bond-curve shapes and typed calibration records.
 
-This module defines the fitted-bond research surface: bond quotes are supplied
-with enough context to price them directly, curve values are converted to
-dirty prices for the fit, and regression adjustments are added on top of the
-curve-implied dirty price. Positive price residuals indicate a bond is rich
-to the fit, while positive bp residuals indicate the observed yield is above
-the fitted yield.
+This module defines the supported yield-curve shapes used by the bond-curve
+calibration path and the typed result records attached to the fitted curve.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
-from types import MappingProxyType
-from typing import TYPE_CHECKING, Mapping, Protocol
+from typing import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
 
-from fuggers_py.pricers.bonds import BondPricer
-from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.types import Date, Price
+from fuggers_py.core.types import Date
 from fuggers_py.core.ids import InstrumentId
 from fuggers_py.market.curves.errors import InvalidCurveInput
 from fuggers_py.market.curves.term_structure import TermStructure
-from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.curves.wrappers import RateCurve
+from fuggers_py.market.curves.yield_curve import CurveDiagnostics
+from fuggers_py.products.bonds.traits import Bond
+from fuggers_py.reference.reference_data import BondReferenceData
 
 from ._splines import NaturalCubicSplineGrid, cached_natural_cubic_spline_grid
-
-if TYPE_CHECKING:
-    from .pricing_adapters import BondCurvePricingAdapter
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -51,26 +42,14 @@ class FittedBondCurveFamily(str, Enum):
     CUBIC_SPLINE_ZERO_RATE = "CUBIC_SPLINE_ZERO_RATE"
 
 
-class FittedBondObjective(str, Enum):
-    """Objective families used by the fitted-bond optimizer."""
-
-    L1 = "L1"
-    L2 = "L2"
-
-
 @dataclass(frozen=True, slots=True)
-class BondCurveFitDiagnostics:
-    """Summary diagnostics for a fitted-bond optimization.
+class BondCurveDiagnostics(CurveDiagnostics):
+    """Summary diagnostics for a calibrated bond curve.
 
     The diagnostics record solver convergence, fit size, and weighted residual
     measures in both price and basis-point space so users can judge fit quality
     without recomputing the objective.
     """
-
-    objective_value: Decimal
-    iterations: int
-    converged: bool
-    observation_count: int
     curve_parameter_count: int
     regression_parameter_count: int
     weighted_rmse_price: Decimal
@@ -81,112 +60,46 @@ class BondCurveFitDiagnostics:
 
 
 @dataclass(frozen=True, slots=True)
-class FittedBondCurve:
-    """Immutable fitted-bond result bundle.
+class BondCurvePoint:
+    """One fitted bond point attached to a calibrated bond curve.
 
-    The bundle contains the fitted curve, the fitted regression coefficient
-    map, one result point for each fitted bond, and summary diagnostics for
-    the optimizer run.
+    The object is also mapping-like so the existing RV helpers can index it by
+    field name while the main code stays typed.
     """
 
-    reference_date: Date
-    curve_family: FittedBondCurveFamily
-    objective: FittedBondObjective
-    curve: RateCurve
-    curve_parameter_names: tuple[str, ...]
-    curve_parameters: tuple[Decimal, ...]
-    coefficients: Mapping[str, Decimal]
-    bonds: tuple[Mapping[str, object], ...]
-    diagnostics: BondCurveFitDiagnostics
-    pricing_adapter: BondCurvePricingAdapter | None = None
-    _bond_index: Mapping[InstrumentId, Mapping[str, object]] = field(init=False, repr=False)
+    instrument_id: InstrumentId
+    bond: Bond
+    maturity_date: Date
+    maturity_years: Decimal
+    coupon_rate: Decimal | None
+    weight: Decimal
+    observed_clean_price: Decimal
+    observed_dirty_price: Decimal
+    observed_yield: Decimal
+    curve_clean_price: Decimal
+    curve_dirty_price: Decimal
+    fitted_clean_price: Decimal
+    fitted_dirty_price: Decimal
+    fitted_yield: Decimal
+    fair_value_clean_price: Decimal
+    fair_value_dirty_price: Decimal
+    regression_adjustment: Decimal
+    price_residual: Decimal
+    bp_residual: Decimal
+    reference_data: BondReferenceData | None = None
 
     def __post_init__(self) -> None:
-        normalized_coefficients: dict[str, Decimal] = {}
-        for raw_name, raw_value in self.coefficients.items():
-            name = raw_name.strip().lower()
-            if not name:
-                raise ValueError("FittedBondCurve coefficients must have non-empty names.")
-            if name in normalized_coefficients:
-                raise ValueError(f"Duplicate fitted-bond coefficient name: {name}.")
-            normalized_coefficients[name] = _to_decimal(raw_value)
-        object.__setattr__(self, "coefficients", MappingProxyType(normalized_coefficients))
-        normalized_bonds: list[Mapping[str, object]] = []
-        bond_index: dict[InstrumentId, Mapping[str, object]] = {}
-        for raw_bond in self.bonds:
-            resolved_bond = dict(raw_bond)
-            instrument_id = InstrumentId.parse(resolved_bond["instrument_id"])
-            if instrument_id in bond_index:
-                raise ValueError(f"Duplicate fitted-bond instrument_id: {instrument_id}.")
-            resolved_bond["instrument_id"] = instrument_id
-            normalized_row = MappingProxyType(resolved_bond)
-            normalized_bonds.append(normalized_row)
-            bond_index[instrument_id] = normalized_row
-        object.__setattr__(self, "bonds", tuple(normalized_bonds))
-        object.__setattr__(self, "_bond_index", MappingProxyType(bond_index))
+        object.__setattr__(self, "instrument_id", InstrumentId.parse(self.instrument_id))
 
-    def get_bond(self, instrument_id: InstrumentId | str) -> Mapping[str, object]:
-        """Return the fitted row mapping for ``instrument_id``.
+    def __getitem__(self, key: str) -> object:
+        return getattr(self, key)
 
-        Raises ``KeyError`` when the requested instrument was not part of the
-        fitted observation set.
-        """
-        resolved = InstrumentId.parse(instrument_id)
-        try:
-            return self._bond_index[resolved]
-        except KeyError as exc:
-            raise KeyError(f"Unknown fitted bond result: {resolved}.") from exc
-
-    def coefficient_map(self) -> dict[str, Decimal]:
-        """Return regression coefficients keyed by normalized exposure name."""
-        return dict(self.coefficients)
-
-    def richest(self) -> Mapping[str, object]:
-        """Return the bond with the largest positive price residual.
-
-        The result is the bond whose observed dirty price sits furthest above
-        its fitted fair value.
-        """
-        return max(
-            self.bonds,
-            key=lambda item: (_to_decimal(item["price_residual"]), InstrumentId.parse(item["instrument_id"]).as_str()),
-        )
-
-    def cheapest(self) -> Mapping[str, object]:
-        """Return the bond with the largest positive bp residual.
-
-        The result is the bond whose observed yield sits furthest above its
-        fitted yield.
-        """
-        return max(
-            self.bonds,
-            key=lambda item: (_to_decimal(item["bp_residual"]), InstrumentId.parse(item["instrument_id"]).as_str()),
-        )
-
-
-class FittedBondCurveModel(Protocol):
-    """Protocol for fitted-bond curve model families.
-
-    Implementations define the parameter names, a starting point, and a way to
-    build the fitted curve representation from optimized parameters.
-    """
-
-    @property
-    def family(self) -> FittedBondCurveFamily:
-        ...
-
-    def parameter_names(self) -> tuple[str, ...]:
-        ...
-
-    def initial_parameters(self, *, observed_yields: NDArray[np.float64], max_t: float) -> NDArray[np.float64]:
-        ...
-
-    def build_curve(self, reference_date: Date, parameters: NDArray[np.float64], *, max_t: float) -> RateCurve:
-        ...
+    def get(self, key: str, default: object | None = None) -> object | None:
+        return getattr(self, key, default)
 
 
 def _normalize_spline_knot_tenors(
-    knot_tenors: tuple[Decimal, ...],
+    knot_tenors: Sequence[Decimal | int | float | str],
     *,
     model_name: str,
 ) -> tuple[Decimal, ...]:
@@ -215,11 +128,12 @@ def _cached_spline_grid(knot_tenors: tuple[Decimal, ...]) -> NaturalCubicSplineG
 
 
 @dataclass(frozen=True, slots=True)
-class ExponentialSplineDiscountCurve(TermStructure):
-    """Discount-factor curve implied by an exponential spline in zero rates.
+class ExponentialSplineZeroRateCurve(TermStructure):
+    """Zero-rate curve implied by an exponential spline.
 
-    The curve is parameterized as a zero-rate spline and then converted back
-    into discount factors for pricing and reporting.
+    The term structure stores the continuous zero rate at each tenor. Discount
+    factors are derived from that zero rate when the surrounding yield curve
+    needs them.
     """
 
     _reference_date: Date
@@ -227,33 +141,31 @@ class ExponentialSplineDiscountCurve(TermStructure):
     decay_factors: NDArray[np.float64]
     max_t: float
 
-    def reference_date(self) -> Date:
-        """Return the reference date of the fitted curve."""
+    def date(self) -> Date:
+        """Return the date of the fitted curve."""
         return self._reference_date
 
-    def value_type(self) -> ValueType:
-        """Return discount-factor semantics."""
-        return ValueType.discount_factor()
+    def value_at_tenor(self, t: float) -> float:
+        """Return the continuous zero rate at tenor ``t``."""
+        tenor = float(t)
+        if tenor <= 0.0:
+            return float(self.coefficients[0])
+        basis = np.concatenate(([1.0], np.exp(-self.decay_factors * tenor)))
+        return float(np.dot(self.coefficients, basis))
 
-    def tenor_bounds(self) -> tuple[float, float]:
-        """Return the supported tenor range."""
-        return (0.0, float(self.max_t))
+    def zero_rate_at_tenor(self, t: float) -> float:
+        """Return the continuous zero rate at tenor ``t``."""
 
-    def value_at(self, t: float) -> float:
-        """Return the discount factor at tenor ``t``.
+        return self.value_at_tenor(t)
 
-        Tenors at or before the reference date map to a discount factor of 1.
-        """
+    def discount_factor_at_tenor(self, t: float) -> float:
+        """Return the discount factor implied by the zero rate at tenor ``t``."""
+
         tenor = float(t)
         if tenor <= 0.0:
             return 1.0
-        basis = np.concatenate(([1.0], np.exp(-self.decay_factors * tenor)))
-        zero_rate = float(np.dot(self.coefficients, basis))
+        zero_rate = self.value_at_tenor(tenor)
         return float(np.exp(np.clip(-tenor * zero_rate, -700.0, 700.0)))
-
-    def max_date(self) -> Date:
-        """Return the maximum date implied by ``max_t``."""
-        return self.tenor_to_date(float(self.max_t))
 
 
 @dataclass(frozen=True, slots=True)
@@ -273,17 +185,9 @@ class CubicSplineZeroRateCurve(TermStructure):
     _spline_grid: NaturalCubicSplineGrid
     max_t: float
 
-    def reference_date(self) -> Date:
-        """Return the reference date of the fitted curve."""
+    def date(self) -> Date:
+        """Return the date of the fitted curve."""
         return self._reference_date
-
-    def value_type(self) -> ValueType:
-        """Return zero-rate semantics under continuous compounding."""
-        return ValueType.continuous_zero()
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        """Return the supported tenor range."""
-        return (0.0, float(self.max_t))
 
     def zero_rate_at_tenor(self, t: float) -> float:
         """Return the spline zero rate at tenor ``t``."""
@@ -317,12 +221,12 @@ class CubicSplineZeroRateCurve(TermStructure):
 
         return self.discount_factor_at_tenor(self.date_to_tenor(date))
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         """Return the zero rate at tenor ``t``."""
 
         return self.zero_rate_at_tenor(t)
 
-    def derivative_at(self, t: float) -> float | None:
+    def derivative_at_tenor(self, t: float) -> float | None:
         """Return the spline zero-rate derivative at tenor ``t``."""
 
         tenor = max(0.0, float(t))
@@ -332,20 +236,23 @@ class CubicSplineZeroRateCurve(TermStructure):
             tenor,
         )
 
-    def max_date(self) -> Date:
-        """Return the maximum date implied by ``max_t``."""
-        return self.tenor_to_date(float(self.max_t))
-
 
 @dataclass(frozen=True, slots=True)
 class ExponentialSplineCurveModel:
     """Exponential-spline fitted-bond curve model.
 
-    The model fits a zero-rate spline with fixed exponential decay factors and
-    then converts the result into a discount-factor curve.
+    The model fits a continuous zero-rate spline with fixed exponential decay
+    factors.
+
+    Parameters
+    ----------
+    decay_factors
+        Positive exponential decay factors that control the spline basis
+        functions. Each value may be passed as ``Decimal``, ``int``, ``float``,
+        or ``str`` and is normalized to ``Decimal`` internally.
     """
 
-    decay_factors: tuple[Decimal, ...] = (Decimal("0.50"), Decimal("1.50"))
+    decay_factors: tuple[Decimal | int | float | str, ...] = (Decimal("0.50"), Decimal("1.50"))
     family: FittedBondCurveFamily = FittedBondCurveFamily.EXPONENTIAL_SPLINE
 
     def __post_init__(self) -> None:
@@ -370,26 +277,48 @@ class ExponentialSplineCurveModel:
         initial[0] = level
         return initial
 
-    def build_curve(self, reference_date: Date, parameters: NDArray[np.float64], *, max_t: float) -> RateCurve:
-        """Build the fitted discount-factor curve for the supplied parameters."""
+    def build_term_structure(
+        self,
+        reference_date: Date,
+        parameters: NDArray[np.float64],
+        *,
+        max_t: float,
+    ) -> TermStructure:
+        """Build the fitted zero-rate term structure for the supplied parameters."""
         if parameters.size != len(self.decay_factors) + 1:
             raise InvalidCurveInput("Exponential spline parameter length does not match the decay-factor configuration.")
-        return RateCurve(
-            ExponentialSplineDiscountCurve(
-                _reference_date=reference_date,
-                coefficients=np.asarray(parameters, dtype=float),
-                decay_factors=np.asarray([float(value) for value in self.decay_factors], dtype=float),
-                max_t=float(max_t),
-            )
+        return ExponentialSplineZeroRateCurve(
+            _reference_date=reference_date,
+            coefficients=np.asarray(parameters, dtype=float),
+            decay_factors=np.asarray([float(value) for value in self.decay_factors], dtype=float),
+            max_t=float(max_t),
         )
 
 
 @dataclass(frozen=True, slots=True)
 class CubicSplineZeroRateCurveModel:
-    """Preferred fitted-bond cubic spline model in zero-rate space."""
+    """Preferred fitted-bond cubic spline model in zero-rate space.
 
-    knot_tenors: tuple[Decimal, ...]
-    initial_zero_rates: tuple[Decimal, ...] | None = None
+    Instruments provide the observations to fit. ``knot_tenors`` define the
+    zero-rate parameter grid used by the spline itself. There is one fitted
+    zero-rate parameter per knot tenor, and the cubic spline interpolates the
+    zero curve between those knot locations.
+
+    Parameters
+    ----------
+    knot_tenors
+        Positive knot locations in year-fraction tenor space. These are not
+        rates. Each value may be passed as ``Decimal``, ``int``, ``float``, or
+        ``str`` and is normalized to ``Decimal`` internally.
+    initial_zero_rates
+        Optional starting zero rates at the knot locations, expressed as raw
+        decimal rates such as ``0.02`` for 2 percent. Each value may be passed
+        as ``Decimal``, ``int``, ``float``, or ``str`` and is normalized to
+        ``Decimal`` internally.
+    """
+
+    knot_tenors: tuple[Decimal | int | float | str, ...]
+    initial_zero_rates: tuple[Decimal | int | float | str, ...] | None = None
     family: FittedBondCurveFamily = FittedBondCurveFamily.CUBIC_SPLINE_ZERO_RATE
 
     def __post_init__(self) -> None:
@@ -425,8 +354,14 @@ class CubicSplineZeroRateCurveModel:
             level = float(np.median(observed_yields))
         return np.full(len(self.knot_tenors), level, dtype=float)
 
-    def build_curve(self, reference_date: Date, parameters: NDArray[np.float64], *, max_t: float) -> RateCurve:
-        """Build the fitted zero-rate cubic spline curve."""
+    def build_term_structure(
+        self,
+        reference_date: Date,
+        parameters: NDArray[np.float64],
+        *,
+        max_t: float,
+    ) -> TermStructure:
+        """Build the fitted zero-rate cubic spline term structure."""
 
         if parameters.size != len(self.knot_tenors):
             raise InvalidCurveInput("Cubic spline zero-rate parameter length does not match knot_tenors.")
@@ -440,27 +375,23 @@ class CubicSplineZeroRateCurveModel:
         spline_grid = _cached_spline_grid(self.knot_tenors)
         second_derivatives = spline_grid.second_derivatives(node_zero_rates)
         support_max = max(float(max_t), float(self.knot_tenors[-1]))
-        return RateCurve(
-            CubicSplineZeroRateCurve(
-                _reference_date=reference_date,
-                knot_tenors=np.asarray([float(knot) for knot in self.knot_tenors], dtype=float),
-                zero_rates=parameter_array,
-                _node_zero_rates=node_zero_rates,
-                _second_derivatives=second_derivatives,
-                _spline_grid=spline_grid,
-                max_t=support_max,
-            )
+        return CubicSplineZeroRateCurve(
+            _reference_date=reference_date,
+            knot_tenors=np.asarray([float(knot) for knot in self.knot_tenors], dtype=float),
+            zero_rates=parameter_array,
+            _node_zero_rates=node_zero_rates,
+            _second_derivatives=second_derivatives,
+            _spline_grid=spline_grid,
+            max_t=support_max,
         )
 
 
 __all__ = [
+    "BondCurveDiagnostics",
+    "BondCurvePoint",
     "CubicSplineZeroRateCurve",
     "CubicSplineZeroRateCurveModel",
-    "BondCurveFitDiagnostics",
     "ExponentialSplineCurveModel",
-    "ExponentialSplineDiscountCurve",
+    "ExponentialSplineZeroRateCurve",
     "FittedBondCurveFamily",
-    "FittedBondCurveModel",
-    "FittedBondCurve",
-    "FittedBondObjective",
 ]

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves import FittedBondCurveFitter, FittedBondObjective
+from fuggers_py.market.curves import BondCurveFitter, CurveObjective
 
 from tests.helpers._fitted_bond_helpers import (
     cubic_model,
@@ -24,10 +24,10 @@ def test_tips_real_l2_fit_recovers_the_callable_overlay() -> None:
         regression_coefficient=Decimal("0.14"),
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
         pricing_adapter=tips_pricing_adapter(fixing_source),
-        objective=FittedBondObjective.L2,
+        objective=CurveObjective.L2,
     ).fit(
         observations,
         regression_exposures=liquidity_regression_exposures(observations),
@@ -47,10 +47,10 @@ def test_tips_real_l1_fit_runs_cleanly_without_regressors() -> None:
         curve_model=cubic_model(),
         regression_coefficient=Decimal("0"),
     )
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=cubic_model(),
         pricing_adapter=tips_pricing_adapter(fixing_source),
-        objective=FittedBondObjective.L1,
+        objective=CurveObjective.L1,
     ).fit(observations, regression_exposures={}, **tips_fit_kwargs())
 
     assert result.diagnostics.converged is True

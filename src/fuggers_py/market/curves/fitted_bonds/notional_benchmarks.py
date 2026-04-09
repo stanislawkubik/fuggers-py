@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Mapping
 
-from .model import FittedBondCurve
+from .bond_curve import BondCurve
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -55,7 +55,7 @@ class NotionalBenchmark:
 
 
 def build_notional_benchmark(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     target_maturity_years: object,
     *,
     component_count: int = 2,

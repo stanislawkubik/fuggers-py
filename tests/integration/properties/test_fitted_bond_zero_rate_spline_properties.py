@@ -25,11 +25,11 @@ def _build_curve(zero_rates: tuple[float, ...]) -> CubicSplineZeroRateCurve:
     )
     return cast(
         CubicSplineZeroRateCurve,
-        model.build_curve(
+        model.build_term_structure(
             Date.from_ymd(2026, 1, 15),
             parameters=np.asarray(zero_rates, dtype=float),
             max_t=7.0,
-        ).curve,
+        ),
     )
 
 

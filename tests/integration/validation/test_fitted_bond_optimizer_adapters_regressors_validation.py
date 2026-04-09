@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves import FittedBondCurveFitter, FittedBondObjective
+from fuggers_py.market.curves import BondCurveFitter, CurveObjective
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,
@@ -22,17 +22,17 @@ def test_l2_and_l1_profiled_regression_paths_recover_the_same_clean_synthetic_ov
         regression_coefficient=Decimal("0.20"),
     )
 
-    l2_result = FittedBondCurveFitter(
+    l2_result = BondCurveFitter(
         curve_model=exponential_model(),
-        objective=FittedBondObjective.L2,
+        objective=CurveObjective.L2,
     ).fit(
         observations,
         regression_exposures=liquidity_regression_exposures(observations),
         **nominal_fit_kwargs(),
     )
-    l1_result = FittedBondCurveFitter(
+    l1_result = BondCurveFitter(
         curve_model=exponential_model(),
-        objective=FittedBondObjective.L1,
+        objective=CurveObjective.L1,
     ).fit(
         observations,
         regression_exposures=liquidity_regression_exposures(observations),

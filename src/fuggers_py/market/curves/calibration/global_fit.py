@@ -22,7 +22,6 @@ from fuggers_py.math.optimization import OptimizationConfig, OptimizationResult,
 from ..conversion import ValueConverter
 from ..errors import InvalidCurveInput
 from ..term_structure import TermStructure
-from ..value_type import ValueType
 from ..wrappers import RateCurve
 from .instruments import CalibrationInstrument, InstrumentSet
 
@@ -124,19 +123,11 @@ class ParametricZeroCurve(TermStructure):
     day_count: DayCountConvention
     max_t: float
 
-    def reference_date(self) -> Date:  # type: ignore[override]
-        """Return the curve reference date."""
+    def date(self) -> Date:  # type: ignore[override]
+        """Return the curve date."""
         return self._reference_date
 
-    def value_type(self) -> ValueType:
-        """Return the zero-rate value type for the configured compounding."""
-        return ValueType.zero_rate(self.compounding, self.day_count)
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        """Return the supported tenor range."""
-        return (0.0, float(self.max_t))
-
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         """Return the model zero rate at tenor ``t`` in the configured compounding."""
         tau = float(t)
         if self.model is ParametricModel.NELSON_SIEGEL:
@@ -146,10 +137,6 @@ class ParametricZeroCurve(TermStructure):
         if self.compounding is Compounding.CONTINUOUS:
             return float(r_cont)
         return ValueConverter.convert_compounding(r_cont, Compounding.CONTINUOUS, self.compounding)
-
-    def max_date(self) -> Date:
-        """Return the maximum date implied by ``max_t``."""
-        return self.tenor_to_date(float(self.max_t))
 
 
 class GlobalFitter:

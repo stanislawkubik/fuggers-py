@@ -75,7 +75,7 @@ def test_built_curve_wrapper_exposes_curve_builder_output() -> None:
     assert built_curve.curve_id == CurveId("usd.discount")
     assert built_curve.unwrap() is curve
     assert built_curve.curve_inputs is not None
-    assert built_curve.reference_date() == reference_date
+    assert built_curve.date() == reference_date
 
 
 def test_reactive_engine_builder_constructs_pricing_and_reactive_engines() -> None:
@@ -113,7 +113,6 @@ async def test_scheduler_and_market_data_public_surface_is_accessible_from_engin
         quote=RawQuote(
             instrument_id=InstrumentId("ABC"),
             value=Decimal("101.25"),
-            side=QuoteSide.MID,
             as_of=Date.from_ymd(2026, 3, 14),
             currency=Currency.USD,
         ),
@@ -165,7 +164,6 @@ async def test_reactive_engine_flow_works_through_root_public_surface() -> None:
                 quote=RawQuote(
                     instrument_id=instrument_id,
                     value=Decimal("101.25"),
-                    side=QuoteSide.MID,
                     as_of=settlement,
                     currency=Currency.USD,
                 ),

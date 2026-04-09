@@ -44,7 +44,7 @@ External-boundary adapters for files, storage, codecs, and transport.
 File-backed adapters for market data, reference data, and outputs.
 
 - Module path: `adapters/file.py`
-- Top-level classes/functions: `_as_path`, `_read_rows`, `_decimal_or_none`, `_date_or_none`, `_datetime_or_none`, `_currency_or_none`, `_frequency_or_none`, `_bond_type`, `_issuer_type`, `_quote_side`, `_load_schedule`, `_load_curve_inputs_payload`, `CSVQuoteSource`, `JSONCurveInputSource`, `CSVIndexFixingSource`, `CSVEtfQuoteSource`, `CSVBondReferenceSource`, `CSVIssuerReferenceSource`, `CSVRatingSource`, `CSVEtfHoldingsSource`, `EmptyBondReferenceSource`, `EmptyIssuerReferenceSource`, `EmptyRatingSource`, `EmptyEtfHoldingsSource`, `create_file_market_data`, `create_file_reference_data`, `NoOpQuotePublisher`, `NoOpCurvePublisher`, `NoOpEtfPublisher`, `NoOpAnalyticsPublisher`, `NoOpAlertPublisher`, `create_empty_output`
+- Top-level classes/functions: `_as_path`, `_read_rows`, `_decimal_or_none`, `_date_or_none`, `_datetime_or_none`, `_currency_or_none`, `_frequency_or_none`, `_bond_type`, `_issuer_type`, `_load_schedule`, `_load_curve_inputs_payload`, `CSVQuoteSource`, `JSONCurveInputSource`, `CSVIndexFixingSource`, `CSVEtfQuoteSource`, `CSVBondReferenceSource`, `CSVIssuerReferenceSource`, `CSVRatingSource`, `CSVEtfHoldingsSource`, `EmptyBondReferenceSource`, `EmptyIssuerReferenceSource`, `EmptyRatingSource`, `EmptyEtfHoldingsSource`, `create_file_market_data`, `create_file_reference_data`, `NoOpQuotePublisher`, `NoOpCurvePublisher`, `NoOpEtfPublisher`, `NoOpAnalyticsPublisher`, `NoOpAlertPublisher`, `create_empty_output`
 
 ### `adapters/json_codec.py`
 
@@ -438,10 +438,17 @@ Fair-value helpers for fitted bond curves.
 
 ### `market/curves/fitted_bonds/model.py`
 
-Fitted bond-curve models and immutable result records.
+Bond-curve shapes and typed calibration records.
 
 - Module path: `market/curves/fitted_bonds/model.py`
-- Top-level classes/functions: `_to_decimal`, `_decimal_tuple`, `FittedBondCurveFamily`, `FittedBondObjective`, `BondCurveFitDiagnostics`, `FittedBondCurve`, `FittedBondCurveModel`, `_normalize_spline_knot_tenors`, `_validate_spline_range`, `_support_knot_array`, `_cached_spline_grid`, `ExponentialSplineDiscountCurve`, `CubicSplineZeroRateCurve`, `ExponentialSplineCurveModel`, `CubicSplineZeroRateCurveModel`
+- Top-level classes/functions: `_to_decimal`, `_decimal_tuple`, `FittedBondCurveFamily`, `BondCurveDiagnostics`, `BondCurvePoint`, `_normalize_spline_knot_tenors`, `_validate_spline_range`, `_support_knot_array`, `_cached_spline_grid`, `ExponentialSplineZeroRateCurve`, `CubicSplineZeroRateCurve`, `ExponentialSplineCurveModel`, `CubicSplineZeroRateCurveModel`
+
+### `market/curves/fitted_bonds/bond_curve.py`
+
+Concrete calibrated nominal bond curve.
+
+- Module path: `market/curves/fitted_bonds/bond_curve.py`
+- Top-level classes/functions: `_to_decimal`, `BondCurve`
 
 ### `market/curves/fitted_bonds/notional_benchmarks.py`
 
@@ -452,10 +459,17 @@ Notional benchmark helpers for fitted bond-curve analytics.
 
 ### `market/curves/fitted_bonds/optimization.py`
 
-Optimization entry points for fitted bond curves.
+Private optimization helpers for calibrated bond curves.
 
 - Module path: `market/curves/fitted_bonds/optimization.py`
-- Top-level classes/functions: `_to_decimal`, `_resolve_reference_date`, `_maturity_date`, `_maturity_years`, `_coupon_rate`, `_weighted_linear_least_squares`, `_ProfiledCurveEvaluation`, `FittedBondCurveFitter`
+- Top-level classes/functions: `_to_decimal`, `_resolve_reference_date`, `_maturity_date`, `_maturity_years`, `_coupon_rate`, `_weighted_linear_least_squares`, `_ProfiledCurveEvaluation`, `_BondCurveCalibration`, `_fit_bond_curve`, `BondCurveFitter`
+
+### `market/curves/yield_curve.py`
+
+Common calibrated yield-curve abstractions.
+
+- Module path: `market/curves/yield_curve.py`
+- Top-level classes/functions: `_to_decimal`, `CurveObjective`, `CurveDiagnostics`, `YieldCurve`
 
 ### `market/curves/fitted_bonds/par_curve.py`
 

@@ -11,16 +11,17 @@ from fuggers_py.market.quotes import BondQuote
 from fuggers_py.market.snapshot import InflationFixing
 from fuggers_py.market.sources import InMemoryInflationFixingSource
 from fuggers_py.market.curves import (
+    BondCurveFitter,
     CubicSplineZeroRateCurveModel,
     ExponentialSplineCurveModel,
-    FittedBondCurve,
-    FittedBondCurveFitter,
-    FittedBondObjective,
+    BondCurve,
+    CurveObjective,
     NominalGovernmentBondPricingAdapter,
-    RateCurve,
+    TermStructure,
     TipsRealBondPricingAdapter,
     dirty_price_from_curve,
 )
+from fuggers_py.market.curves.fitted_bonds.fair_value import _discount_factor_from_curve
 from fuggers_py.products.bonds import FixedBondBuilder, TipsBond
 from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.reference.bonds.types import YieldCalculationRules
@@ -190,8 +191,6 @@ def nominal_fit_kwargs(
     weights: Mapping[str, Decimal] | None = None,
 ) -> dict[str, object]:
     kwargs: dict[str, object] = {
-        "bonds": nominal_bond_lookup(),
-        "settlement_date": REFERENCE_DATE,
         "reference_data": nominal_reference_data_lookup(),
     }
     if weights is not None:
@@ -203,10 +202,7 @@ def tips_fit_kwargs(
     *,
     weights: Mapping[str, Decimal] | None = None,
 ) -> dict[str, object]:
-    kwargs: dict[str, object] = {
-        "bonds": tips_bond_lookup(),
-        "settlement_date": TIPS_REFERENCE_DATE,
-    }
+    kwargs: dict[str, object] = {}
     if weights is not None:
         kwargs["weights"] = weights
     return kwargs
@@ -219,10 +215,10 @@ def make_observations(
     mispricings: dict[str, Decimal] | None = None,
     weights: dict[str, Decimal] | None = None,
     quote_field: str = "clean",
-) -> tuple[tuple[BondQuote, ...], RateCurve]:
+) -> tuple[tuple[BondQuote, ...], TermStructure]:
     del weights
     model = curve_model or exponential_model()
-    curve = model.build_curve(REFERENCE_DATE, _curve_parameters_for(model), max_t=10.0)
+    curve = model.build_term_structure(REFERENCE_DATE, _curve_parameters_for(model), max_t=10.0)
     bonds = nominal_bond_lookup()
     quotes: list[BondQuote] = []
     for instrument_id, _maturity_years, _coupon_rate, exposure_value, *_ in UNIVERSE:
@@ -234,11 +230,10 @@ def make_observations(
         clean_price = observed_dirty - bond.accrued_interest(REFERENCE_DATE)
         quotes.append(
             BondQuote(
-                instrument_id=InstrumentId(instrument_id),
+                instrument=bond,
                 dirty_price=observed_dirty if quote_field == "dirty" else None,
                 clean_price=None if quote_field == "dirty" else clean_price,
                 as_of=REFERENCE_DATE,
-                currency=Currency.USD,
             )
         )
     return tuple(quotes), curve
@@ -246,7 +241,7 @@ def make_observations(
 
 def _tips_dirty_price_from_curve(
     bond: TipsBond,
-    curve: RateCurve,
+    curve: TermStructure,
     settlement_date: Date,
     fixing_source: InMemoryInflationFixingSource,
 ) -> Decimal:
@@ -255,7 +250,7 @@ def _tips_dirty_price_from_curve(
         fixing_source=fixing_source,
         settlement_date=settlement_date,
     ):
-        present_value += cash_flow.factored_amount() * curve.discount_factor(cash_flow.date)
+        present_value += cash_flow.factored_amount() * _discount_factor_from_curve(curve, cash_flow.date)
     return present_value
 
 
@@ -266,7 +261,7 @@ def make_curve_observations(
     mispricings: dict[str, Decimal] | None = None,
     weights: dict[str, Decimal] | None = None,
     quote_field: str = "clean",
-) -> tuple[tuple[BondQuote, ...], RateCurve]:
+) -> tuple[tuple[BondQuote, ...], TermStructure]:
     return make_observations(
         curve_model=curve_model,
         regression_coefficient=regression_coefficient,
@@ -282,10 +277,10 @@ def make_tips_curve_observations(
     regression_coefficient: Decimal = Decimal("0"),
     mispricings: dict[str, Decimal] | None = None,
     weights: dict[str, Decimal] | None = None,
-) -> tuple[tuple[BondQuote, ...], RateCurve, InMemoryInflationFixingSource]:
+) -> tuple[tuple[BondQuote, ...], TermStructure, InMemoryInflationFixingSource]:
     del weights
     model = curve_model or exponential_model()
-    curve = model.build_curve(TIPS_REFERENCE_DATE, _curve_parameters_for(model), max_t=10.0)
+    curve = model.build_term_structure(TIPS_REFERENCE_DATE, _curve_parameters_for(model), max_t=10.0)
     fixing_source = tips_fixing_source()
     bonds = tips_bond_lookup()
     quotes: list[BondQuote] = []
@@ -299,10 +294,9 @@ def make_tips_curve_observations(
         clean_price = observed_dirty - bond.accrued_interest(TIPS_REFERENCE_DATE, fixing_source=fixing_source)
         quotes.append(
             BondQuote(
-                instrument_id=InstrumentId(instrument_id),
+                instrument=bond,
                 clean_price=clean_price,
                 as_of=TIPS_REFERENCE_DATE,
-                currency=Currency.USD,
             )
         )
     return tuple(quotes), curve, fixing_source
@@ -311,29 +305,25 @@ def make_tips_curve_observations(
 def fit_result(
     *,
     curve_model: CurveModelLike | None = None,
-    objective: FittedBondObjective = FittedBondObjective.L2,
+    objective: CurveObjective = CurveObjective.L2,
     regression_coefficient: Decimal = Decimal("0.25"),
     mispricings: dict[str, Decimal] | None = None,
     weights: dict[str, Decimal] | None = None,
     regression_exposures: Mapping[str, Sequence[object]] | None = None,
-) -> FittedBondCurve:
+) -> BondCurve:
     quotes, _ = make_observations(
         curve_model=curve_model,
         regression_coefficient=regression_coefficient,
         mispricings=mispricings,
         weights=weights,
     )
-    fitter = FittedBondCurveFitter(
-        curve_model=curve_model or exponential_model(),
-        objective=objective,
-    )
-    return fitter.fit(
+    return BondCurve(
         quotes,
-        bonds=nominal_bond_lookup(),
-        settlement_date=REFERENCE_DATE,
+        shape=curve_model or exponential_model(),
+        objective=objective,
         weights=weights,
         reference_data=nominal_reference_data_lookup(),
-        regression_exposures=(
+        regressors=(
             regression_exposures
             if regression_exposures is not None
             else liquidity_regression_exposures(quotes)
@@ -344,27 +334,25 @@ def fit_result(
 def tips_fit_result(
     *,
     curve_model: CurveModelLike | None = None,
-    objective: FittedBondObjective = FittedBondObjective.L2,
+    objective: CurveObjective = CurveObjective.L2,
     regression_coefficient: Decimal = Decimal("0"),
     mispricings: dict[str, Decimal] | None = None,
     weights: dict[str, Decimal] | None = None,
     regression_exposures: Mapping[str, Sequence[object]] | None = None,
-) -> FittedBondCurve:
+) -> BondCurve:
     quotes, _, fixing_source = make_tips_curve_observations(
         curve_model=curve_model,
         regression_coefficient=regression_coefficient,
         mispricings=mispricings,
         weights=weights,
     )
-    fitter = FittedBondCurveFitter(
+    fitter = BondCurveFitter(
         curve_model=curve_model or exponential_model(),
         objective=objective,
         pricing_adapter=tips_pricing_adapter(fixing_source),
     )
     return fitter.fit(
         quotes,
-        bonds=tips_bond_lookup(),
-        settlement_date=TIPS_REFERENCE_DATE,
         weights=weights,
         regression_exposures={} if regression_exposures is None else regression_exposures,
     )

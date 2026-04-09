@@ -184,9 +184,9 @@ def scenario_market_data() -> MarketDataSnapshot:
     return MarketDataSnapshot(
         as_of=SETTLEMENT,
         quotes=(
-            RawQuote(FIXED_ID, Decimal("101.25"), QuoteSide.MID, as_of=SETTLEMENT, currency=Currency.USD),
-            RawQuote(CALLABLE_ID, Decimal("102.50"), QuoteSide.MID, as_of=SETTLEMENT, currency=Currency.USD),
-            RawQuote(FRN_ID, Decimal("100.15"), QuoteSide.MID, as_of=SETTLEMENT, currency=Currency.USD),
+            RawQuote(FIXED_ID, Decimal("101.25"), as_of=SETTLEMENT, currency=Currency.USD),
+            RawQuote(CALLABLE_ID, Decimal("102.50"), as_of=SETTLEMENT, currency=Currency.USD),
+            RawQuote(FRN_ID, Decimal("100.15"), as_of=SETTLEMENT, currency=Currency.USD),
         ),
         fixings=tuple(scenario_c_fixing_source().fixings.values()),
     )

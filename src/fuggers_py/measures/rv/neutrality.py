@@ -15,7 +15,7 @@ from typing import Mapping
 from fuggers_py.pricers.bonds.risk import RiskMetrics
 from fuggers_py.reference.bonds.types import CompoundingKind
 from fuggers_py.core.types import Compounding, Yield
-from fuggers_py.market.curves.fitted_bonds import FittedBondCurve
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 from fuggers_py.core.ids import InstrumentId
 from fuggers_py.core.types import Date
 
@@ -114,7 +114,7 @@ def _point_risk(point: Mapping[str, object], *, settlement_date: Date) -> Decima
 
 
 def _point_from_choice(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     choice: MaturityChoice | BondChoice,
 ) -> Mapping[str, object]:
     return fit_result.get_bond(choice.instrument_id)
@@ -140,7 +140,7 @@ def _trade_leg(
 
 
 def neutralize_choices(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     long_choice: MaturityChoice | BondChoice,
     short_choice: MaturityChoice | BondChoice,
@@ -164,8 +164,8 @@ def neutralize_choices(
 
     long_point = _point_from_choice(fit_result, long_choice)
     short_point = _point_from_choice(fit_result, short_choice)
-    long_dv01 = _point_risk(long_point, settlement_date=fit_result.reference_date)
-    short_dv01 = _point_risk(short_point, settlement_date=fit_result.reference_date)
+    long_dv01 = _point_risk(long_point, settlement_date=fit_result.date())
+    short_dv01 = _point_risk(short_point, settlement_date=fit_result.date())
 
     if target is NeutralityTarget.DV01:
         if short_dv01 == Decimal(0):
@@ -180,13 +180,13 @@ def neutralize_choices(
         long_point,
         direction=SignalDirection.LONG,
         notional=base_notional,
-        settlement_date=fit_result.reference_date,
+        settlement_date=fit_result.date(),
     )
     short_leg = _trade_leg(
         short_point,
         direction=SignalDirection.SHORT,
         notional=short_notional,
-        settlement_date=fit_result.reference_date,
+        settlement_date=fit_result.date(),
     )
     net_dv01 = (base_notional / Decimal(100)) * long_dv01 - (short_notional / Decimal(100)) * short_dv01
     expected_price_convergence = (base_notional / Decimal(100)) * (-_to_decimal(long_point["price_residual"])) + (
@@ -206,7 +206,7 @@ def neutralize_choices(
 
 
 def neutralize_bond_pair(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     long_instrument_id: InstrumentId | str,
     short_instrument_id: InstrumentId | str,

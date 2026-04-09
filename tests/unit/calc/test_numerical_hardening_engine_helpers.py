@@ -36,7 +36,6 @@ async def test_market_data_publisher_unsubscribe_stops_delivery() -> None:
         quote=RawQuote(
             instrument_id=InstrumentId("PUBLISHER"),
             value=Decimal("101.25"),
-            side=QuoteSide.MID,
             as_of=Date.from_ymd(2026, 3, 14),
             currency=Currency.USD,
         ),
@@ -86,7 +85,6 @@ async def test_market_data_listener_throttles_repeated_quote_updates() -> None:
         quote=RawQuote(
             instrument_id=InstrumentId("THROTTLED"),
             value=Decimal("101.25"),
-            side=QuoteSide.MID,
             as_of=Date.from_ymd(2026, 3, 14),
             currency=Currency.USD,
         ),
@@ -212,4 +210,4 @@ def test_built_curve_reference_date_falls_back_to_curve_inputs_for_opaque_curves
     )
     built = BuiltCurve.of("opaque.curve", object(), curve_inputs=curve_inputs)
 
-    assert built.reference_date() == reference_date
+    assert built.date() == reference_date

@@ -91,7 +91,7 @@ FixingSource = IndexFixingSource
 class InMemoryQuoteSource:
     """Deterministic in-memory quote source."""
 
-    quotes: dict[tuple[InstrumentId, QuoteSide], RawQuote] = field(default_factory=dict)
+    quotes: dict[InstrumentId, RawQuote] = field(default_factory=dict)
 
     def __init__(self, quotes: tuple[RawQuote, ...] | list[RawQuote] | None = None) -> None:
         self.quotes = {}
@@ -99,23 +99,22 @@ class InMemoryQuoteSource:
             self.add_quote(quote)
 
     def add_quote(self, quote: RawQuote) -> "InMemoryQuoteSource":
-        """Store a quote and any side views that can be derived from it."""
-        for side in (QuoteSide.BID, QuoteSide.ASK, QuoteSide.MID):
-            candidate = quote.for_side(side)
-            if candidate is not None:
-                self.quotes[(quote.instrument_id, side)] = candidate
-        self.quotes[(quote.instrument_id, quote.side)] = quote
+        """Store one canonical quote keyed by instrument id."""
+        self.quotes[quote.instrument_id] = quote
         return self
 
     def get_quote(self, instrument_id: InstrumentId | str, side: QuoteSide = QuoteSide.MID) -> RawQuote | None:
         """Return a normalized quote for the requested instrument and side."""
         resolved = instrument_id if isinstance(instrument_id, InstrumentId) else InstrumentId.parse(instrument_id)
-        direct = self.quotes.get((resolved, side))
+        quote = self.quotes.get(resolved)
+        if quote is None:
+            return None
+        direct = quote.for_side(side)
         if direct is not None:
             return direct
         if side is not QuoteSide.MID:
-            return self.quotes.get((resolved, QuoteSide.MID))
-        return None
+            return quote.for_side(QuoteSide.MID)
+        return quote
 
 
 @dataclass(slots=True)

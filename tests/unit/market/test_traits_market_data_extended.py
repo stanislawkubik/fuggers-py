@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from decimal import Decimal
 
 from fuggers_py.core import Currency, Date
@@ -48,9 +47,7 @@ def test_in_memory_market_data_provider_serves_extended_sources() -> None:
     quote = RawQuote(
         instrument_id=InstrumentId("BOND-1"),
         value=Decimal("101.25"),
-        side=QuoteSide.MID,
         as_of=as_of,
-        timestamp=datetime(2026, 3, 13, 9, 0),
         currency=Currency.USD,
         bid=Decimal("101.10"),
         ask=Decimal("101.40"),
@@ -117,7 +114,7 @@ def test_market_data_snapshot_builds_composite_provider() -> None:
     as_of = Date.from_ymd(2026, 3, 13)
     snapshot = MarketDataSnapshot(
         as_of=as_of,
-        quotes=(RawQuote(InstrumentId("BOND-2"), Decimal("99.50"), QuoteSide.MID, as_of=as_of),),
+        quotes=(RawQuote(InstrumentId("BOND-2"), Decimal("99.50"), as_of=as_of),),
         fx_rates=(FxRate(CurrencyPair.parse("eur/usd"), Decimal("1.09"), as_of=as_of),),
     )
 
@@ -136,7 +133,6 @@ def test_extended_quote_records_coerce_decimals_and_normalize_fields() -> None:
         haircut="0.02",
         term=" 1w ",
         collateral_type=" UST ",
-        side=QuoteSide.MID,
         as_of=as_of,
     )
     swap = SwapQuote(
@@ -145,7 +141,7 @@ def test_extended_quote_records_coerce_decimals_and_normalize_fields() -> None:
         tenor=" 5y ",
         floating_index=" sofr ",
         fixed_frequency=" semi_annual ",
-        side=QuoteSide.BID,
+        bid="0.0380",
         as_of=as_of,
     )
     basis = BasisSwapQuote(
@@ -154,7 +150,7 @@ def test_extended_quote_records_coerce_decimals_and_normalize_fields() -> None:
         tenor=" 5y ",
         pay_index=" sofr ",
         receive_index=" libor_3m ",
-        side=QuoteSide.ASK,
+        ask="0.0012",
         as_of=as_of,
     )
     future = BondFutureQuote(
@@ -169,7 +165,6 @@ def test_extended_quote_records_coerce_decimals_and_normalize_fields() -> None:
         currency_pair="eur/usd",
         spot_rate="1.08",
         points="0.015",
-        side=QuoteSide.MID,
         as_of=as_of,
     )
     cds = CdsQuote(
@@ -184,7 +179,6 @@ def test_extended_quote_records_coerce_decimals_and_normalize_fields() -> None:
         instrument_id="ust-on-the-run",
         haircut="0.015",
         collateral_type=" govies ",
-        side=QuoteSide.MID,
         as_of=as_of,
     )
 
@@ -225,7 +219,6 @@ def test_curve_input_accepts_extended_quote_records() -> None:
         instrument_id="usd-swap-10y",
         rate="0.0395",
         floating_index="sofr",
-        side=QuoteSide.MID,
     )
     curve_input = CurveInput(
         instrument_type=CurveInstrumentType.SWAP,

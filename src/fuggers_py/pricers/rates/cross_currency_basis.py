@@ -30,9 +30,9 @@ def _pair(base: Currency, quote: Currency) -> CurrencyPair:
 def _curve_value_at_date(candidate: object, date: Date) -> Decimal | None:
     if hasattr(candidate, "value_at_date"):
         return _to_decimal(candidate.value_at_date(date))
-    if hasattr(candidate, "date_to_tenor") and hasattr(candidate, "value_at"):
+    if hasattr(candidate, "date_to_tenor") and hasattr(candidate, "value_at_tenor"):
         tenor = candidate.date_to_tenor(date)
-        return _to_decimal(candidate.value_at(tenor))
+        return _to_decimal(candidate.value_at_tenor(tenor))
     return None
 
 

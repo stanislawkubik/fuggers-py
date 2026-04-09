@@ -11,7 +11,7 @@ from fuggers_py.market.curves import (
     BreakevenParCurve,
     BreakevenZeroCurve,
     CubicSplineZeroRateCurveModel,
-    FittedBondCurve,
+    BondCurve,
     FittedParYieldCurve,
     ParCurveSpec,
 )
@@ -22,7 +22,7 @@ from tests.helpers._fitted_bond_helpers import REFERENCE_DATE, cubic_model, fit_
 
 
 def _weighted_coupon_from_benchmark(
-    result: FittedBondCurve,
+    result: BondCurve,
     benchmark: NotionalBenchmark,
 ) -> Decimal:
     total = Decimal(0)
@@ -75,12 +75,12 @@ def test_breakeven_zero_curve_matches_synthetic_nominal_and_real_zero_curves() -
             Decimal("10.0"),
         )
     )
-    nominal_curve = model.build_curve(
+    nominal_curve = model.build_term_structure(
         REFERENCE_DATE,
         np.asarray([0.05, 0.05, 0.05, 0.05, 0.05], dtype=float),
         max_t=10.0,
     )
-    real_curve = model.build_curve(
+    real_curve = model.build_term_structure(
         REFERENCE_DATE,
         np.asarray([0.02, 0.02, 0.02, 0.02, 0.02], dtype=float),
         max_t=10.0,
@@ -107,12 +107,12 @@ def test_breakeven_par_curve_returns_expected_sampled_differences() -> None:
             Decimal("10.0"),
         )
     )
-    nominal_curve = model.build_curve(
+    nominal_curve = model.build_term_structure(
         REFERENCE_DATE,
         np.asarray([0.05, 0.05, 0.05, 0.05, 0.05], dtype=float),
         max_t=10.0,
     )
-    real_curve = model.build_curve(
+    real_curve = model.build_term_structure(
         REFERENCE_DATE,
         np.asarray([0.02, 0.02, 0.02, 0.02, 0.02], dtype=float),
         max_t=10.0,

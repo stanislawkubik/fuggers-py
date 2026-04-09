@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.market.quotes import BondQuote
-from fuggers_py.market.curves import BondFairValueRequest, FittedBondCurveFitter
+from fuggers_py.market.curves import BondCurveFitter, BondFairValueRequest
 from fuggers_py.market.curves.fitted_bonds.fair_value import fair_value_from_fit
 
 from tests.helpers._fitted_bond_helpers import (
@@ -33,14 +33,14 @@ def test_clean_and_dirty_bondquote_paths_produce_the_same_nominal_fit() -> None:
         quote_field="dirty",
     )
 
-    clean_result = FittedBondCurveFitter(
+    clean_result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         clean_observations,
         regression_exposures=liquidity_regression_exposures(clean_observations),
         **nominal_fit_kwargs(),
     )
-    dirty_result = FittedBondCurveFitter(
+    dirty_result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         dirty_observations,
@@ -68,14 +68,14 @@ def test_inconsistent_clean_and_dirty_bondquote_is_rejected() -> None:
     )
     bad = observations[0]
     inconsistent_quote = BondQuote(
-        instrument_id=bad.instrument_id,
+        instrument=bad.instrument,
         clean_price=bad.clean_price,
         dirty_price=(bad.clean_price or Decimal(0)) + Decimal("1.00"),
         as_of=bad.as_of,
     )
 
     with pytest.raises(ValueError, match="match accrued interest"):
-        FittedBondCurveFitter(
+        BondCurveFitter(
             curve_model=exponential_model(),
         ).fit(
             (inconsistent_quote, *observations[1:]),
@@ -91,7 +91,7 @@ def test_fair_value_request_accepts_regular_bondquote() -> None:
         curve_model=exponential_model(),
         regression_coefficient=Decimal("0.25"),
     )
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         observations,
@@ -99,7 +99,7 @@ def test_fair_value_request_accepts_regular_bondquote() -> None:
         **nominal_fit_kwargs(),
     )
     quote = observations[4]
-    bond = nominal_bond_lookup()[quote.instrument_id.as_str()]
+    bond = quote.instrument
     reference_data = nominal_reference_data_lookup()[quote.instrument_id.as_str()]
     assert quote.as_of is not None
     point = result.get_bond(quote.instrument_id)

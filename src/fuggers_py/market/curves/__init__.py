@@ -66,19 +66,18 @@ from .discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
 from .errors import *  # noqa: F403
 from .errors import CurvesError
 from .fitted_bonds import (
+    BondCurve,
     BondFairValueRequest,
     BondFairValueResult,
-    BondCurveFitDiagnostics,
+    BondCurveDiagnostics,
+    BondCurveFitter,
+    BondCurvePoint,
     BondCurvePricingAdapter,
     CubicSplineZeroRateCurve,
     CubicSplineZeroRateCurveModel,
     ExponentialSplineCurveModel,
-    ExponentialSplineDiscountCurve,
+    ExponentialSplineZeroRateCurve,
     FittedBondCurveFamily,
-    FittedBondCurveFitter,
-    FittedBondCurve,
-    FittedBondCurveModel,
-    FittedBondObjective,
     FittedParYieldCurve,
     NominalGovernmentBondPricingAdapter,
     ParCurveSpec,
@@ -105,6 +104,7 @@ from .models import JumpDiffusionAdjustment, JumpDiffusionCurve, ShadowRateCurve
 from .multicurve import CurrencyPair, MissingCurveError, MultiCurveEnvironment, MultiCurveEnvironmentBuilder, RateIndex
 from .segmented import SegmentSource, SegmentedCurve
 from .term_structure import TermStructure
+from .yield_curve import CurveDiagnostics, CurveObjective, YieldCurve
 from .value_type import ValueType, ValueTypeKind
 from .wrappers import CreditCurve, CurveRef, DiscountCurve, RateCurve
 
@@ -117,6 +117,9 @@ __all__ = [
     "Compounding",
     "Currency",
     "Tenor",
+    "CurveDiagnostics",
+    "CurveObjective",
+    "YieldCurve",
     "ValueTypeKind",
     "ValueType",
     "ValueConverter",
@@ -212,17 +215,16 @@ __all__ = [
     "MissingCurveError",
     "BondFairValueRequest",
     "BondFairValueResult",
-    "BondCurveFitDiagnostics",
+    "BondCurve",
+    "BondCurveDiagnostics",
     "BondCurvePricingAdapter",
+    "BondCurvePoint",
     "CubicSplineZeroRateCurve",
     "CubicSplineZeroRateCurveModel",
     "ExponentialSplineCurveModel",
-    "ExponentialSplineDiscountCurve",
+    "ExponentialSplineZeroRateCurve",
     "FittedBondCurveFamily",
-    "FittedBondCurveFitter",
-    "FittedBondCurveModel",
-    "FittedBondCurve",
-    "FittedBondObjective",
+    "BondCurveFitter",
     "FittedParYieldCurve",
     "NominalGovernmentBondPricingAdapter",
     "ParCurveSpec",

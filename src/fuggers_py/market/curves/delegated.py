@@ -10,12 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from math import isnan
-
 from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
 
 from .term_structure import TermStructure
-from .value_type import ValueType
 from .wrappers import RateCurve
 
 
@@ -32,21 +30,12 @@ class DelegationFallback(str, Enum):
 class _YieldCurveTermStructure(TermStructure):
     curve: YieldCurve
 
-    def reference_date(self) -> Date:
-        return self.curve.reference_date()
+    def date(self) -> Date:
+        return self.curve.date()
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         date = self.tenor_to_date(t)
         return float(self.curve.zero_rate(date).value())
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        return 0.0, self.date_to_tenor(self.curve.max_date())
-
-    def value_type(self) -> ValueType:
-        return ValueType.zero_rate()
-
-    def max_date(self) -> Date:
-        return self.curve.max_date()
 
 
 def _as_term_structure(source: TermStructure | YieldCurve) -> TermStructure:
@@ -55,6 +44,33 @@ def _as_term_structure(source: TermStructure | YieldCurve) -> TermStructure:
     if isinstance(source, RateCurve):
         return source.curve
     return _YieldCurveTermStructure(source)
+
+
+def _supports_tenor(curve: TermStructure, tenor: float) -> bool:
+    bounds = getattr(curve, "_bounds", None)
+    if isinstance(bounds, tuple) and len(bounds) == 2:
+        lo, hi = bounds
+        return float(lo) <= tenor <= float(hi)
+
+    if hasattr(curve, "tenors"):
+        tenors_getter = getattr(curve, "tenors")
+        if callable(tenors_getter):
+            try:
+                tenors = tenors_getter()
+            except Exception:
+                tenors = None
+            if tenors is not None and len(tenors) > 0:
+                return float(tenors[0]) <= tenor <= float(tenors[-1])
+
+    if hasattr(curve, "segments"):
+        segments = getattr(curve, "segments")
+        try:
+            if segments:
+                return float(segments[0].start) <= tenor <= float(segments[-1].end)
+        except Exception:
+            pass
+
+    return True
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,62 +92,50 @@ class DelegatedCurve(TermStructure):
         object.__setattr__(self, "_primary_curve", _as_term_structure(self.primary))
         object.__setattr__(self, "_fallback_curve", _as_term_structure(self.fallback))
 
-    def reference_date(self) -> Date:
-        """Return the primary curve reference date."""
-        return self._primary_curve.reference_date()
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        """Return the combined tenor span of the primary and fallback curves."""
-        p_lo, p_hi = self._primary_curve.tenor_bounds()
-        f_lo, f_hi = self._fallback_curve.tenor_bounds()
-        return min(p_lo, f_lo), max(p_hi, f_hi)
-
-    def value_type(self) -> ValueType:
-        """Return the value type of the primary curve."""
-        return self._primary_curve.value_type()
-
-    def max_date(self) -> Date:
-        """Return the latest date supported by either underlying curve."""
-        return max(self._primary_curve.max_date(), self._fallback_curve.max_date())
+    def date(self) -> Date:
+        """Return the primary curve date."""
+        return self._primary_curve.date()
 
     def _use_fallback_for_tenor(self, tenor: float) -> bool:
         if self.fallback_mode is DelegationFallback.ALWAYS_FALLBACK:
             return True
-        if self.fallback_mode in {
-            DelegationFallback.OUT_OF_RANGE,
-            DelegationFallback.OUT_OF_RANGE_OR_MISSING,
-        } and not self._primary_curve.in_range(tenor):
-            return True
+        if self.fallback_mode in {DelegationFallback.OUT_OF_RANGE, DelegationFallback.OUT_OF_RANGE_OR_MISSING}:
+            if not _supports_tenor(self._primary_curve, tenor):
+                return True
+            try:
+                self._primary_curve.value_at_tenor(tenor)
+            except Exception:
+                return True
         return False
 
     def _primary_value_missing(self, tenor: float) -> bool:
-        value = float(self._primary_curve.value_at(tenor))
+        value = float(self._primary_curve.value_at_tenor(tenor))
         return isnan(value)
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         """Return the primary value unless the fallback policy is triggered."""
         tenor = float(t)
         if self._use_fallback_for_tenor(tenor):
-            return float(self._fallback_curve.value_at(tenor))
+            return float(self._fallback_curve.value_at_tenor(tenor))
 
         if self.fallback_mode in {
             DelegationFallback.MISSING_VALUE,
             DelegationFallback.OUT_OF_RANGE_OR_MISSING,
         } and self._primary_value_missing(tenor):
-            return float(self._fallback_curve.value_at(tenor))
-        return float(self._primary_curve.value_at(tenor))
+            return float(self._fallback_curve.value_at_tenor(tenor))
+        return float(self._primary_curve.value_at_tenor(tenor))
 
-    def derivative_at(self, t: float) -> float | None:
+    def derivative_at_tenor(self, t: float) -> float | None:
         """Return the primary derivative unless the fallback policy is triggered."""
         tenor = float(t)
         if self._use_fallback_for_tenor(tenor):
-            return self._fallback_curve.derivative_at(tenor)
-        derivative = self._primary_curve.derivative_at(tenor)
+            return self._fallback_curve.derivative_at_tenor(tenor)
+        derivative = self._primary_curve.derivative_at_tenor(tenor)
         if derivative is None and self.fallback_mode in {
             DelegationFallback.MISSING_VALUE,
             DelegationFallback.OUT_OF_RANGE_OR_MISSING,
         }:
-            return self._fallback_curve.derivative_at(tenor)
+            return self._fallback_curve.derivative_at_tenor(tenor)
         return derivative
 
 

@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from fuggers_py.market.curves import FittedBondCurveFitter, FittedBondObjective
+from fuggers_py.market.curves import BondCurveFitter, CurveObjective
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,
@@ -33,9 +33,9 @@ def test_profiled_l2_recovers_callable_regression_coefficients(regression_bps: i
         regression_coefficient=coefficient,
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
-        objective=FittedBondObjective.L2,
+        objective=CurveObjective.L2,
     ).fit(
         observations,
         regression_exposures=liquidity_regression_exposures(observations),
@@ -47,18 +47,18 @@ def test_profiled_l2_recovers_callable_regression_coefficients(regression_bps: i
 
 
 @PROPERTY_SETTINGS
-@given(objective=st.sampled_from((FittedBondObjective.L2, FittedBondObjective.L1)))
+@given(objective=st.sampled_from((CurveObjective.L2, CurveObjective.L1)))
 @pytest.mark.feature_slug("fitted-bond-optimizer-adapters-regressors")
 @pytest.mark.feature_category("properties")
 def test_profiled_fit_with_zero_regressors_keeps_an_empty_coefficient_surface(
-    objective: FittedBondObjective,
+    objective: CurveObjective,
 ) -> None:
     observations, _ = make_curve_observations(
         curve_model=exponential_model(),
         regression_coefficient=Decimal("0"),
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
         objective=objective,
     ).fit(observations, regression_exposures={}, **nominal_fit_kwargs())

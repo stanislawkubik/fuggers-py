@@ -4,11 +4,10 @@ import pytest
 
 from fuggers_py.core.types import Date
 from fuggers_py.market.curves.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from fuggers_py.market.curves.errors import TenorOutOfBounds
 from fuggers_py.market.curves.value_type import ValueType
 
 
-def test_try_value_at_bounds_checking() -> None:
+def test_value_at_date_uses_date_to_tenor() -> None:
     ref = Date.from_ymd(2024, 1, 1)
     curve = DiscreteCurve(
         ref,
@@ -19,9 +18,8 @@ def test_try_value_at_bounds_checking() -> None:
         extrapolation_method=ExtrapolationMethod.FLAT,
     )
 
-    with pytest.raises(TenorOutOfBounds):
-        _ = curve.try_value_at(0.5)
-    assert curve.try_value_at(1.5) == pytest.approx(curve.value_at(1.5))
+    target_date = ref.add_days(int(round(1.5 * 365)))
+    assert curve.value_at_date(target_date) == pytest.approx(curve.value_at_tenor(1.5), abs=1e-2)
 
 
 def test_date_to_tenor_and_tenor_to_date_round_trip() -> None:

@@ -10,6 +10,7 @@ from fuggers_py.core.daycounts import DayCountConvention
 from fuggers_py.core.types import Date
 from fuggers_py.reference.inflation.conventions import InflationConvention
 
+from .._semantics import stored_value_type
 from ..discrete import DiscreteCurve
 
 
@@ -38,15 +39,10 @@ class InflationIndexCurve:
         object.__setattr__(self, "anchor_reference_cpi", _to_decimal(self.anchor_reference_cpi))
         if self.anchor_reference_cpi <= Decimal(0):
             raise ValueError("InflationIndexCurve requires a positive anchor_reference_cpi.")
-        if self.curve.reference_date() != self.reference_date:
-            raise ValueError("InflationIndexCurve curve.reference_date() must match reference_date.")
-        if self.curve.value_type().kind.value != "INFLATION_INDEX_RATIO":
+        if self.curve.date() != self.reference_date:
+            raise ValueError("InflationIndexCurve curve.date() must match reference_date.")
+        if stored_value_type(self.curve).kind.value != "INFLATION_INDEX_RATIO":
             raise ValueError("InflationIndexCurve requires a curve with ValueType.INFLATION_INDEX_RATIO.")
-
-    def max_date(self) -> Date:
-        """Return the latest supported projection date."""
-
-        return self.curve.max_date()
 
     def projected_reference_cpi(self, date: Date) -> Decimal:
         """Return the projected daily reference CPI for ``date``."""

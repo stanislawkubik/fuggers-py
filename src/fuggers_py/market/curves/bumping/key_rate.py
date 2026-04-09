@@ -95,13 +95,9 @@ class KeyRateBumpedCurve(YieldCurve):
     base_curve: YieldCurve
     key_rate_bump: KeyRateBump
 
-    def reference_date(self) -> Date:
-        """Return the reference date of the underlying curve."""
-        return self.base_curve.reference_date()
-
-    def max_date(self) -> Date:
-        """Return the maximum date supported by the underlying curve."""
-        return self.base_curve.max_date()
+    def date(self) -> Date:
+        """Return the date of the underlying curve."""
+        return self.base_curve.date()
 
     def bump_at_tenor(self, t: float) -> float:
         """Return the raw decimal bump applied at tenor ``t``."""
@@ -110,13 +106,13 @@ class KeyRateBumpedCurve(YieldCurve):
     def zero_rate(self, date: Date) -> Yield:
         """Return the continuously compounded bumped zero rate."""
         base_zero = self.base_curve.zero_rate(date).convert_to(Compounding.CONTINUOUS).value()
-        t = _tenor_from_date(self.reference_date(), date)
+        t = _tenor_from_date(self.date(), date)
         bumped = float(base_zero) + self.key_rate_bump.bump_at(t)
         return Yield.new(_to_decimal(bumped), Compounding.CONTINUOUS)
 
     def discount_factor(self, date: Date) -> Decimal:
         """Return the discount factor implied by the bumped zero rate."""
-        t = _tenor_from_date(self.reference_date(), date)
+        t = _tenor_from_date(self.date(), date)
         if t <= 0.0:
             return Decimal(1)
         zero = self.zero_rate(date).value()

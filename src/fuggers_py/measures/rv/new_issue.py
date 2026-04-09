@@ -16,7 +16,7 @@ from fuggers_py.products.bonds.instruments import FixedBondBuilder
 from fuggers_py.pricers.bonds import BondPricer
 from fuggers_py.reference.bonds.types import YieldCalculationRules
 from fuggers_py.core.types import Currency, Date, Frequency, Price
-from fuggers_py.market.curves.fitted_bonds import BondFairValueRequest, FittedBondCurve, fair_value_from_fit
+from fuggers_py.market.curves.fitted_bonds import BondCurve, BondFairValueRequest, fair_value_from_fit
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -60,7 +60,7 @@ class NewIssueFairValue:
 
 
 def estimate_new_issue_fair_value(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     request: NewIssueRequest,
 ) -> NewIssueFairValue:
     """Estimate new-issue fair value from a fitted-bond curve.
@@ -83,7 +83,7 @@ def estimate_new_issue_fair_value(
         fit_result,
         BondFairValueRequest(
             bond=bond,
-            settlement_date=fit_result.reference_date,
+            settlement_date=fit_result.date(),
             regression_exposures=request.regression_exposures,
         ),
     )
@@ -94,7 +94,7 @@ def estimate_new_issue_fair_value(
         marketed_yield = BondPricer().yield_from_price(
             bond,
             Price.new(request.marketed_clean_price, request.currency),
-            fit_result.reference_date,
+            fit_result.date(),
         ).ytm.value()
         concession_price = fair_value.fair_value_clean_price - request.marketed_clean_price
         concession_bps = (marketed_yield - fair_value.fair_value_yield) * Decimal("10000")

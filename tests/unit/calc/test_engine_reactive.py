@@ -78,7 +78,6 @@ async def test_reactive_engine_processes_updates_without_background_hangs() -> N
             quote=RawQuote(
                 instrument_id=fixed_id,
                 value=Decimal("101.25"),
-                side=QuoteSide.MID,
                 as_of=Date.from_ymd(2026, 3, 14),
                 currency=Currency.USD,
             ),

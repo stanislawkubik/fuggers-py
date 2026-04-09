@@ -28,7 +28,7 @@ def test_minimal_breakeven_notebook_uses_the_required_public_api_surface() -> No
     source = _joined_source(notebook)
 
     assert NOTEBOOK_PATH.exists()
-    assert "FittedBondCurveFitter" in source
+    assert "BondCurveFitter" in source
     assert "CubicSplineZeroRateCurveModel" in source
     assert "NominalGovernmentBondPricingAdapter" in source
     assert "TipsRealBondPricingAdapter" in source
@@ -36,11 +36,11 @@ def test_minimal_breakeven_notebook_uses_the_required_public_api_surface() -> No
     assert "BreakevenZeroCurve" in source
     assert "BreakevenParCurve" in source
     assert "BondQuote(" in source
-    assert "nominal_bonds =" in source
-    assert "tips_bonds =" in source
-    assert "bonds=nominal_bonds" in source
-    assert "bonds=tips_bonds" in source
-    assert "settlement_date=REFERENCE_DATE" in source
+    assert "instrument=bond" in source
+    assert "as_of=REFERENCE_DATE" in source
     assert "BondObservation(" not in source
+    assert "FittedBondCurveFitter" not in source
     assert "FittedBondObservation" not in source
+    assert "bonds=nominal_bonds" not in source
+    assert "bonds=tips_bonds" not in source
     assert "regression_exposures={}" in source

@@ -76,7 +76,7 @@ class BondOption:
         if short_rate_model is None:
             raise ModelError(reason="BondOption.price requires a short-rate model.")
 
-        value_date = valuation_date or self.valuation_date or short_rate_model.term_structure.reference_date()
+        value_date = valuation_date or self.valuation_date or short_rate_model.term_structure.date()
         if value_date >= self.expiry:
             intrinsic = self._payoff(Decimal("0"))
             return intrinsic

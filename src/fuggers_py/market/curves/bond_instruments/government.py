@@ -53,7 +53,7 @@ class GovernmentZeroCoupon:
     def repriced_discount_factor(self, curve: YieldCurve, *, settlement_date: Date | None = None) -> Decimal:
         """Return the discount factor from settlement to maturity implied by ``curve``."""
 
-        settle = settlement_date or curve.reference_date()
+        settle = settlement_date or curve.date()
         df_settle = curve.discount_factor(settle)
         df = curve.discount_factor(self.maturity)
         if df_settle == 0:
@@ -112,7 +112,7 @@ class GovernmentCouponBond:
         ignores accrued interest (synthetic par-style pricing).
         """
 
-        settle = settlement_date or curve.reference_date()
+        settle = settlement_date or curve.date()
         schedule = self._schedule(settle)
         day_count = self.day_count.to_day_count()
 

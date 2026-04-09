@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.market.curves import FittedBondCurveFitter, FittedBondObjective
+from fuggers_py.market.curves import BondCurveFitter, CurveObjective
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,
@@ -33,9 +33,9 @@ def test_weighted_fit_prioritizes_high_weight_observations_over_a_low_weight_out
             "UST10Y": Decimal("0.10"),
         },
     )
-    fitter = FittedBondCurveFitter(
+    fitter = BondCurveFitter(
         curve_model=exponential_model(),
-        objective=FittedBondObjective.L2,
+        objective=CurveObjective.L2,
     )
     unweighted = fitter.fit(
         unweighted_observations,
@@ -68,17 +68,17 @@ def test_l1_objective_is_more_robust_to_the_same_outlier_than_l2() -> None:
         regression_coefficient=Decimal("0.25"),
         mispricings={"UST10Y": Decimal("1.20")},
     )
-    l2_fit = FittedBondCurveFitter(
+    l2_fit = BondCurveFitter(
         curve_model=exponential_model(),
-        objective=FittedBondObjective.L2,
+        objective=CurveObjective.L2,
     ).fit(observations, regression_exposures=liquidity_regression_exposures(observations), **nominal_fit_kwargs())
-    l1_fit = FittedBondCurveFitter(
+    l1_fit = BondCurveFitter(
         curve_model=exponential_model(),
-        objective=FittedBondObjective.L1,
+        objective=CurveObjective.L1,
     ).fit(observations, regression_exposures=liquidity_regression_exposures(observations), **nominal_fit_kwargs())
 
     l2_total_abs = sum(abs(point["price_residual"]) for point in l2_fit.bonds)
     l1_total_abs = sum(abs(point["price_residual"]) for point in l1_fit.bonds)
 
-    assert l1_fit.objective is FittedBondObjective.L1
+    assert l1_fit.objective is CurveObjective.L1
     assert l1_total_abs <= l2_total_abs

@@ -76,7 +76,6 @@ def _quote_update(instrument_id: InstrumentId, settlement: Date, *, value: str =
         quote=RawQuote(
             instrument_id=instrument_id,
             value=Decimal(value),
-            side=QuoteSide.MID,
             as_of=settlement,
             currency=Currency.USD,
         ),

@@ -104,7 +104,7 @@ class HullWhiteOptionPricer:
         swap_pricer=None,
     ) -> SwaptionPricingResult:
         """Price a swaption using the Hull-White normal-volatility proxy."""
-        resolved_valuation_date = valuation_date or resolve_discount_curve(curves, swaption.currency()).reference_date()
+        resolved_valuation_date = valuation_date or resolve_discount_curve(curves, swaption.currency()).date()
         expiry_years = _time_to_expiry(swaption.expiry_date, resolved_valuation_date)
         underlying_tenor_years = _time_to_expiry(
             swaption.underlying_swap.effective_date,
@@ -130,7 +130,7 @@ class HullWhiteOptionPricer:
         valuation_date=None,
     ) -> CapFloorPricingResult:
         """Price a cap or floor using the Hull-White normal-volatility proxy."""
-        resolved_valuation_date = valuation_date or resolve_discount_curve(curves, cap_floor.currency()).reference_date()
+        resolved_valuation_date = valuation_date or resolve_discount_curve(curves, cap_floor.currency()).date()
         optionlets = []
         for period in cap_floor.optionlet_periods():
             expiry_years = _time_to_expiry(period.start_date, resolved_valuation_date)

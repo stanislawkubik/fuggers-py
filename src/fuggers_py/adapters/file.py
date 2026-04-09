@@ -138,13 +138,6 @@ def _issuer_type(value: str) -> IssuerType:
     return IssuerType[value.strip().upper()]
 
 
-def _quote_side(value: str | None) -> QuoteSide:
-    """Parse a quote side from text, defaulting to ``MID``."""
-    if value is None or not value.strip():
-        return QuoteSide.MID
-    return QuoteSide(value.strip().lower())
-
-
 def _load_schedule(raw_value: str | None) -> tuple[CallScheduleEntry, ...]:
     """Load a serialized call or put schedule from JSON text."""
     if raw_value is None or not raw_value.strip():
@@ -207,9 +200,7 @@ class CSVQuoteSource:
             RawQuote(
                 instrument_id=InstrumentId.parse(row["instrument_id"]),
                 value=Decimal(row["value"]),
-                side=_quote_side(row.get("side")),
                 as_of=_date_or_none(row.get("as_of")),
-                timestamp=_datetime_or_none(row.get("timestamp")),
                 currency=_currency_or_none(row.get("currency")),
                 source=row.get("source"),
                 bid=_decimal_or_none(row.get("bid")),

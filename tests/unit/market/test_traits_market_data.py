@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from decimal import Decimal
 
 from fuggers_py.core import Currency, Date
@@ -16,14 +15,11 @@ def test_raw_quote_curve_inputs_and_fixing_sources() -> None:
     quote = RawQuote(
         instrument_id=instrument_id,
         value=Decimal("101.25"),
-        side=QuoteSide.MID,
         as_of=Date.from_ymd(2026, 1, 15),
-        timestamp=datetime(2026, 1, 15, 9, 30),
         currency=Currency.USD,
     )
-    assert quote.side is QuoteSide.MID
     assert quote.as_of == Date.from_ymd(2026, 1, 15)
-    assert quote.timestamp == datetime(2026, 1, 15, 9, 30)
+    assert quote.mid == Decimal("101.25")
 
     inputs = CurveInputs.from_points(
         CurveId("usd.discount"),

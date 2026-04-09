@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.market.curves.fitted_bonds import FittedBondCurve
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -32,7 +32,7 @@ class RichCheapSignal:
 
 
 def rank_rich_cheap(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     threshold_bps: object = Decimal(0),
 ) -> tuple[RichCheapSignal, ...]:

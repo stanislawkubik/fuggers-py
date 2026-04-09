@@ -14,6 +14,7 @@ from fuggers_py.core.types import Date
 
 from ..conversion import ValueConverter
 from ..errors import InvalidCurveInput, UnsupportedValueType
+from .._semantics import stored_value_type
 from ..term_structure import TermStructure
 from ..value_type import ValueTypeKind
 
@@ -55,20 +56,10 @@ class CreditCurve:
         if self.recovery_rate < Decimal(0) or self.recovery_rate >= Decimal(1):
             raise InvalidCurveInput("recovery_rate must lie in [0, 1).")
 
-    def reference_date(self) -> Date:
-        """Return the wrapped curve reference date."""
+    def date(self) -> Date:
+        """Return the wrapped curve date."""
 
-        return self.curve.reference_date()
-
-    def max_date(self) -> Date:
-        """Return the latest date supported by the wrapped curve."""
-
-        return self.curve.max_date()
-
-    def value_type(self) -> ValueTypeKind:
-        """Return the semantic kind stored by the wrapped curve."""
-
-        return self.curve.value_type().kind
+        return self.curve.date()
 
     def _date_to_tenor(self, date: Date) -> float:
         """Convert a calendar date to a tenor using the wrapped curve."""
@@ -86,8 +77,8 @@ class CreditCurve:
         if tau <= 0.0:
             return Decimal(1)
 
-        value = float(self.curve.value_at(tau))
-        match self.curve.value_type().kind:
+        value = float(self.curve.value_at_tenor(tau))
+        match stored_value_type(self.curve).kind:
             case ValueTypeKind.SURVIVAL_PROBABILITY:
                 if value < 0.0 or value > 1.0:
                     raise InvalidCurveInput("Survival-probability curves must return values in [0, 1].")
@@ -104,7 +95,7 @@ class CreditCurve:
                 return _to_decimal(ValueConverter.hazard_to_survival(hazard, tau))
             case _:
                 raise UnsupportedValueType(
-                    f"Cannot produce survival probabilities from {self.curve.value_type().kind.value}."
+                    f"Cannot produce survival probabilities from {stored_value_type(self.curve).kind.value}."
                 )
 
     def hazard_rate_at_tenor(self, tenor: float) -> Decimal:
@@ -118,8 +109,8 @@ class CreditCurve:
         if tau <= 0.0:
             return Decimal(0)
 
-        value = float(self.curve.value_at(tau))
-        match self.curve.value_type().kind:
+        value = float(self.curve.value_at_tenor(tau))
+        match stored_value_type(self.curve).kind:
             case ValueTypeKind.HAZARD_RATE:
                 if value < 0.0:
                     raise InvalidCurveInput("Hazard-rate curves must not return negative hazards.")
@@ -132,7 +123,7 @@ class CreditCurve:
                     raise InvalidCurveInput("Credit-spread curves must not return negative spreads.")
                 return _to_decimal(value / loss_given_default)
             case _:
-                raise UnsupportedValueType(f"Cannot produce hazard rates from {self.curve.value_type().kind.value}.")
+                raise UnsupportedValueType(f"Cannot produce hazard rates from {stored_value_type(self.curve).kind.value}.")
 
     def credit_spread_at_tenor(self, tenor: float) -> Decimal:
         """Return the credit spread implied at tenor ``tenor`` in years."""

@@ -59,15 +59,10 @@ class CurveRef:
             return self.curve
         return RateCurve(self.curve)
 
-    def reference_date(self):
-        """Forward :meth:`reference_date` to the wrapped object."""
+    def date(self):
+        """Forward :meth:`date` to the wrapped object."""
 
-        return self.curve.reference_date()
-
-    def max_date(self):
-        """Forward :meth:`max_date` to the wrapped object."""
-
-        return self.curve.max_date()
+        return self.curve.date()
 
     def __getattr__(self, name: str):
         """Delegate unknown attributes to the wrapped object."""

@@ -24,7 +24,7 @@ def test_public_api_uses_bond_quote_and_drops_curve_only_quote_types() -> None:
         settlement_date=Date.from_ymd(2026, 1, 15),
         instrument_id=observations[0].instrument_id,
         quote=BondQuote(
-            instrument_id=observations[0].instrument_id,
+            instrument=bond,
             clean_price=Decimal("99.25"),
             as_of=Date.from_ymd(2026, 1, 15),
         ),
@@ -43,7 +43,8 @@ def test_public_api_uses_bond_quote_and_drops_curve_only_quote_types() -> None:
     assert hasattr(fitted_bonds, "BondCurveQuoteBasis") is False
     assert hasattr(fitted_bonds, "BondCurveObservation") is False
     assert request.quote is not None
-    assert hasattr(request.quote, "bond") is False
+    assert request.quote.instrument is bond
+    assert request.quote.as_of == Date.from_ymd(2026, 1, 15)
     assert hasattr(request.quote, "settlement_date") is False
     assert hasattr(request.quote, "reference_data") is False
     assert hasattr(request.quote, "user_data") is False

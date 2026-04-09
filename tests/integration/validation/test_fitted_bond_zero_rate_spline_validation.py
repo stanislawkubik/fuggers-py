@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves import FittedBondCurveFitter
+from fuggers_py.market.curves import BondCurveFitter
 
 from tests.helpers._fitted_bond_helpers import cubic_model, liquidity_regression_exposures, make_observations, nominal_fit_kwargs
 
@@ -17,7 +17,7 @@ def test_zero_rate_cubic_spline_fit_matches_a_synthetic_cross_section() -> None:
         regression_coefficient=Decimal("0.12"),
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=cubic_model(),
     ).fit(
         observations,

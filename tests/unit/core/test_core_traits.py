@@ -11,7 +11,7 @@ class DummyCurve(YieldCurve):
         self._ref = ref
         self._df_end = df_end
 
-    def reference_date(self) -> Date:
+    def date(self) -> Date:
         return self._ref
 
     def discount_factor(self, date: Date) -> Decimal:
@@ -21,9 +21,6 @@ class DummyCurve(YieldCurve):
 
     def zero_rate(self, date: Date) -> Yield:
         return Yield.new(Decimal("0.0"), Compounding.ANNUAL)
-
-    def max_date(self) -> Date:
-        return self._ref.add_years(100)
 
 
 def test_discountable_present_value_default() -> None:
@@ -38,4 +35,3 @@ def test_yieldcurve_forward_rate_default() -> None:
     curve = DummyCurve(ref=start, df_end=Decimal("0.95"))
     fwd = curve.forward_rate(start, end)
     assert abs(fwd - (Decimal(1) / Decimal("0.95") - Decimal(1))) < Decimal("1e-12")
-

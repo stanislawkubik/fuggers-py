@@ -14,11 +14,19 @@ from fuggers_py.core.types import Date
 
 from .errors import InvalidCurveInput
 from .term_structure import TermStructure
+from ._semantics import stored_value_type
 from .value_type import ValueType
 from .discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
 
 
 SourceValue = TermStructure | Callable[[float], float] | Sequence[tuple[float, float]]
+
+
+def _segment_value_type(curve: TermStructure) -> ValueType | None:
+    try:
+        return stored_value_type(curve)
+    except AttributeError:
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,7 +41,7 @@ class SegmentSource:
     @classmethod
     def from_curve(cls, curve: TermStructure) -> "SegmentSource":
         """Create a segment source from an existing term structure."""
-        return cls(source=curve, value_type=curve.value_type())
+        return cls(source=curve, value_type=_segment_value_type(curve))
 
     @classmethod
     def from_callable(
@@ -72,20 +80,11 @@ class _CallableTermStructure(TermStructure):
     _bounds: tuple[float, float]
     _value_type: ValueType
 
-    def reference_date(self) -> Date:
+    def date(self) -> Date:
         return self._reference_date
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         return float(self._fn(float(t)))
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        return self._bounds
-
-    def value_type(self) -> ValueType:
-        return self._value_type
-
-    def max_date(self) -> Date:
-        return self.tenor_to_date(self._bounds[1])
 
 
 @dataclass(frozen=True, slots=True)
@@ -207,21 +206,9 @@ class SegmentedCurve(TermStructure):
         object.__setattr__(self, "_segments", tuple(built))
         object.__setattr__(self, "_value_type", value_type)
 
-    def reference_date(self) -> Date:
-        """Return the curve reference date."""
+    def date(self) -> Date:
+        """Return the curve date."""
         return self._reference_date
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        """Return the outer tenor bounds spanned by the segments."""
-        return self._segments[0].start, self._segments[-1].end
-
-    def value_type(self) -> ValueType:
-        """Return the common value type of the segmented curve."""
-        return self._value_type
-
-    def max_date(self) -> Date:
-        """Return the maximum date implied by the final segment."""
-        return self.tenor_to_date(self._segments[-1].end)
 
     def _segment_for(self, tenor: float) -> _Segment:
         for segment in self._segments:
@@ -231,17 +218,17 @@ class SegmentedCurve(TermStructure):
             return self._segments[0]
         return self._segments[-1]
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         """Return the value from the segment containing tenor ``t``."""
         tenor = float(t)
         segment = self._segment_for(tenor)
-        return float(segment.curve.value_at(tenor))
+        return float(segment.curve.value_at_tenor(tenor))
 
-    def derivative_at(self, t: float) -> float | None:
+    def derivative_at_tenor(self, t: float) -> float | None:
         """Return the derivative from the selected segment, if available."""
         tenor = float(t)
         segment = self._segment_for(tenor)
-        return segment.curve.derivative_at(tenor)
+        return segment.curve.derivative_at_tenor(tenor)
 
     @property
     def segments(self) -> tuple[_Segment, ...]:

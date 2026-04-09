@@ -12,7 +12,7 @@ from decimal import Decimal
 from fuggers_py.pricers.bonds.risk import RiskMetrics
 from fuggers_py.reference.bonds.types import CompoundingKind
 from fuggers_py.core.types import Compounding, Yield
-from fuggers_py.market.curves.fitted_bonds import FittedBondCurve
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 
 from .rich_cheap import rank_rich_cheap
 
@@ -54,7 +54,7 @@ class BondSwitchTrade:
 
 
 def construct_bond_switch(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     cheap_instrument_id: object | None = None,
     rich_instrument_id: object | None = None,
@@ -70,12 +70,12 @@ def construct_bond_switch(
     cheap_dv01 = RiskMetrics.from_bond(
         cheap["bond"],
         _yield_from_decimal(cheap["bond"], _to_decimal(cheap["fitted_yield"])),
-        fit_result.reference_date,
+        fit_result.date(),
     ).dv01
     rich_dv01 = RiskMetrics.from_bond(
         rich["bond"],
         _yield_from_decimal(rich["bond"], _to_decimal(rich["fitted_yield"])),
-        fit_result.reference_date,
+        fit_result.date(),
     ).dv01
     if rich_dv01 == Decimal(0):
         raise ValueError("construct_bond_switch requires a non-zero rich-bond DV01.")

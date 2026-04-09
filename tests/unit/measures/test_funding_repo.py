@@ -18,7 +18,7 @@ class _FlatYieldCurve(YieldCurve):
         self._reference_date = reference_date
         self._rate = rate
 
-    def reference_date(self) -> Date:
+    def date(self) -> Date:
         return self._reference_date
 
     def discount_factor(self, date: Date) -> Decimal:
@@ -27,9 +27,6 @@ class _FlatYieldCurve(YieldCurve):
 
     def zero_rate(self, date: Date) -> Yield:
         return Yield.new(self._rate, Compounding.CONTINUOUS)
-
-    def max_date(self) -> Date:
-        return self._reference_date.add_days(365 * 30)
 
 
 def test_repo_trade_year_fraction_cash_interest_and_repurchase_amounts() -> None:

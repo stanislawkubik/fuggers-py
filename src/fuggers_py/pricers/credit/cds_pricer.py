@@ -91,8 +91,8 @@ class CdsPricer:
             raise ValueError("default_timing_fraction must lie in [0, 1].")
 
     def _valuation_date(self, discount_curve: object, credit_curve: CreditCurve) -> Date:
-        valuation_date = discount_curve.reference_date()
-        credit_reference = credit_curve.reference_date()
+        valuation_date = discount_curve.date()
+        credit_reference = credit_curve.date()
         if credit_reference > valuation_date:
             return credit_reference
         return valuation_date
@@ -121,7 +121,7 @@ class CdsPricer:
 
             period_start = period.start_date if period.start_date >= valuation_date else valuation_date
             survival_start = (
-                Decimal(1) if period_start <= credit_curve.reference_date() else credit_curve.survival_probability(period_start)
+                Decimal(1) if period_start <= credit_curve.date() else credit_curve.survival_probability(period_start)
             )
             survival_end = credit_curve.survival_probability(period.end_date)
             default_probability = survival_start - survival_end

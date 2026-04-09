@@ -12,7 +12,7 @@ from decimal import Decimal
 from fuggers_py.pricers.bonds.risk import RiskMetrics
 from fuggers_py.reference.bonds.types import CompoundingKind
 from fuggers_py.core.types import Compounding, Yield
-from fuggers_py.market.curves.fitted_bonds import FittedBondCurve
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 
 
 def _yield_from_decimal(bond, yield_value: Decimal) -> Yield:
@@ -46,7 +46,7 @@ class ButterflyTrade:
 
 
 def construct_butterfly(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     short_wing_instrument_id: object | None = None,
     body_instrument_id: object | None = None,
@@ -75,17 +75,17 @@ def construct_butterfly(
     short_dv01 = RiskMetrics.from_bond(
         short["bond"],
         _yield_from_decimal(short["bond"], Decimal(str(short["fitted_yield"]))),
-        fit_result.reference_date,
+        fit_result.date(),
     ).dv01
     body_dv01 = RiskMetrics.from_bond(
         body["bond"],
         _yield_from_decimal(body["bond"], Decimal(str(body["fitted_yield"]))),
-        fit_result.reference_date,
+        fit_result.date(),
     ).dv01
     long_dv01 = RiskMetrics.from_bond(
         long["bond"],
         _yield_from_decimal(long["bond"], Decimal(str(long["fitted_yield"]))),
-        fit_result.reference_date,
+        fit_result.date(),
     ).dv01
     if body_dv01 == Decimal(0):
         raise ValueError("construct_butterfly requires a non-zero body DV01.")

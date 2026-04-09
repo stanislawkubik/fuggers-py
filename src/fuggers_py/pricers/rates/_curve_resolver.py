@@ -46,11 +46,8 @@ def _curve_supports_inflation_projection(curve: object | None) -> bool:
 class _ForwardProjectionWrapper:
     curve: YieldCurve
 
-    def reference_date(self) -> Date:
-        return self.curve.reference_date()
-
-    def max_date(self) -> Date:
-        return self.curve.max_date()
+    def date(self) -> Date:
+        return self.curve.date()
 
     def forward_rate(self, start_date: Date, end_date: Date) -> Decimal:
         return self.curve.forward_rate(start_date, end_date)

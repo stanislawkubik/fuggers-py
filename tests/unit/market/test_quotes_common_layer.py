@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
 from decimal import Decimal
 
-from fuggers_py.core import Currency, CurrencyPair, Date, InstrumentId, YearMonth
+from fuggers_py.core import Currency, CurrencyPair, Date, Frequency, InstrumentId, YearMonth
 from fuggers_py.market.quotes import (
     BasisSwapQuote,
     BondFutureQuote,
@@ -19,15 +18,29 @@ from fuggers_py.market.quotes import (
 )
 from fuggers_py.market.snapshot import CurveInput, CurveInstrumentType, MarketDataSnapshot
 from fuggers_py.market.state import QuoteSide
+from fuggers_py.products.bonds import FixedBondBuilder
+from fuggers_py.reference.bonds.types import YieldCalculationRules
+
+
+def _sample_bond(instrument_id: str) -> object:
+    return (
+        FixedBondBuilder.new()
+        .with_issue_date(Date.from_ymd(2024, 1, 15))
+        .with_maturity_date(Date.from_ymd(2029, 1, 15))
+        .with_coupon_rate(Decimal("0.045"))
+        .with_frequency(Frequency.SEMI_ANNUAL)
+        .with_currency(Currency.USD)
+        .with_instrument_id(instrument_id)
+        .with_rules(YieldCalculationRules.us_treasury())
+        .build()
+    )
 
 
 def test_scalar_quote_is_the_canonical_raw_quote_alias() -> None:
     quote = ScalarQuote(
         instrument_id="RAW-1",
         value="101.25",
-        side=QuoteSide.MID,
         as_of=Date.from_ymd(2026, 4, 6),
-        timestamp=datetime(2026, 4, 6, 9, 30),
         currency=Currency.USD,
         source="screen",
     )
@@ -37,9 +50,7 @@ def test_scalar_quote_is_the_canonical_raw_quote_alias() -> None:
     assert quote == RawQuote(
         instrument_id="RAW-1",
         value=Decimal("101.25"),
-        side=QuoteSide.MID,
         as_of=Date.from_ymd(2026, 4, 6),
-        timestamp=datetime(2026, 4, 6, 9, 30),
         currency=Currency.USD,
         source="screen",
     )
@@ -47,9 +58,10 @@ def test_scalar_quote_is_the_canonical_raw_quote_alias() -> None:
 
 def test_quote_families_conform_to_common_instrument_quote_protocol() -> None:
     as_of = Date.from_ymd(2026, 4, 6)
+    bond = _sample_bond("BOND-1")
     quotes = (
-        RawQuote("RAW-1", Decimal("101.25"), QuoteSide.MID, as_of=as_of, currency=Currency.USD, source="raw"),
-        BondQuote("BOND-1", clean_price=Decimal("100.50"), as_of=as_of, currency=Currency.USD, source="bond"),
+        RawQuote("RAW-1", Decimal("101.25"), as_of=as_of, currency=Currency.USD, source="raw"),
+        BondQuote(instrument=bond, clean_price=Decimal("100.50"), as_of=as_of, source="bond"),
         RepoQuote("REPO-1", rate=Decimal("0.045"), as_of=as_of, currency=Currency.USD, source="repo"),
         SwapQuote("SWAP-1", rate=Decimal("0.039"), as_of=as_of, currency=Currency.USD, source="swap"),
         BasisSwapQuote("BASIS-1", basis=Decimal("0.0012"), as_of=as_of, currency=Currency.USD, source="basis"),
@@ -80,11 +92,11 @@ def test_quote_families_conform_to_common_instrument_quote_protocol() -> None:
 
 
 def test_curve_input_quote_annotation_is_widened_and_accepts_bond_quotes() -> None:
+    bond = _sample_bond("BOND-2")
     quote = BondQuote(
-        instrument_id="BOND-2",
+        instrument=bond,
         clean_price=Decimal("99.75"),
         as_of=Date.from_ymd(2026, 4, 6),
-        currency=Currency.USD,
         source="bond",
     )
     curve_input = CurveInput(
@@ -101,7 +113,7 @@ def test_curve_input_quote_annotation_is_widened_and_accepts_bond_quotes() -> No
 
 def test_market_data_snapshot_flattens_instrument_quotes_in_family_order() -> None:
     as_of = Date.from_ymd(2026, 4, 6)
-    raw_quote = RawQuote("RAW-3", Decimal("100.10"), QuoteSide.MID, as_of=as_of, currency=Currency.USD)
+    raw_quote = RawQuote("RAW-3", Decimal("100.10"), as_of=as_of, currency=Currency.USD)
     repo_quote = RepoQuote("REPO-3", rate=Decimal("0.043"), as_of=as_of, currency=Currency.USD)
     swap_quote = SwapQuote("SWAP-3", rate=Decimal("0.038"), as_of=as_of, currency=Currency.USD)
     basis_quote = BasisSwapQuote("BASIS-3", basis=Decimal("0.0009"), as_of=as_of, currency=Currency.USD)
@@ -146,7 +158,7 @@ def test_market_data_snapshot_flattens_instrument_quotes_in_family_order() -> No
 
 def test_snapshot_provider_keeps_scalar_quote_path_unchanged() -> None:
     as_of = Date.from_ymd(2026, 4, 6)
-    raw_quote = RawQuote("RAW-4", Decimal("99.90"), QuoteSide.MID, as_of=as_of, currency=Currency.USD)
+    raw_quote = RawQuote("RAW-4", Decimal("99.90"), as_of=as_of, currency=Currency.USD)
     repo_quote = RepoQuote("REPO-4", rate=Decimal("0.041"), as_of=as_of, currency=Currency.USD)
     snapshot = MarketDataSnapshot(
         as_of=as_of,

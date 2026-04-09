@@ -123,20 +123,14 @@ def test_credit_curve_survival_hazard_and_spread_match_flat_reference_formulas()
             self._value = float(value)
             self._value_type = value_type
 
-        def reference_date(self) -> Date:
+        def date(self) -> Date:
             return self._reference_date
 
-        def value_at(self, t: float) -> float:
+        def value_at_tenor(self, t: float) -> float:
             return self._value
-
-        def tenor_bounds(self) -> tuple[float, float]:
-            return (0.0, 30.0)
 
         def value_type(self) -> ValueType:
             return self._value_type
-
-        def max_date(self) -> Date:
-            return self._reference_date.add_years(30)
 
     hazard_case = fixture["flat_hazard_curve"]
     hazard_curve = CreditCurve(

@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.market.curves.fitted_bonds import FittedBondCurve
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 
 from .basis_swapped_bonds import (
     CommonCurrencyFixedBondView,
@@ -60,7 +60,7 @@ class GlobalUsdSofrRvResult:
 def global_fixed_cashflow_rv(
     asset_swap,
     curves,
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     local_basis_swap=None,
     cross_currency_basis_swap=None,
@@ -75,7 +75,7 @@ def global_fixed_cashflow_rv(
         cross_currency_basis_swap=cross_currency_basis_swap,
         fixed_schedule=fixed_schedule,
     )
-    target_maturity_years = fit_result.reference_date.days_between(fixed_view.maturity_date)
+    target_maturity_years = fit_result.date().days_between(fixed_view.maturity_date)
     benchmark = generate_constant_maturity_benchmark(
         fit_result,
         Decimal(target_maturity_years) / Decimal(365),

@@ -9,9 +9,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.market.state import QuoteSide
-
-
 def _to_decimal(value: object | None) -> Decimal | None:
     """Coerce a nullable market-data scalar to ``Decimal``."""
     if value is None or isinstance(value, Decimal):
@@ -28,16 +25,11 @@ def _coerce_decimal_fields(instance: object, *names: str) -> None:
             object.__setattr__(instance, name, coerced)
 
 
-def _apply_two_sided_quote_defaults(instance: object, *, side: QuoteSide, value_field: str) -> None:
+def _apply_two_sided_quote_defaults(instance: object, *, value_field: str) -> None:
     """Populate bid/ask/mid defaults for two-sided quote records."""
-    side_field = {
-        QuoteSide.BID: "bid",
-        QuoteSide.ASK: "ask",
-        QuoteSide.MID: "mid",
-    }[side]
     value = getattr(instance, value_field)
-    if getattr(instance, side_field) is None and value is not None:
-        object.__setattr__(instance, side_field, value)
+    if getattr(instance, "mid") is None and value is not None:
+        object.__setattr__(instance, "mid", value)
     bid = getattr(instance, "bid")
     ask = getattr(instance, "ask")
     if getattr(instance, "mid") is None and bid is not None and ask is not None:

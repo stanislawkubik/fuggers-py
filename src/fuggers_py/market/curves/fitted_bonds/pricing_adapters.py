@@ -9,8 +9,8 @@ real discount or zero curve with the same generic engine.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Protocol
 
 from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Price
@@ -18,9 +18,9 @@ from fuggers_py.market.quotes import BondQuote
 from fuggers_py.market.sources import InflationFixingSource
 from fuggers_py.pricers.bonds import BondPricer, TipsPricer
 from fuggers_py.products.bonds import TipsBond
-from fuggers_py.products.bonds.traits import Bond
 
-from .fair_value import dirty_price_from_curve
+from ..term_structure import TermStructure
+from .fair_value import _discount_factor_from_curve, dirty_price_from_curve
 
 
 _PRICE_IDENTITY_TOLERANCE = Decimal("1e-8")
@@ -32,11 +32,12 @@ def _require_positive_price(value: Decimal, *, label: str) -> Decimal:
     return value
 
 
-def _nominal_prices(quote: BondQuote, *, bond: Bond, settlement_date: Date) -> tuple[Decimal, Decimal]:
+def _nominal_prices(quote: BondQuote, *, settlement_date: Date) -> tuple[Decimal, Decimal]:
     clean_price = quote.clean_price
     dirty_price = quote.dirty_price
     if clean_price is None and dirty_price is None:
         raise ValueError("Nominal bond quotes require clean_price or dirty_price.")
+    bond = quote.instrument
     accrued_interest = bond.accrued_interest(settlement_date)
     if clean_price is not None:
         clean_price = _require_positive_price(clean_price, label="BondQuote clean_price")
@@ -68,28 +69,32 @@ def _tips_real_prices(quote: BondQuote, *, accrued_interest: Decimal) -> tuple[D
     return clean_price, dirty_price
 
 
-class BondCurvePricingAdapter(Protocol):
-    """Protocol that maps bond quotes into the fitter pricing space."""
+class BondCurvePricingAdapter(ABC):
+    """Common interface that maps bond quotes into the fitter pricing space."""
 
-    def observed_clean_price(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
+    @abstractmethod
+    def observed_clean_price(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
         """Return the observed clean price."""
 
-    def observed_dirty_price(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
+    @abstractmethod
+    def observed_dirty_price(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
         """Return the observed dirty price."""
 
-    def observed_yield(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
+    @abstractmethod
+    def observed_yield(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
         """Return the observed yield implied by the quote."""
 
-    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve, *, bond: Bond, settlement_date: Date) -> Decimal:
+    @abstractmethod
+    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve | TermStructure, *, settlement_date: Date) -> Decimal:
         """Return the curve-implied dirty price."""
 
+    @abstractmethod
     def fitted_yield(
         self,
         quote: BondQuote,
         fitted_clean_price: Decimal,
-        curve: YieldCurve,
+        curve: YieldCurve | TermStructure,
         *,
-        bond: Bond,
         settlement_date: Date,
     ) -> Decimal:
         """Return the fitted yield implied by the fitted clean price."""
@@ -101,47 +106,45 @@ class NominalGovernmentBondPricingAdapter:
     def __init__(self, pricer: BondPricer | None = None) -> None:
         self._pricer = pricer or BondPricer()
 
-    def _validate_bond(self, bond: Bond) -> Bond:
+    def _validate_bond(self, quote: BondQuote):
+        bond = quote.instrument
         if isinstance(bond, TipsBond):
             raise TypeError("NominalGovernmentBondPricingAdapter does not accept TipsBond quotes.")
         return bond
 
-    def observed_clean_price(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
-        bond = self._validate_bond(bond)
-        clean_price, _ = _nominal_prices(quote, bond=bond, settlement_date=settlement_date)
+    def observed_clean_price(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
+        self._validate_bond(quote)
+        clean_price, _ = _nominal_prices(quote, settlement_date=settlement_date)
         return clean_price
 
-    def observed_dirty_price(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
-        bond = self._validate_bond(bond)
-        _, dirty_price = _nominal_prices(quote, bond=bond, settlement_date=settlement_date)
+    def observed_dirty_price(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
+        self._validate_bond(quote)
+        _, dirty_price = _nominal_prices(quote, settlement_date=settlement_date)
         return dirty_price
 
-    def observed_yield(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
-        bond = self._validate_bond(bond)
-        clean_price = self.observed_clean_price(quote, bond=bond, settlement_date=settlement_date)
+    def observed_yield(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
+        bond = self._validate_bond(quote)
+        clean_price = self.observed_clean_price(quote, settlement_date=settlement_date)
         return self._pricer.yield_from_price(
             bond,
             Price.new(clean_price, bond.currency()),
             settlement_date,
         ).ytm.value()
 
-    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve, *, bond: Bond, settlement_date: Date) -> Decimal:
-        del quote
-        bond = self._validate_bond(bond)
+    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve | TermStructure, *, settlement_date: Date) -> Decimal:
+        bond = self._validate_bond(quote)
         return dirty_price_from_curve(bond, curve, settlement_date)
 
     def fitted_yield(
         self,
         quote: BondQuote,
         fitted_clean_price: Decimal,
-        curve: YieldCurve,
+        curve: YieldCurve | TermStructure,
         *,
-        bond: Bond,
         settlement_date: Date,
     ) -> Decimal:
-        del quote
         del curve
-        bond = self._validate_bond(bond)
+        bond = self._validate_bond(quote)
         return self._pricer.yield_from_price(
             bond,
             Price.new(fitted_clean_price, bond.currency()),
@@ -163,31 +166,32 @@ class TipsRealBondPricingAdapter:
         self._bond_pricer = bond_pricer or BondPricer()
         self._tips_pricer = tips_pricer or TipsPricer()
 
-    def _tips_bond(self, bond: Bond) -> TipsBond:
+    def _tips_bond(self, quote: BondQuote) -> TipsBond:
+        bond = quote.instrument
         if not isinstance(bond, TipsBond):
             raise TypeError("TipsRealBondPricingAdapter requires a TipsBond input.")
         return bond
 
-    def _accrued_interest(self, bond: Bond, *, settlement_date: Date) -> Decimal:
-        tips_bond = self._tips_bond(bond)
+    def _accrued_interest(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
+        tips_bond = self._tips_bond(quote)
         return tips_bond.accrued_interest(
             settlement_date,
             fixing_source=self._fixing_source,
         )
 
-    def observed_clean_price(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
-        self._tips_bond(bond)
-        clean_price, _ = _tips_real_prices(quote, accrued_interest=self._accrued_interest(bond, settlement_date=settlement_date))
+    def observed_clean_price(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
+        self._tips_bond(quote)
+        clean_price, _ = _tips_real_prices(quote, accrued_interest=self._accrued_interest(quote, settlement_date=settlement_date))
         return clean_price
 
-    def observed_dirty_price(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
-        self._tips_bond(bond)
-        _, dirty_price = _tips_real_prices(quote, accrued_interest=self._accrued_interest(bond, settlement_date=settlement_date))
+    def observed_dirty_price(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
+        self._tips_bond(quote)
+        _, dirty_price = _tips_real_prices(quote, accrued_interest=self._accrued_interest(quote, settlement_date=settlement_date))
         return dirty_price
 
-    def observed_yield(self, quote: BondQuote, *, bond: Bond, settlement_date: Date) -> Decimal:
-        tips_bond = self._tips_bond(bond)
-        clean_price = self.observed_clean_price(quote, bond=tips_bond, settlement_date=settlement_date)
+    def observed_yield(self, quote: BondQuote, *, settlement_date: Date) -> Decimal:
+        tips_bond = self._tips_bond(quote)
+        clean_price = self.observed_clean_price(quote, settlement_date=settlement_date)
         return self._bond_pricer.yield_from_price(
             tips_bond,
             Price.new(clean_price, tips_bond.currency()),
@@ -195,29 +199,26 @@ class TipsRealBondPricingAdapter:
             fixing_source=self._fixing_source,
         ).ytm.value()
 
-    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve, *, bond: Bond, settlement_date: Date) -> Decimal:
-        del quote
-        tips_bond = self._tips_bond(bond)
+    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve | TermStructure, *, settlement_date: Date) -> Decimal:
+        tips_bond = self._tips_bond(quote)
         present_value = Decimal(0)
         for cash_flow in tips_bond.projected_cash_flows(
             fixing_source=self._fixing_source,
             settlement_date=settlement_date,
         ):
-            present_value += cash_flow.factored_amount() * curve.discount_factor(cash_flow.date)
+            present_value += cash_flow.factored_amount() * _discount_factor_from_curve(curve, cash_flow.date)
         return present_value
 
     def fitted_yield(
         self,
         quote: BondQuote,
         fitted_clean_price: Decimal,
-        curve: YieldCurve,
+        curve: YieldCurve | TermStructure,
         *,
-        bond: Bond,
         settlement_date: Date,
     ) -> Decimal:
-        del quote
         del curve
-        tips_bond = self._tips_bond(bond)
+        tips_bond = self._tips_bond(quote)
         return self._tips_pricer.real_yield_from_clean_price(
             tips_bond,
             Price.new(fitted_clean_price, tips_bond.currency()),

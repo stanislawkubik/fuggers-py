@@ -39,20 +39,11 @@ class _ExplodingPrimaryCurve(TermStructure):
     def __init__(self, reference_date: Date) -> None:
         self._reference_date = reference_date
 
-    def reference_date(self) -> Date:
+    def date(self) -> Date:
         return self._reference_date
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         raise RuntimeError(f"primary curve failure at {t}")
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        return 0.0, 5.0
-
-    def value_type(self) -> ValueType:
-        return ValueType.discount_factor()
-
-    def max_date(self) -> Date:
-        return self._reference_date.add_years(5)
 
 
 def test_resolve_discount_curve_propagates_environment_failures() -> None:
@@ -122,7 +113,7 @@ def test_discrete_curve_propagates_interpolator_failures_in_range() -> None:
     object.__setattr__(curve, "_interpolator", _ExplodingInterpolator())
 
     with pytest.raises(RuntimeError, match="broken interpolator"):
-        curve.value_at(1.5)
+        curve.value_at_tenor(1.5)
 
 
 def test_delegated_curve_propagates_primary_failures_for_missing_value_mode() -> None:
@@ -142,4 +133,4 @@ def test_delegated_curve_propagates_primary_failures_for_missing_value_mode() ->
     )
 
     with pytest.raises(RuntimeError, match="primary curve failure"):
-        delegated.value_at(1.0)
+        delegated.value_at_tenor(1.0)

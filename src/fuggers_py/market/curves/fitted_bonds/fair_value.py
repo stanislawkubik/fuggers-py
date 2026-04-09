@@ -7,9 +7,10 @@ price before the accrued-interest subtraction is applied.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Mapping
+from typing import TYPE_CHECKING, Mapping
 
 from fuggers_py.market.quotes import BondQuote
 from fuggers_py.pricers.bonds import BondPricer
@@ -19,8 +20,11 @@ from fuggers_py.core.types import Date, Price
 from fuggers_py.core.ids import InstrumentId
 from fuggers_py.reference.reference_data import BondReferenceData
 
-from .model import FittedBondCurve
+from ..term_structure import TermStructure
 from .regression import evaluate_regression_adjustment
+
+if TYPE_CHECKING:
+    from .bond_curve import BondCurve
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +48,9 @@ class BondFairValueRequest:
         object.__setattr__(self, "regression_exposures", dict(self.regression_exposures))
         if self.quote is not None and self.instrument_id is not None and self.quote.instrument_id != self.instrument_id:
             raise ValueError("BondFairValueRequest quote instrument_id must match instrument_id.")
+        bond_instrument_id = getattr(self.bond, "instrument_id", None)
+        if self.quote is not None and bond_instrument_id is not None and self.quote.instrument_id != InstrumentId.parse(bond_instrument_id):
+            raise ValueError("BondFairValueRequest quote bond must match request bond.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,7 +70,17 @@ class BondFairValueResult:
     regression_adjustment: Decimal
 
 
-def dirty_price_from_curve(bond: Bond, curve: YieldCurve, settlement_date: Date) -> Decimal:
+def _discount_factor_from_curve(curve: YieldCurve | TermStructure, date: Date) -> Decimal:
+    if isinstance(curve, TermStructure):
+        tenor_years = curve.date_to_tenor(date)
+        if tenor_years <= 0.0:
+            return Decimal(1)
+        zero_rate = float(curve.value_at_tenor(tenor_years))
+        return Decimal(str(math.exp(-tenor_years * zero_rate)))
+    return curve.discount_factor(date)
+
+
+def dirty_price_from_curve(bond: Bond, curve: YieldCurve | TermStructure, settlement_date: Date) -> Decimal:
     """Return the curve-implied dirty price in percent of par.
 
     The price is the discounted sum of remaining cash flows from the settlement
@@ -71,11 +88,11 @@ def dirty_price_from_curve(bond: Bond, curve: YieldCurve, settlement_date: Date)
     """
     present_value = Decimal(0)
     for cash_flow in bond.cash_flows(from_date=settlement_date):
-        present_value += cash_flow.factored_amount() * curve.discount_factor(cash_flow.date)
+        present_value += cash_flow.factored_amount() * _discount_factor_from_curve(curve, cash_flow.date)
     return present_value
 
 
-def clean_price_from_curve(bond: Bond, curve: YieldCurve, settlement_date: Date) -> Decimal:
+def clean_price_from_curve(bond: Bond, curve: YieldCurve | TermStructure, settlement_date: Date) -> Decimal:
     """Return the curve-implied clean price in percent of par.
 
     The clean price is the dirty price minus accrued interest at the settlement
@@ -84,7 +101,7 @@ def clean_price_from_curve(bond: Bond, curve: YieldCurve, settlement_date: Date)
     return dirty_price_from_curve(bond, curve, settlement_date) - bond.accrued_interest(settlement_date)
 
 
-def fair_value_from_curve(bond: Bond, curve: YieldCurve, settlement_date: Date) -> BondFairValueResult:
+def fair_value_from_curve(bond: Bond, curve: YieldCurve | TermStructure, settlement_date: Date) -> BondFairValueResult:
     """Return a fair-value result without any regression adjustment.
 
     The curve-implied clean price is converted back to a yield so callers can
@@ -109,7 +126,7 @@ def fair_value_from_curve(bond: Bond, curve: YieldCurve, settlement_date: Date) 
 
 
 def fair_value_from_fit(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     request: BondFairValueRequest,
 ) -> BondFairValueResult:
     """Return the fitted fair value including the regression adjustment.
@@ -130,24 +147,20 @@ def fair_value_from_fit(
     )
     instrument_id = InstrumentId.parse(instrument_id)
     base_quote = request.quote or BondQuote(
-        instrument_id=instrument_id,
+        instrument=request.bond,
         clean_price=Decimal("100"),
         as_of=request.settlement_date,
-        currency=request.bond.currency(),
     )
     accrued_interest = pricing_adapter.observed_dirty_price(
         base_quote,
-        bond=request.bond,
         settlement_date=request.settlement_date,
     ) - pricing_adapter.observed_clean_price(
         base_quote,
-        bond=request.bond,
         settlement_date=request.settlement_date,
     )
     curve_dirty = pricing_adapter.curve_dirty_price(
         base_quote,
-        fit_result.curve,
-        bond=request.bond,
+        fit_result,
         settlement_date=request.settlement_date,
     )
     curve_clean = curve_dirty - accrued_interest
@@ -155,10 +168,9 @@ def fair_value_from_fit(
         request.quote
         if request.quote is not None
         else BondQuote(
-            instrument_id=instrument_id,
+            instrument=request.bond,
             clean_price=curve_clean,
             as_of=request.settlement_date,
-            currency=request.bond.currency(),
         )
     )
     regression_adjustment = evaluate_regression_adjustment(
@@ -170,8 +182,7 @@ def fair_value_from_fit(
     fair_yield = pricing_adapter.fitted_yield(
         evaluation_quote,
         fair_clean,
-        fit_result.curve,
-        bond=request.bond,
+        fit_result,
         settlement_date=request.settlement_date,
     )
     return BondFairValueResult(

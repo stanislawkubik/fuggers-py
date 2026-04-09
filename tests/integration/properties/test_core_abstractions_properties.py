@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from decimal import Decimal
 
 import pytest
@@ -38,9 +37,7 @@ SupportedInstrumentQuote = (
             RawQuote(
                 instrument_id="RAW-1",
                 value=Decimal("100.25"),
-                side=QuoteSide.MID,
                 as_of=Date.from_ymd(2026, 3, 3),
-                timestamp=datetime(2026, 3, 3, 9, 0),
                 currency=Currency.USD,
                 source="raw",
             ),
@@ -50,9 +47,8 @@ SupportedInstrumentQuote = (
             RepoQuote(
                 instrument_id="REPO-1",
                 rate=Decimal("0.05"),
-                side=QuoteSide.BID,
+                bid=Decimal("0.05"),
                 as_of=Date.from_ymd(2026, 3, 3),
-                timestamp=datetime(2026, 3, 3, 9, 1),
                 currency=Currency.USD,
                 source="repo",
             ),
@@ -62,9 +58,8 @@ SupportedInstrumentQuote = (
             SwapQuote(
                 instrument_id="SWAP-1",
                 rate=Decimal("0.041"),
-                side=QuoteSide.ASK,
+                ask=Decimal("0.041"),
                 as_of=Date.from_ymd(2026, 3, 3),
-                timestamp=datetime(2026, 3, 3, 9, 2),
                 currency=Currency.USD,
                 source="swap",
             ),
@@ -74,9 +69,7 @@ SupportedInstrumentQuote = (
             BasisSwapQuote(
                 instrument_id="BASIS-1",
                 basis=Decimal("0.0012"),
-                side=QuoteSide.MID,
                 as_of=Date.from_ymd(2026, 3, 3),
-                timestamp=datetime(2026, 3, 3, 9, 3),
                 currency=Currency.USD,
                 source="basis",
             ),
@@ -87,9 +80,7 @@ SupportedInstrumentQuote = (
                 instrument_id="FUT-1",
                 price=Decimal("114.50"),
                 delivery_month=YearMonth(2026, 6),
-                side=QuoteSide.MID,
                 as_of=Date.from_ymd(2026, 3, 3),
-                timestamp=datetime(2026, 3, 3, 9, 4),
                 currency=Currency.USD,
                 source="future",
             ),
@@ -99,9 +90,7 @@ SupportedInstrumentQuote = (
             CdsQuote(
                 instrument_id="CDS-1",
                 par_spread=Decimal("0.0125"),
-                side=QuoteSide.MID,
                 as_of=Date.from_ymd(2026, 3, 3),
-                timestamp=datetime(2026, 3, 3, 9, 5),
                 currency=Currency.USD,
                 source="cds",
             ),
@@ -111,9 +100,8 @@ SupportedInstrumentQuote = (
             HaircutQuote(
                 instrument_id="HAIRCUT-1",
                 haircut=Decimal("0.03"),
-                side=QuoteSide.BID,
+                bid=Decimal("0.03"),
                 as_of=Date.from_ymd(2026, 3, 3),
-                timestamp=datetime(2026, 3, 3, 9, 6),
                 currency=Currency.USD,
                 source="haircut",
             ),
@@ -133,8 +121,7 @@ def test_instrument_quote_header_invariants_hold_for_existing_market_quotes(
     assert normalized is not None
     assert isinstance(normalized, InstrumentQuote)
     assert normalized.instrument_id == quote.instrument_id
-    assert normalized.side is side
+    assert normalized.quoted_value() == quote.quoted_value(side)
     assert normalized.as_of == quote.as_of
-    assert normalized.timestamp == quote.timestamp
     assert normalized.source == quote.source
     assert normalized.currency == quote.currency

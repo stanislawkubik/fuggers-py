@@ -56,7 +56,7 @@ def test_curve_ref_wraps_discount_and_term_structure_aliases() -> None:
     assert curve_ref.unwrap() is discount_curve
     assert curve_ref.as_discount_curve() is discount_curve
     assert isinstance(curve_ref.as_curve(), Curve)
-    assert curve_ref.reference_date() == reference_date
+    assert curve_ref.date() == reference_date
     assert curve_ref.discount_factor(reference_date.add_days(365)) == discount_curve.discount_factor(
         reference_date.add_days(365)
     )
@@ -101,5 +101,4 @@ def test_curves_root_re_exports_optional_advanced_curve_models() -> None:
         .build()
     )
 
-    assert ShadowRateCurve(base_curve=base_curve).reference_date() == reference_date
-    assert JumpDiffusionCurve(base_curve=base_curve).max_date() == base_curve.max_date()
+    assert ShadowRateCurve(base_curve=base_curve).date() == reference_date

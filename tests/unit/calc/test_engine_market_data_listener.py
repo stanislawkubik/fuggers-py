@@ -27,7 +27,6 @@ async def test_market_data_listener_marks_dependents_dirty_for_quote_updates() -
             quote=RawQuote(
                 instrument_id=InstrumentId("US1234567890"),
                 value=Decimal("101.25"),
-                side=QuoteSide.MID,
                 as_of=Date.from_ymd(2026, 3, 14),
                 currency=Currency.USD,
             ),

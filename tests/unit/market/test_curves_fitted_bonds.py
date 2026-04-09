@@ -5,9 +5,10 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.market.curves import (
+    BondCurve,
+    BondCurveFitter,
     BondFairValueRequest,
-    FittedBondCurveFitter,
-    FittedBondObjective,
+    CurveObjective,
     clean_price_from_curve,
     fair_value_from_curve,
     fair_value_from_fit,
@@ -41,30 +42,28 @@ def test_exponential_spline_fitted_curve_recovers_prices_yields_and_regression_c
 
 def test_cubic_spline_zero_rate_fit_matches_a_synthetic_cross_section() -> None:
     observations, _ = make_observations(curve_model=cubic_model(), regression_coefficient=Decimal("0.10"))
-    fitter = FittedBondCurveFitter(
-        curve_model=cubic_model(),
-        objective=FittedBondObjective.L2,
-    )
-    result = fitter.fit(
+    result = BondCurve(
         observations,
-        regression_exposures=liquidity_regression_exposures(observations),
+        shape=cubic_model(),
+        objective=CurveObjective.L2,
+        regressors=liquidity_regression_exposures(observations),
         **nominal_fit_kwargs(),
     )
 
     assert result.diagnostics.converged is True
     assert float(result.diagnostics.weighted_rmse_price) == pytest.approx(0.0, abs=1e-6)
-    assert len(result.curve_parameter_names) == 5
+    assert len(result.parameter_names) == 5
     assert float(result.coefficient_map()["liquidity"]) == pytest.approx(0.10, abs=1e-5)
 
 
 def test_l1_fit_path_runs_and_returns_stable_residual_outputs() -> None:
     result = fit_result(
         curve_model=exponential_model(),
-        objective=FittedBondObjective.L1,
+        objective=CurveObjective.L1,
         regression_coefficient=Decimal("0.20"),
     )
 
-    assert result.objective is FittedBondObjective.L1
+    assert result.objective is CurveObjective.L1
     assert result.diagnostics.converged is True
     assert result.diagnostics.max_abs_price_residual < Decimal("0.001")
 

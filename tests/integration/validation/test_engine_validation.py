@@ -102,7 +102,6 @@ async def test_reactive_engine_reference_flow_matches_fixture() -> None:
             quote=RawQuote(
                 instrument_id=instrument_id,
                 value=D(fixture["market_price"]),
-                side=QuoteSide.MID,
                 as_of=Date.parse(fixture["settlement_date"]),
                 currency=Currency.USD,
             ),

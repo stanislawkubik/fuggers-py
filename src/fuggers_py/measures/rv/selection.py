@@ -11,7 +11,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Mapping
 
-from fuggers_py.market.curves.fitted_bonds import FittedBondCurve
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 from fuggers_py.core.ids import InstrumentId
 
 
@@ -153,7 +153,7 @@ class BondChoice:
 
 
 def _eligible_points(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     benchmark_only: bool = False,
     minimum_liquidity_score: object | None = None,
@@ -174,7 +174,7 @@ def _eligible_points(
 
 
 def select_maturity_choice(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     signal: MaturitySignal,
     *,
     benchmark_only: bool = False,
@@ -216,7 +216,7 @@ def select_maturity_choice(
 
 
 def select_maturity_choices(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     signals: tuple[MaturitySignal, ...],
     *,
     benchmark_only: bool = False,
@@ -234,7 +234,7 @@ def select_maturity_choices(
     )
 
 
-def select_bond_choice(fit_result: FittedBondCurve, signal: BondSignal) -> BondChoice:
+def select_bond_choice(fit_result: BondCurve, signal: BondSignal) -> BondChoice:
     """Select the fitted bond referenced by a bond signal."""
     point = fit_result.get_bond(signal.instrument_id)
     benchmark_flag, liquidity_score = _point_metadata(point)
@@ -252,7 +252,7 @@ def select_bond_choice(fit_result: FittedBondCurve, signal: BondSignal) -> BondC
 
 
 def select_bond_choices(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     signals: tuple[BondSignal, ...],
 ) -> tuple[BondChoice, ...]:
     """Select fitted bonds for a sequence of bond signals."""

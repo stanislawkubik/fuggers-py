@@ -32,13 +32,9 @@ class BumpedCurve(YieldCurve):
     base_curve: YieldCurve
     bump: float
 
-    def reference_date(self) -> Date:
-        """Return the reference date of the underlying curve."""
-        return self.base_curve.reference_date()
-
-    def max_date(self) -> Date:
-        """Return the maximum date supported by the underlying curve."""
-        return self.base_curve.max_date()
+    def date(self) -> Date:
+        """Return the date of the underlying curve."""
+        return self.base_curve.date()
 
     def bump_at_tenor(self, t: float) -> float:
         """Return the constant bump applied to tenor ``t``."""
@@ -46,7 +42,7 @@ class BumpedCurve(YieldCurve):
 
     def zero_rate_at_tenor(self, t: float) -> float:
         """Return the bumped continuous zero rate at tenor ``t``."""
-        date = self.reference_date().add_days(int(round(float(t) * 365.0)))
+        date = self.date().add_days(int(round(float(t) * 365.0)))
         return float(self.zero_rate(date).value())
 
     def zero_rate(self, date: Date) -> Yield:
@@ -57,7 +53,7 @@ class BumpedCurve(YieldCurve):
 
     def discount_factor(self, date: Date) -> Decimal:
         """Return the discount factor implied by the bumped zero rate."""
-        t = _tenor_from_date(self.reference_date(), date)
+        t = _tenor_from_date(self.date(), date)
         if t <= 0.0:
             return Decimal(1)
         zero = self.zero_rate(date).value()

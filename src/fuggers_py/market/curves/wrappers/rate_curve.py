@@ -1,9 +1,9 @@
 """Rate-curve wrapper helpers.
 
 These adapters translate a generic term structure into the core
-``YieldCurve`` protocol.  The wrapped curve is still responsible for the
-reference date and tenor interpretation; the wrapper only converts between raw
-node conventions and the yield-curve methods.
+``YieldCurve`` protocol. The wrapped curve is still responsible for the curve
+date and tenor interpretation; the wrapper only converts between raw node
+conventions and the yield-curve methods.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from fuggers_py.core.types import Compounding, Date, Yield
 
 from ..conversion import ValueConverter
 from ..errors import InvalidCurveInput, UnsupportedValueType
+from .._semantics import stored_value_type
 from ..term_structure import TermStructure
 from ..value_type import ValueTypeKind
 
@@ -40,15 +41,10 @@ class RateCurve(YieldCurve):
 
     curve: TermStructure
 
-    def value_type(self) -> ValueTypeKind:
-        """Return the semantic kind stored by the wrapped curve."""
+    def date(self) -> Date:
+        """Return the wrapped curve date."""
 
-        return self.curve.value_type().kind
-
-    def reference_date(self) -> Date:
-        """Return the wrapped curve reference date."""
-
-        return self.curve.reference_date()
+        return self.curve.date()
 
     def _date_to_tenor(self, date: Date) -> float:
         """Convert a calendar date to a tenor using the wrapped curve."""
@@ -65,16 +61,16 @@ class RateCurve(YieldCurve):
         if tau <= 0.0:
             return 1.0
 
-        vt = self.curve.value_type()
+        vt = stored_value_type(self.curve)
         match vt.kind:
             case ValueTypeKind.DISCOUNT_FACTOR:
-                return float(self.curve.value_at(tau))
+                return float(self.curve.value_at_tenor(tau))
             case ValueTypeKind.ZERO_RATE:
-                z = float(self.curve.value_at(tau))
+                z = float(self.curve.value_at_tenor(tau))
                 comp = vt.compounding or Compounding.CONTINUOUS
                 return ValueConverter.zero_to_df(z, tau, comp)
             case ValueTypeKind.SURVIVAL_PROBABILITY:
-                return float(self.curve.value_at(tau))
+                return float(self.curve.value_at_tenor(tau))
             case _:
                 raise UnsupportedValueType(f"Cannot produce a discount factor from {vt}.")
 
@@ -90,13 +86,13 @@ class RateCurve(YieldCurve):
         if tau <= 0.0:
             return 0.0
 
-        vt = self.curve.value_type()
+        vt = stored_value_type(self.curve)
         match vt.kind:
             case ValueTypeKind.DISCOUNT_FACTOR:
-                df = float(self.curve.value_at(tau))
+                df = float(self.curve.value_at_tenor(tau))
                 return ValueConverter.df_to_zero(df, tau, compounding)
             case ValueTypeKind.ZERO_RATE:
-                z = float(self.curve.value_at(tau))
+                z = float(self.curve.value_at_tenor(tau))
                 stored = vt.compounding or Compounding.CONTINUOUS
                 return ValueConverter.convert_compounding(z, stored, compounding)
             case _:
@@ -135,11 +131,6 @@ class RateCurve(YieldCurve):
         t = self._date_to_tenor(date)
         r = self.zero_rate_at_tenor(t, compounding=Compounding.CONTINUOUS)
         return Yield.new(_decimal_from_float(r), Compounding.CONTINUOUS)
-
-    def max_date(self) -> Date:
-        """Return the latest date supported by the wrapped curve."""
-
-        return self.curve.max_date()
 
 
 __all__ = ["RateCurve"]

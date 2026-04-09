@@ -53,15 +53,10 @@ class RepoCurve:
             return curve
         return cls(curve=curve)
 
-    def reference_date(self) -> Date:
-        """Return the curve reference date."""
+    def date(self) -> Date:
+        """Return the curve date."""
 
-        return self.curve.reference_date()
-
-    def max_date(self) -> Date:
-        """Return the curve maximum date."""
-
-        return self.curve.max_date()
+        return self.curve.date()
 
     def discount_factor(self, date: Date) -> Decimal:
         """Return the discount factor on ``date`` as a raw decimal."""

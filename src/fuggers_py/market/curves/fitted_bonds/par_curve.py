@@ -14,14 +14,15 @@ from decimal import Decimal
 from typing import Sequence
 
 from fuggers_py.core import Currency, Date, Frequency, Price
+from fuggers_py.core.traits import YieldCurve as CoreYieldCurve
 from fuggers_py.pricers.bonds import BondPricer
 from fuggers_py.products.bonds import FixedBondBuilder
 from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.reference.bonds.types import YieldCalculationRules
-from fuggers_py.market.curves.wrappers import RateCurve
+from fuggers_py.market.curves.term_structure import TermStructure
 
 from .fair_value import clean_price_from_curve, dirty_price_from_curve
-from .model import FittedBondCurve
+from .bond_curve import BondCurve
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -66,29 +67,29 @@ class ParCurveSpec:
 class FittedParYieldCurve:
     """Direct par-yield curve built from a fitted bond discount or zero curve."""
 
-    curve: RateCurve
+    curve: CoreYieldCurve | TermStructure
     spec: ParCurveSpec = field(default_factory=ParCurveSpec)
     pricer: BondPricer = field(default_factory=BondPricer)
 
     @classmethod
     def from_fit_result(
         cls,
-        fit_result: FittedBondCurve,
+        fit_result: BondCurve,
         spec: ParCurveSpec | None = None,
     ) -> "FittedParYieldCurve":
         """Construct a direct par-yield curve from a fitted-bond result."""
 
-        return cls(curve=fit_result.curve, spec=spec or ParCurveSpec())
+        return cls(curve=fit_result, spec=spec or ParCurveSpec())
 
-    def reference_date(self) -> Date:
-        """Return the fitted-curve reference date."""
+    def date(self) -> Date:
+        """Return the fitted-curve date."""
 
-        return self.curve.reference_date()
+        return self.curve.date()
 
     def settlement_date(self) -> Date:
         """Return the settlement date used for synthetic par-bond pricing."""
 
-        return self.spec.settlement_date or self.reference_date()
+        return self.spec.settlement_date or self.date()
 
     def issue_date(self) -> Date:
         """Return the issue date used to generate synthetic bond schedules."""

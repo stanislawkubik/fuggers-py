@@ -8,15 +8,15 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Sequence
 
 from fuggers_py.core import Compounding, Date
+from fuggers_py.core.traits import YieldCurve as CoreYieldCurve
 
 from ..conversion import ValueConverter
 from ..term_structure import TermStructure
-from ..value_type import ValueType
-from ..wrappers import RateCurve
+from ..fitted_bonds.fair_value import _discount_factor_from_curve
 from ..fitted_bonds.par_curve import FittedParYieldCurve
 
 if TYPE_CHECKING:
-    from ..fitted_bonds.model import FittedBondCurve
+    from ..fitted_bonds.bond_curve import BondCurve
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -42,27 +42,27 @@ class BreakevenZeroCurve(TermStructure):
     greater than 1 when implied inflation is positive.
     """
 
-    nominal_curve: RateCurve
-    real_curve: RateCurve
+    nominal_curve: CoreYieldCurve | TermStructure
+    real_curve: CoreYieldCurve | TermStructure
     compounding: Compounding = Compounding.CONTINUOUS
 
     def __post_init__(self) -> None:
-        if self.nominal_curve.reference_date() != self.real_curve.reference_date():
+        if self.nominal_curve.date() != self.real_curve.date():
             raise ValueError("BreakevenZeroCurve requires nominal and real curves with the same reference_date.")
 
     @classmethod
     def from_fitted_curves(
         cls,
-        nominal_fit_result: FittedBondCurve,
-        real_fit_result: FittedBondCurve,
+        nominal_fit_result: BondCurve,
+        real_fit_result: BondCurve,
         *,
         compounding: Compounding = Compounding.CONTINUOUS,
     ) -> "BreakevenZeroCurve":
         """Construct a zero-breakeven curve from fitted nominal and real curves."""
 
         return cls(
-            nominal_curve=nominal_fit_result.curve,
-            real_curve=real_fit_result.curve,
+            nominal_curve=nominal_fit_result,
+            real_curve=real_fit_result,
             compounding=compounding,
         )
 
@@ -91,27 +91,10 @@ class BreakevenZeroCurve(TermStructure):
         )
         return Decimal(str(breakeven))
 
-    def reference_date(self) -> Date:
-        """Return the shared curve reference date."""
+    def date(self) -> Date:
+        """Return the shared curve date."""
 
-        return self.nominal_curve.reference_date()
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        """Return the shared supported tenor interval."""
-
-        nominal_lo, nominal_hi = self.nominal_curve.curve.tenor_bounds()
-        real_lo, real_hi = self.real_curve.curve.tenor_bounds()
-        return (max(nominal_lo, real_lo), min(nominal_hi, real_hi))
-
-    def value_type(self) -> ValueType:
-        """Return zero-rate semantics for the configured breakeven compounding."""
-
-        return ValueType.zero_rate(self.compounding)
-
-    def max_date(self) -> Date:
-        """Return the latest shared date supported by both fitted curves."""
-
-        return min(self.nominal_curve.max_date(), self.real_curve.max_date())
+        return self.nominal_curve.date()
 
     def discount_factor(self, tenor_years: object) -> Decimal:
         """Return the implied inflation accumulation factor at ``tenor_years``."""
@@ -119,8 +102,8 @@ class BreakevenZeroCurve(TermStructure):
         tenor = _tenor(tenor_years)
         if tenor == Decimal(0):
             return Decimal(1)
-        nominal_df = Decimal(str(self.nominal_curve.discount_factor_at_tenor(float(tenor))))
-        real_df = Decimal(str(self.real_curve.discount_factor_at_tenor(float(tenor))))
+        nominal_df = _discount_factor_from_curve(self.nominal_curve, self.date().add_days(int(round(float(tenor) * 365.0))))
+        real_df = _discount_factor_from_curve(self.real_curve, self.date().add_days(int(round(float(tenor) * 365.0))))
         if nominal_df <= Decimal(0) or real_df <= Decimal(0):
             raise ValueError("BreakevenZeroCurve requires positive nominal and real discount factors.")
         return real_df / nominal_df
@@ -140,7 +123,7 @@ class BreakevenZeroCurve(TermStructure):
         )
         return Decimal(str(breakeven))
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         """Return the configured zero breakeven at tenor ``t``."""
 
         return float(self.zero_breakeven(Decimal(str(float(t)))))
@@ -159,7 +142,7 @@ class BreakevenParCurve:
     real_curve: FittedParYieldCurve
 
     def __post_init__(self) -> None:
-        if self.nominal_curve.reference_date() != self.real_curve.reference_date():
+        if self.nominal_curve.date() != self.real_curve.date():
             raise ValueError("BreakevenParCurve requires nominal and real par curves with the same reference_date.")
         if self.nominal_curve.spec.frequency != self.real_curve.spec.frequency:
             raise ValueError("BreakevenParCurve requires matching nominal and real coupon frequencies.")
@@ -178,10 +161,10 @@ class BreakevenParCurve:
 
         return cls(nominal_curve=nominal_curve, real_curve=real_curve)
 
-    def reference_date(self) -> Date:
-        """Return the shared par-curve reference date."""
+    def date(self) -> Date:
+        """Return the shared par-curve date."""
 
-        return self.nominal_curve.reference_date()
+        return self.nominal_curve.date()
 
     def par_breakeven(self, tenor_years: object) -> Decimal:
         """Return the par breakeven at ``tenor_years``."""

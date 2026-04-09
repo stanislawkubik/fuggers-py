@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.market.curves.fitted_bonds import FittedBondCurve
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 
 from .neutrality import NeutralityTarget, NeutralizedTradeExpression, neutralize_choices
 from .selection import (
@@ -47,7 +47,7 @@ class RvWorkflowResult:
 
 
 def maturity_signal_workflow(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     signals: tuple[MaturitySignal, ...],
     *,
     base_long_notional: object = Decimal("1000000"),
@@ -88,7 +88,7 @@ def maturity_signal_workflow(
 
 
 def bond_signal_workflow(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     signals: tuple[BondSignal, ...],
     *,
     base_long_notional: object = Decimal("1000000"),
@@ -117,7 +117,7 @@ def bond_signal_workflow(
 
 
 def maturity_pair_trade(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     long_signal: MaturitySignal,
     short_signal: MaturitySignal,
@@ -138,7 +138,7 @@ def maturity_pair_trade(
 
 
 def bond_pair_trade(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     *,
     long_signal: BondSignal,
     short_signal: BondSignal,

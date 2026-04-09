@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from fuggers_py.market.curves import FittedBondCurveFitter
+from fuggers_py.market.curves import BondCurveFitter
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,
@@ -39,14 +39,14 @@ def test_clean_and_dirty_quote_fields_are_fit_equivalent(regression_bps: int) ->
         quote_field="dirty",
     )
 
-    clean_result = FittedBondCurveFitter(
+    clean_result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         clean_observations,
         regression_exposures=liquidity_regression_exposures(clean_observations),
         **nominal_fit_kwargs(),
     )
-    dirty_result = FittedBondCurveFitter(
+    dirty_result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         dirty_observations,

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves import FittedBondCurveFitter
+from fuggers_py.market.curves import BondCurveFitter
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,
@@ -22,7 +22,7 @@ def test_fit_runs_with_zero_regressors_on_new_observations() -> None:
         regression_coefficient=Decimal("0"),
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(observations, regression_exposures={}, **nominal_fit_kwargs())
 
@@ -39,7 +39,7 @@ def test_callable_regressor_is_included_for_new_observations() -> None:
         regression_coefficient=Decimal("0.25"),
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         observations,
@@ -60,7 +60,7 @@ def test_dirty_price_quotes_run_on_the_same_observation_surface() -> None:
         quote_field="dirty",
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         observations,

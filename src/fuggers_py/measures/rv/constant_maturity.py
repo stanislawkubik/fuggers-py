@@ -7,8 +7,8 @@ from decimal import Decimal
 
 from fuggers_py.core.types import Currency, Frequency
 from fuggers_py.market.curves.fitted_bonds import (
+    BondCurve,
     FittedParYieldCurve,
-    FittedBondCurve,
     NotionalBenchmark,
     ParCurveSpec,
     build_notional_benchmark,
@@ -34,7 +34,7 @@ class ConstantMaturityBenchmark:
 
 
 def generate_constant_maturity_benchmark(
-    fit_result: FittedBondCurve,
+    fit_result: BondCurve,
     target_maturity_years: object,
     *,
     component_count: int = 2,

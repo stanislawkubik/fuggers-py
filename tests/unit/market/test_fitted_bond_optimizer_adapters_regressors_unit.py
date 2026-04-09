@@ -5,8 +5,8 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.market.curves import (
+    BondCurveFitter,
     BondFairValueRequest,
-    FittedBondCurveFitter,
 )
 from fuggers_py.market.curves.fitted_bonds.fair_value import fair_value_from_fit
 
@@ -29,7 +29,7 @@ def test_new_fit_api_runs_with_zero_regressors() -> None:
         regression_coefficient=Decimal("0"),
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(observations, regression_exposures={}, **nominal_fit_kwargs())
 
@@ -46,7 +46,7 @@ def test_new_fit_api_recovers_one_custom_regressor_and_reports_price_and_bp_resi
         regression_coefficient=Decimal("0.25"),
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         observations,
@@ -69,7 +69,7 @@ def test_fair_value_from_fit_uses_pricing_adapter_and_regressor_context() -> Non
         curve_model=exponential_model(),
         regression_coefficient=Decimal("0.25"),
     )
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         observations,

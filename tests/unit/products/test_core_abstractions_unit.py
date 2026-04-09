@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from decimal import Decimal
 
 import pytest
@@ -9,6 +8,7 @@ import pytest
 from fuggers_py.core import Currency, Date, Frequency, InstrumentId
 from fuggers_py.market.quotes import BondQuote, InstrumentQuote, RawQuote, RepoQuote
 from fuggers_py.market.state import QuoteSide
+from fuggers_py.products.bonds import FixedBondBuilder
 from fuggers_py.products.instruments import (
     HasExpiry,
     HasOptionType,
@@ -16,6 +16,7 @@ from fuggers_py.products.instruments import (
     Instrument,
     KindedInstrumentMixin,
 )
+from fuggers_py.reference.bonds.types import YieldCalculationRules
 from fuggers_py.reference import (
     BondReferenceData,
     BondType,
@@ -43,6 +44,20 @@ class _SyntheticOption:
 
     def underlying_instrument(self) -> object:
         return self.underlying
+
+
+def _sample_bond(instrument_id: str) -> object:
+    return (
+        FixedBondBuilder.new()
+        .with_issue_date(Date.from_ymd(2024, 1, 15))
+        .with_maturity_date(Date.from_ymd(2029, 1, 15))
+        .with_coupon_rate(Decimal("0.045"))
+        .with_frequency(Frequency.SEMI_ANNUAL)
+        .with_currency(Currency.USD)
+        .with_instrument_id(instrument_id)
+        .with_rules(YieldCalculationRules.us_treasury())
+        .build()
+    )
 
 
 @pytest.mark.feature_slug("non-bond-instrument-adoption")
@@ -80,28 +95,23 @@ def test_reference_and_quote_protocols_accept_current_records_without_behavior_c
     raw_quote = RawQuote(
         instrument_id="  UNIT-BOND  ",
         value=Decimal("101.25"),
-        side=QuoteSide.MID,
         as_of=Date.from_ymd(2026, 1, 15),
-        timestamp=datetime(2026, 1, 15, 9, 30),
         currency=Currency.USD,
         source="  feed  ",
     )
     repo_quote = RepoQuote(
         instrument_id="repo-1",
         rate=Decimal("0.051"),
-        side=QuoteSide.BID,
+        bid=Decimal("0.051"),
         as_of=Date.from_ymd(2026, 1, 15),
-        timestamp=datetime(2026, 1, 15, 9, 31),
         currency=Currency.USD,
         source="  repo screen  ",
     )
+    bond = _sample_bond("UNIT-BOND")
     bond_quote = BondQuote(
-        instrument_id="UNIT-BOND",
+        instrument=bond,
         clean_price=Decimal("99.75"),
-        side=QuoteSide.MID,
         as_of=Date.from_ymd(2026, 1, 15),
-        timestamp=datetime(2026, 1, 15, 9, 32),
-        currency=Currency.USD,
         source="  bond screen  ",
     )
 

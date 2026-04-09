@@ -23,13 +23,13 @@ def test_breakeven_notebook_uses_one_bondquote_surface() -> None:
     source = _joined_source()
 
     assert "BondQuote(" in source
-    assert "nominal_bonds =" in source
-    assert "tips_bonds =" in source
-    assert "bonds=nominal_bonds" in source
-    assert "bonds=tips_bonds" in source
-    assert "settlement_date=REFERENCE_DATE" in source
+    assert "instrument=bond" in source
+    assert "as_of=REFERENCE_DATE" in source
     assert "BondObservation(" not in source
+    assert "FittedBondCurveFitter" not in source
     assert "FittedBondObservation" not in source
+    assert "bonds=nominal_bonds" not in source
+    assert "bonds=tips_bonds" not in source
     assert "BondCurveQuote" not in source
     assert "BondCurveQuoteBasis" not in source
     assert "BondCurveObservation" not in source

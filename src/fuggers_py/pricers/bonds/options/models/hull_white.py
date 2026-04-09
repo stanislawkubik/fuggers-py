@@ -43,7 +43,7 @@ class HullWhiteModel:
 
     def short_rate(self, date: Date) -> float:
         """Return the model short rate at ``date`` from the term structure."""
-        ref = self.term_structure.reference_date()
+        ref = self.term_structure.date()
         if date <= ref:
             return 0.0
         return float(self.term_structure.zero_rate(date).value())

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Changed
+
+- refactored the fitted-bond workflow around instrument-bound `BondQuote` inputs, so bond quotes now carry a concrete bond instrument, derive `instrument_id` and `currency` from that instrument, and use `as_of` as the single pricing date
+- renamed the public fitted-bond optimizer from `FittedBondCurveFitter` to `BondCurveFitter`, removed the separate `bonds=` lookup from `fit(...)`, and made the pricing adapters and fair-value helpers read the bond directly from `quote.instrument`
+- added a market-level calibrated `YieldCurve` base plus a concrete nominal `BondCurve`, so the simple bond path is now `BondQuote[instrument] -> BondCurve(quotes, ...)` and the curve object itself owns the runtime term structure, fitted parameters, diagnostics, and point-by-point bond report
+- simplified the generic market quote layer by removing `side`, `timestamp`, and settlement-date-style fields from quote records, changing raw quote storage to one canonical quote per instrument with side views derived on demand
+- widened the fitted-bond spline model inputs so knot tenors, initial zero rates, and exponential decay factors accept simple numeric values and normalize them internally to `Decimal`
+- refreshed the market API docs, module reference, notebook example, and regression coverage so the current nominal-bond and TIPS fitting surfaces are documented against the new quote model
+
 ## 0.2.3
 
 First public release of `fuggers-py`.

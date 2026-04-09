@@ -6,7 +6,7 @@ from typing import cast
 import pytest
 
 from fuggers_py.core import Price
-from fuggers_py.market.curves import BondFairValueRequest, FittedBondCurveFitter
+from fuggers_py.market.curves import BondCurveFitter, BondFairValueRequest
 from fuggers_py.market.curves.fitted_bonds.fair_value import fair_value_from_fit
 from fuggers_py.pricers.bonds import TipsPricer
 from fuggers_py.products.bonds import TipsBond
@@ -37,11 +37,11 @@ def test_nominal_and_tips_fits_run_through_the_same_generic_fitter_without_regre
         regression_coefficient=Decimal("0"),
     )
 
-    nominal_result = FittedBondCurveFitter(
+    nominal_result = BondCurveFitter(
         curve_model=exponential_model(),
         pricing_adapter=nominal_pricing_adapter(),
     ).fit(nominal_observations, regression_exposures={}, **nominal_fit_kwargs())
-    tips_result = FittedBondCurveFitter(
+    tips_result = BondCurveFitter(
         curve_model=exponential_model(),
         pricing_adapter=tips_pricing_adapter(fixing_source),
     ).fit(tips_observations, regression_exposures={}, **tips_fit_kwargs())
@@ -62,7 +62,7 @@ def test_tips_fit_returns_real_yields_and_supports_a_custom_regressor() -> None:
         regression_coefficient=Decimal("0.18"),
     )
     quote = observations[3]
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
         pricing_adapter=tips_pricing_adapter(fixing_source),
     ).fit(

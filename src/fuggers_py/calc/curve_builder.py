@@ -44,9 +44,9 @@ class ForwardRateCurve:
 
     curve: RateCurve
 
-    def reference_date(self):
-        """Return the curve reference date."""
-        return self.curve.reference_date()
+    def date(self):
+        """Return the curve date."""
+        return self.curve.date()
 
     def forward_rate_at(self, tenor: float) -> float:
         """Return the zero rate at a tenor using the wrapped curve."""
@@ -54,7 +54,7 @@ class ForwardRateCurve:
 
     def forward_rate(self, start, end) -> float:
         """Return the implied forward rate between two dates."""
-        reference_date = self.reference_date()
+        reference_date = self.date()
         start_tenor = float(reference_date.days_between(start)) / 365.0
         end_tenor = float(reference_date.days_between(end)) / 365.0
         return self.curve.forward_rate_at_tenors(start_tenor, end_tenor)
@@ -87,10 +87,10 @@ class BuiltCurve:
         """Return the wrapped curve object."""
         return self.curve
 
-    def reference_date(self):
-        """Return the curve reference date when it can be resolved."""
-        if hasattr(self.curve, "reference_date"):
-            return getattr(self.curve, "reference_date")()
+    def date(self):
+        """Return the curve date when it can be resolved."""
+        if hasattr(self.curve, "date"):
+            return getattr(self.curve, "date")()
         if self.curve_inputs is not None:
             return self.curve_inputs.reference_date
         return None
@@ -103,20 +103,11 @@ class _FlatTermStructure(TermStructure):
     _max_tenor: float
     _value_type: ValueType
 
-    def reference_date(self):
+    def date(self):
         return self._reference_date
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         return self._value
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        return (0.0, max(self._max_tenor, 0.0))
-
-    def value_type(self) -> ValueType:
-        return self._value_type
-
-    def max_date(self):
-        return self.reference_date().add_days(int(round(max(self._max_tenor, 0.0) * 365.0)))
 
 
 def _curve_key(curve_id: CurveId | str) -> str:

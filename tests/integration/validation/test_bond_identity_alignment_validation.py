@@ -67,13 +67,13 @@ def test_reference_built_bonds_preserve_instrument_id_and_quote_alignment() -> N
     floating_bond = floating_reference.to_instrument()
     zero_bond = zero_reference.to_instrument()
     fixed_quote = BondQuote(
-        instrument_id=fixed_reference.instrument_id,
+        instrument=fixed_bond,
         clean_price=Decimal("101.25"),
         as_of=Date.from_ymd(2026, 1, 15),
-        currency=Currency.USD,
     )
 
     assert fixed_bond.instrument_id == fixed_reference.instrument_id == fixed_quote.instrument_id
+    assert fixed_quote.instrument is fixed_bond
     assert callable_bond.instrument_id == callable_reference.instrument_id
     assert callable_bond.base_bond.instrument_id == callable_reference.instrument_id
     assert floating_bond.instrument_id == floating_reference.instrument_id

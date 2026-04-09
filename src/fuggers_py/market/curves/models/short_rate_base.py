@@ -56,21 +56,17 @@ class ShortRateModelCurve(YieldCurve, ABC):
 
     base_curve: YieldCurve
 
-    def reference_date(self) -> Date:
-        """Return the reference date of the base curve."""
-        return self.base_curve.reference_date()
-
-    def max_date(self) -> Date:
-        """Return the maximum date supported by the base curve."""
-        return self.base_curve.max_date()
+    def date(self) -> Date:
+        """Return the date of the base curve."""
+        return self.base_curve.date()
 
     def tenor_in_years(self, date: Date) -> Decimal:
         """Return the ACT/365F tenor from the reference date to ``date``."""
-        if date <= self.reference_date():
+        if date <= self.date():
             return Decimal(0)
         return _to_decimal(
             DayCountConvention.ACT_365_FIXED.to_day_count().year_fraction(
-                self.reference_date(),
+                self.date(),
                 date,
             )
         )
@@ -78,8 +74,8 @@ class ShortRateModelCurve(YieldCurve, ABC):
     def _tenor_to_date(self, tenor_years: object) -> Date:
         tenor = _to_decimal(tenor_years)
         if tenor <= Decimal(0):
-            return self.reference_date()
-        return self.reference_date().add_days(int(round(float(tenor) * 365.0)))
+            return self.date()
+        return self.date().add_days(int(round(float(tenor) * 365.0)))
 
     def base_zero_rate_at_tenor(self, tenor_years: object) -> Decimal:
         """Return the base curve zero rate in continuous compounding."""

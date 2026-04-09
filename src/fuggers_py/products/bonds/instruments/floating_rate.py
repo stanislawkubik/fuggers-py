@@ -442,7 +442,7 @@ class FloatingRateNote(KindedInstrumentMixin, BondAnalytics, Bond):
             return _to_decimal(rate, field_name="forward_rate")
 
         if hasattr(forward_curve, "forward_rate_at") and hasattr(forward_curve, "reference_date"):
-            ref = forward_curve.reference_date()
+            ref = forward_curve.date()
             tenor = float(ref.days_between(start)) / 365.0
             rate = getattr(forward_curve, "forward_rate_at")(tenor)
             return _to_decimal(rate, field_name="forward_rate_at")

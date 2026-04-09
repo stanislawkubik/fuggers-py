@@ -187,13 +187,9 @@ class DiscreteCurve(TermStructure):
             case InterpolationMethod.NELSON_SIEGEL | InterpolationMethod.SVENSSON:
                 raise InvalidCurveInput("Parametric models require calibration, not direct construction")
 
-    def reference_date(self) -> Date:
+    def date(self) -> Date:
         """Return the date from which pillar tenors are measured."""
         return self._reference_date
-
-    def value_type(self) -> ValueType:
-        """Return the semantic type describing the stored ordinates."""
-        return self._value_type
 
     def interpolation_method(self) -> InterpolationMethod:
         """Return the interpolation method used between pillars."""
@@ -211,15 +207,12 @@ class DiscreteCurve(TermStructure):
         """Return a copy of the pillar ordinates as raw decimals."""
         return self._values.copy()
 
-    def tenor_bounds(self) -> tuple[float, float]:
-        """Return the inclusive first and last pillar tenor."""
-        return float(self._tenors[0]), float(self._tenors[-1])
-
     def _extrapolate(self, t: float) -> float:
         """Extrapolate a value outside the pillar range when configured."""
 
         tau = float(t)
-        lo, hi = self.tenor_bounds()
+        lo = float(self._tenors[0])
+        hi = float(self._tenors[-1])
         if self._extrapolation_method is ExtrapolationMethod.NONE:
             return float("nan")
         if self._extrapolation_method in {ExtrapolationMethod.FLAT, ExtrapolationMethod.FLAT_FORWARD}:
@@ -240,22 +233,20 @@ class DiscreteCurve(TermStructure):
             return float(y1 + slope * (tau - x1))
         return float("nan")
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         """Return the interpolated or extrapolated curve value at tenor ``t``."""
         tau = float(t)
-        lo, hi = self.tenor_bounds()
+        lo = float(self._tenors[0])
+        hi = float(self._tenors[-1])
         if tau < lo or tau > hi:
             return self._extrapolate(tau)
         return float(self._interpolator.interpolate(tau))
 
-    def derivative_at(self, t: float) -> float | None:
+    def derivative_at_tenor(self, t: float) -> float | None:
         """Return the tenor derivative when the interpolator provides one."""
         tau = float(t)
-        lo, hi = self.tenor_bounds()
+        lo = float(self._tenors[0])
+        hi = float(self._tenors[-1])
         if tau < lo or tau > hi:
             return None
         return float(self._interpolator.derivative(tau))
-
-    def max_date(self) -> Date:
-        """Return the maximum date implied by the final pillar tenor."""
-        return self.tenor_to_date(float(self._tenors[-1]))

@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from fuggers_py.market.curves import FittedBondCurveFitter
+from fuggers_py.market.curves import BondCurveFitter
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,
@@ -31,7 +31,7 @@ def test_callable_regressor_recovers_synthetic_overlay_across_coefficients(regre
         regression_coefficient=coefficient,
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(
         observations,

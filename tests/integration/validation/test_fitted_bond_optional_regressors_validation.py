@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves import FittedBondCurveFitter
+from fuggers_py.market.curves import BondCurveFitter
 
 from tests.helpers._fitted_bond_helpers import exponential_model, make_curve_observations, nominal_fit_kwargs
 
@@ -18,7 +18,7 @@ def test_dirty_price_quotes_fit_cleanly_without_regressors() -> None:
         quote_field="dirty",
     )
 
-    result = FittedBondCurveFitter(
+    result = BondCurveFitter(
         curve_model=exponential_model(),
     ).fit(observations, regression_exposures={}, **nominal_fit_kwargs())
 

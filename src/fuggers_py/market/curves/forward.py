@@ -12,7 +12,6 @@ from fuggers_py.core.types import Compounding, Date
 
 from .errors import InvalidCurveInput
 from .term_structure import TermStructure
-from .value_type import ValueType
 from .wrappers import RateCurve
 
 
@@ -51,19 +50,9 @@ class ForwardCurve(TermStructure):
         """Return the forward horizon in years."""
         return float(self._forward_tenor)
 
-    def reference_date(self) -> Date:
-        """Return the reference date of the underlying discount curve."""
-        return self.discount_curve.reference_date()
-
-    def tenor_bounds(self) -> tuple[float, float]:
-        """Return the tenor range over which the forward horizon fits."""
-        lo, hi = self.discount_curve.curve.tenor_bounds()
-        max_t = float(hi) - float(self._forward_tenor)
-        return float(lo), float(max_t)
-
-    def value_type(self) -> ValueType:
-        """Return a continuously compounded forward-rate value type."""
-        return ValueType.forward_rate(self._forward_tenor, compounding=Compounding.CONTINUOUS)
+    def date(self) -> Date:
+        """Return the date of the underlying discount curve."""
+        return self.discount_curve.date()
 
     def forward_rate_at(self, t: float) -> float:
         """Return the continuously compounded forward rate at tenor ``t``."""
@@ -74,10 +63,6 @@ class ForwardCurve(TermStructure):
             compounding=Compounding.CONTINUOUS,
         )
 
-    def value_at(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         """Alias for :meth:`forward_rate_at`."""
         return self.forward_rate_at(t)
-
-    def max_date(self) -> Date:
-        """Return the maximum date supported by the underlying discount curve."""
-        return self.discount_curve.max_date()

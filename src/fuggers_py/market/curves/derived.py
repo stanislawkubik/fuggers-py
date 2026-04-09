@@ -136,17 +136,13 @@ class DerivedCurve(YieldCurve):
         curve = base_curve if isinstance(base_curve, YieldCurve) else RateCurve(base_curve)
         return cls.from_curve(curve, CurveTransform.function(fn))
 
-    def reference_date(self) -> Date:
-        """Return the reference date of the base curve."""
-        return self.base_curve.reference_date()
-
-    def max_date(self) -> Date:
-        """Return the maximum date supported by the base curve."""
-        return self.base_curve.max_date()
+    def date(self) -> Date:
+        """Return the date of the base curve."""
+        return self.base_curve.date()
 
     def zero_rate(self, date: Date) -> Yield:
         """Return the transformed continuously compounded zero rate."""
-        tenor = max(float(self.reference_date().days_between(date)) / 365.0, 0.0)
+        tenor = max(float(self.date().days_between(date)) / 365.0, 0.0)
         zero = float(self.base_curve.zero_rate(date).convert_to(Compounding.CONTINUOUS).value())
         for transform in self.transforms:
             zero = transform.apply(tenor=tenor, base_zero=zero, date=date)
@@ -154,7 +150,7 @@ class DerivedCurve(YieldCurve):
 
     def discount_factor(self, date: Date) -> Decimal:
         """Return the discount factor implied by the transformed zero rate."""
-        tenor = max(float(self.reference_date().days_between(date)) / 365.0, 0.0)
+        tenor = max(float(self.date().days_between(date)) / 365.0, 0.0)
         if tenor <= 0.0:
             return Decimal(1)
         zero = float(self.zero_rate(date).value())

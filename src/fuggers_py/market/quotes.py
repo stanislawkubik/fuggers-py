@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import Protocol, TypeAlias, runtime_checkable
@@ -11,6 +10,7 @@ from typing import Protocol, TypeAlias, runtime_checkable
 from fuggers_py.core.ids import CurrencyPair, InstrumentId, YearMonth
 from fuggers_py.core.types import Currency, Date
 from fuggers_py.market.state import QuoteSide
+from fuggers_py.products.bonds.traits import Bond
 
 from ._shared import _apply_two_sided_quote_defaults, _coerce_decimal_fields
 
@@ -29,17 +29,15 @@ class SourceType(str, Enum):
 class RawQuote:
     """Generic quote record with normalized identifiers and raw decimals.
 
-    ``value`` stores the side-specific quote. Bid/ask/mid views can be derived
-    from the stored fields, and missing side fields are populated from the
-    active side when possible. The economic meaning comes from the instrument
-    identifier and source metadata rather than from this container.
+    ``value`` stores the canonical quote value. Bid/ask/mid views can be
+    derived from the stored fields when present. The economic meaning comes
+    from the instrument identifier and source metadata rather than from this
+    container.
     """
 
     instrument_id: InstrumentId
     value: Decimal
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     currency: Currency | None = None
     source: str | None = None
     source_type: SourceType | None = None
@@ -73,56 +71,44 @@ class RawQuote:
             object.__setattr__(self, "source", self.source.strip())
         if self.venue is not None:
             object.__setattr__(self, "venue", self.venue.strip())
-        side_field = {
-            QuoteSide.BID: "bid",
-            QuoteSide.ASK: "ask",
-            QuoteSide.MID: "mid",
-        }[self.side]
-        if getattr(self, side_field) is None:
-            object.__setattr__(self, side_field, self.value)
+        if self.mid is None:
+            object.__setattr__(self, "mid", self.value)
         if self.mid is None and self.bid is not None and self.ask is not None:
             object.__setattr__(self, "mid", (self.bid + self.ask) / Decimal(2))
 
     def quoted_value(self, side: QuoteSide = QuoteSide.MID) -> Decimal | None:
         """Return the best available quote for the requested side."""
         if side is QuoteSide.BID:
-            if self.bid is not None:
-                return self.bid
-            return self.value if self.side is QuoteSide.BID else None
+            return self.bid
         if side is QuoteSide.ASK:
-            if self.ask is not None:
-                return self.ask
-            return self.value if self.side is QuoteSide.ASK else None
+            return self.ask
         if self.mid is not None:
             return self.mid
-        return self.value if self.side is QuoteSide.MID else None
+        return self.value
 
     def for_side(self, side: QuoteSide) -> "RawQuote" | None:
         """Return a copy normalized to a different quote side."""
         quoted_value = self.quoted_value(side)
         if quoted_value is None:
             return None
-        return replace(self, value=quoted_value, side=side)
+        return replace(self, value=quoted_value)
 
 
 @dataclass(frozen=True, slots=True)
 class BondQuote:
-    """Pure market quote for a bond instrument."""
+    """Market quote bound to a concrete bond instrument."""
 
-    instrument_id: InstrumentId
+    instrument: Bond
     clean_price: Decimal | None = None
     dirty_price: Decimal | None = None
     accrued_interest: Decimal | None = None
     yield_to_maturity: Decimal | None = None
     yield_to_worst: Decimal | None = None
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     source: str | None = None
     currency: Currency | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "instrument_id", InstrumentId.parse(self.instrument_id))
         _coerce_decimal_fields(
             self,
             "clean_price",
@@ -131,8 +117,30 @@ class BondQuote:
             "yield_to_maturity",
             "yield_to_worst",
         )
+        instrument_id = getattr(self.instrument, "instrument_id", None)
+        if instrument_id is None:
+            raise ValueError("BondQuote requires a concrete bond instrument with instrument_id.")
         if self.source is not None:
             object.__setattr__(self, "source", self.source.strip())
+        instrument_currency = self.instrument.currency()
+        if self.currency is None:
+            object.__setattr__(self, "currency", instrument_currency)
+        elif self.currency != instrument_currency:
+            raise ValueError("BondQuote currency must match the bond currency.")
+
+    @property
+    def instrument_id(self) -> InstrumentId:
+        """Return the instrument id of the bound bond."""
+        instrument_id = getattr(self.instrument, "instrument_id", None)
+        if instrument_id is None:
+            raise ValueError("BondQuote requires a concrete bond instrument with instrument_id.")
+        return InstrumentId.parse(instrument_id)
+
+    def resolved_settlement_date(self) -> Date:
+        """Return the pricing date carried by the quote."""
+        if self.as_of is None:
+            raise ValueError("BondQuote requires as_of.")
+        return self.as_of
 
 
 @dataclass(frozen=True, slots=True)
@@ -146,9 +154,7 @@ class RepoQuote:
     end_date: Date | None = None
     term: str | None = None
     collateral_type: str | None = None
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     currency: Currency | None = None
     source: str | None = None
     bid: Decimal | None = None
@@ -164,7 +170,7 @@ class RepoQuote:
             object.__setattr__(self, "collateral_type", self.collateral_type.strip())
         if self.source is not None:
             object.__setattr__(self, "source", self.source.strip())
-        _apply_two_sided_quote_defaults(self, side=self.side, value_field="rate")
+        _apply_two_sided_quote_defaults(self, value_field="rate")
 
     def quoted_value(self, side: QuoteSide = QuoteSide.MID) -> Decimal | None:
         """Return the side-specific repo rate when present."""
@@ -179,7 +185,7 @@ class RepoQuote:
         quoted_value = self.quoted_value(side)
         if quoted_value is None:
             return None
-        return replace(self, rate=quoted_value, side=side)
+        return replace(self, rate=quoted_value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,9 +197,7 @@ class SwapQuote:
     tenor: str | None = None
     floating_index: str | None = None
     fixed_frequency: str | None = None
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     currency: Currency | None = None
     source: str | None = None
     bid: Decimal | None = None
@@ -211,7 +215,7 @@ class SwapQuote:
             object.__setattr__(self, "fixed_frequency", self.fixed_frequency.strip().upper())
         if self.source is not None:
             object.__setattr__(self, "source", self.source.strip())
-        _apply_two_sided_quote_defaults(self, side=self.side, value_field="rate")
+        _apply_two_sided_quote_defaults(self, value_field="rate")
 
     def quoted_value(self, side: QuoteSide = QuoteSide.MID) -> Decimal | None:
         """Return the side-specific swap rate when present."""
@@ -226,7 +230,7 @@ class SwapQuote:
         quoted_value = self.quoted_value(side)
         if quoted_value is None:
             return None
-        return replace(self, rate=quoted_value, side=side)
+        return replace(self, rate=quoted_value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -238,9 +242,7 @@ class BasisSwapQuote:
     tenor: str | None = None
     pay_index: str | None = None
     receive_index: str | None = None
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     currency: Currency | None = None
     source: str | None = None
     bid: Decimal | None = None
@@ -258,7 +260,7 @@ class BasisSwapQuote:
             object.__setattr__(self, "receive_index", self.receive_index.strip().upper())
         if self.source is not None:
             object.__setattr__(self, "source", self.source.strip())
-        _apply_two_sided_quote_defaults(self, side=self.side, value_field="basis")
+        _apply_two_sided_quote_defaults(self, value_field="basis")
 
     def quoted_value(self, side: QuoteSide = QuoteSide.MID) -> Decimal | None:
         """Return the side-specific basis when present."""
@@ -273,7 +275,7 @@ class BasisSwapQuote:
         quoted_value = self.quoted_value(side)
         if quoted_value is None:
             return None
-        return replace(self, basis=quoted_value, side=side)
+        return replace(self, basis=quoted_value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -286,9 +288,7 @@ class BondFutureQuote:
     conversion_factor: Decimal | None = None
     implied_repo_rate: Decimal | None = None
     cheapest_to_deliver: InstrumentId | None = None
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     currency: Currency | None = None
     source: str | None = None
     bid: Decimal | None = None
@@ -304,7 +304,7 @@ class BondFutureQuote:
         _coerce_decimal_fields(self, "price", "conversion_factor", "implied_repo_rate", "bid", "ask", "mid")
         if self.source is not None:
             object.__setattr__(self, "source", self.source.strip())
-        _apply_two_sided_quote_defaults(self, side=self.side, value_field="price")
+        _apply_two_sided_quote_defaults(self, value_field="price")
 
     def quoted_value(self, side: QuoteSide = QuoteSide.MID) -> Decimal | None:
         """Return the side-specific futures price when present."""
@@ -319,7 +319,7 @@ class BondFutureQuote:
         quoted_value = self.quoted_value(side)
         if quoted_value is None:
             return None
-        return replace(self, price=quoted_value, side=side)
+        return replace(self, price=quoted_value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -330,9 +330,7 @@ class FxForwardQuote:
     forward_rate: Decimal | None = None
     points: Decimal | None = None
     spot_rate: Decimal | None = None
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     source: str | None = None
     bid: Decimal | None = None
     ask: Decimal | None = None
@@ -345,7 +343,7 @@ class FxForwardQuote:
             object.__setattr__(self, "forward_rate", self.spot_rate + self.points)
         if self.source is not None:
             object.__setattr__(self, "source", self.source.strip())
-        _apply_two_sided_quote_defaults(self, side=self.side, value_field="forward_rate")
+        _apply_two_sided_quote_defaults(self, value_field="forward_rate")
 
     @property
     def instrument_id(self) -> InstrumentId:
@@ -370,7 +368,7 @@ class FxForwardQuote:
         quoted_value = self.quoted_value(side)
         if quoted_value is None:
             return None
-        return replace(self, forward_rate=quoted_value, side=side)
+        return replace(self, forward_rate=quoted_value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -383,9 +381,7 @@ class CdsQuote:
     recovery_rate: Decimal | None = None
     tenor: str | None = None
     reference_entity: str | None = None
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     currency: Currency | None = None
     source: str | None = None
     bid: Decimal | None = None
@@ -405,10 +401,6 @@ class CdsQuote:
             object.__setattr__(self, "mid", (self.bid + self.ask) / Decimal(2))
         elif self.mid is None:
             object.__setattr__(self, "mid", self.par_spread if self.par_spread is not None else self.upfront)
-        if self.bid is None and self.side is QuoteSide.BID:
-            object.__setattr__(self, "bid", self.mid)
-        if self.ask is None and self.side is QuoteSide.ASK:
-            object.__setattr__(self, "ask", self.mid)
 
     def quoted_value(self, side: QuoteSide = QuoteSide.MID) -> Decimal | None:
         """Return the side-specific CDS spread when present."""
@@ -423,7 +415,7 @@ class CdsQuote:
         quoted_value = self.quoted_value(side)
         if quoted_value is None:
             return None
-        return replace(self, par_spread=quoted_value, side=side)
+        return replace(self, par_spread=quoted_value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -433,9 +425,7 @@ class HaircutQuote:
     instrument_id: InstrumentId
     haircut: Decimal | None = None
     collateral_type: str | None = None
-    side: QuoteSide = QuoteSide.MID
     as_of: Date | None = None
-    timestamp: datetime | None = None
     currency: Currency | None = None
     source: str | None = None
     bid: Decimal | None = None
@@ -449,7 +439,7 @@ class HaircutQuote:
             object.__setattr__(self, "collateral_type", self.collateral_type.strip())
         if self.source is not None:
             object.__setattr__(self, "source", self.source.strip())
-        _apply_two_sided_quote_defaults(self, side=self.side, value_field="haircut")
+        _apply_two_sided_quote_defaults(self, value_field="haircut")
 
     def quoted_value(self, side: QuoteSide = QuoteSide.MID) -> Decimal | None:
         """Return the side-specific haircut when present."""
@@ -464,7 +454,7 @@ class HaircutQuote:
         quoted_value = self.quoted_value(side)
         if quoted_value is None:
             return None
-        return replace(self, haircut=quoted_value, side=side)
+        return replace(self, haircut=quoted_value)
 
 
 @runtime_checkable
@@ -476,15 +466,7 @@ class InstrumentQuote(Protocol):
         ...
 
     @property
-    def side(self) -> QuoteSide | None:
-        ...
-
-    @property
     def as_of(self) -> Date | None:
-        ...
-
-    @property
-    def timestamp(self) -> datetime | None:
         ...
 
     @property

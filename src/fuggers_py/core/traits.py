@@ -25,16 +25,16 @@ class YieldCurve(ABC):
     """
 
     @abstractmethod
-    def reference_date(self) -> Date:
-        """Return the curve's reference or anchor date."""
+    def date(self) -> Date:
+        """Return the curve's anchor date."""
 
     @abstractmethod
     def discount_factor(self, date: Date) -> Decimal:
-        """Return the discount factor from `reference_date()` to `date`."""
+        """Return the discount factor from `date()` to `date`."""
 
     @abstractmethod
     def zero_rate(self, date: Date) -> Yield:
-        """Return the zero rate from `reference_date()` to `date`."""
+        """Return the zero rate from `date()` to `date`."""
 
     def forward_rate(self, start: Date, end: Date) -> Decimal:
         """Return the annualized simple forward rate implied by discount factors.
@@ -58,10 +58,6 @@ class YieldCurve(ABC):
 
         t = Decimal(day_count) / Decimal(365)
         return (df_start / df_end - Decimal(1)) / t
-
-    @abstractmethod
-    def max_date(self) -> Date:
-        """Return the maximum supported curve date."""
 
 
 class PricingEngine(ABC):
