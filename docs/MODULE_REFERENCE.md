@@ -10,6 +10,8 @@ For each module, it records:
 
 Use [SRC_STRUCTURE.md](SRC_STRUCTURE.md) for the package/directory map and this document for the file-level reference.
 
+Curve-related module entries are intentionally omitted while that part of the library is being rewritten.
+
 ## Root package files
 
 Root package metadata, version plumbing, and top-level exports.
@@ -119,13 +121,6 @@ Coordination protocols and deterministic in-memory helpers.
 
 - Module path: `calc/coordination.py`
 - Top-level classes/functions: `_normalize_text`, `ServiceRegistration`, `PartitionAssignment`, `ServiceRegistry`, `PartitionRegistry`, `LeaderElection`, `InMemoryServiceRegistry`, `InMemoryPartitionRegistry`, `InMemoryLeaderElection`
-
-### `calc/curve_builder.py`
-
-Small synchronous curve builder for calc-layer workflows.
-
-- Module path: `calc/curve_builder.py`
-- Top-level classes/functions: `ForwardRateCurve`, `BuiltCurve`, `_FlatTermStructure`, `_curve_key`, `_curve_inputs`, `_single_pillar_curve`, `CurveBuilder`
 
 ### `calc/errors.py`
 
@@ -245,399 +240,14 @@ Fundamental value types for fixed-income analytics.
 
 ## `market/`
 
-Dynamic market-state objects, market data records, indices, and curves.
+Dynamic market-state objects, market data records, and indices.
 
 ### `market/__init__.py`
 
-Market-layer state, quotes, providers, fixings, and curves.
+Market-layer state, quotes, providers, fixings, and indices.
 
 - Module path: `market/__init__.py`
 - Top-level classes/functions: `__getattr__`, `__dir__`
-
-### `market/curves/__init__.py`
-
-Primary home for generic and specialized market-curve infrastructure.
-
-- Module path: `market/curves/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/bond_instruments/__init__.py`
-
-Bond-specific curve-construction helpers.
-
-- Module path: `market/curves/bond_instruments/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/bond_instruments/conventions.py`
-
-Curve-instrument day-count and market convention helpers.
-
-- Module path: `market/curves/bond_instruments/conventions.py`
-- Top-level classes/functions: `day_count_factor`, `MarketConvention`
-
-### `market/curves/bond_instruments/government.py`
-
-Government bond curve instruments.
-
-- Module path: `market/curves/bond_instruments/government.py`
-- Top-level classes/functions: `_to_decimal`, `_price_to_percentage`, `GovernmentZeroCoupon`, `GovernmentCouponBond`
-
-### `market/curves/builder/__init__.py`
-
-Upstream-style curve builders.
-
-- Module path: `market/curves/builder/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/builder/curve_builder.py`
-
-Compatibility-focused curve builders.
-
-- Module path: `market/curves/builder/curve_builder.py`
-- Top-level classes/functions: `CurveFamily`, `InstrumentType`, `CurveInstrument`, `_float`, `CurveBuilder`
-
-### `market/curves/builders.py`
-
-Simple builders for common rate curves.
-
-- Module path: `market/curves/builders.py`
-- Top-level classes/functions: `_float`, `DiscountCurveBuilder`, `ZeroCurveBuilder`
-
-### `market/curves/bumping/__init__.py`
-
-Curve bumping helpers for scenario analysis.
-
-- Module path: `market/curves/bumping/__init__.py`
-- Top-level classes/functions: `key_rate_profile`
-
-### `market/curves/bumping/key_rate.py`
-
-Key-rate bump helpers.
-
-- Module path: `market/curves/bumping/key_rate.py`
-- Top-level classes/functions: `_to_decimal`, `_tenor_to_years`, `_tenor_from_date`, `KeyRateBump`, `KeyRateBumpedCurve`
-
-### `market/curves/bumping/parallel.py`
-
-Parallel zero-rate bump helpers.
-
-- Module path: `market/curves/bumping/parallel.py`
-- Top-level classes/functions: `_to_decimal`, `_tenor_from_date`, `BumpedCurve`, `ParallelBump`
-
-### `market/curves/bumping/scenario.py`
-
-Scenario bump helpers.
-
-- Module path: `market/curves/bumping/scenario.py`
-- Top-level classes/functions: `_to_decimal`, `_tenor_to_years`, `_tenor_from_date`, `Scenario`, `ScenarioCurve`, `parallel_up_50bp`, `parallel_down_50bp`, `steepener_50bp`, `flattener_50bp`
-
-### `market/curves/calibration/__init__.py`
-
-Calibration helpers for :mod:`fuggers_py.market.curves`.
-
-- Module path: `market/curves/calibration/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/calibration/global_fit.py`
-
-Parametric curve fitting for zero-rate and instrument data.
-
-- Module path: `market/curves/calibration/global_fit.py`
-- Top-level classes/functions: `_to_float_array`, `ParametricModel`, `FitterConfig`, `GlobalFitResult`, `_nelson_siegel_zero`, `_svensson_zero`, `ParametricZeroCurve`, `GlobalFitter`
-
-### `market/curves/calibration/instruments.py`
-
-Calibration instruments for rate curves.
-
-- Module path: `market/curves/calibration/instruments.py`
-- Top-level classes/functions: `_to_decimal`, `_resolve_date`, `CalibrationInstrument`, `Deposit`, `Fra`, `Swap`, `Ois`, `Future`, `BasisSwap`, `InstrumentSet`
-
-### `market/curves/calibration/piecewise.py`
-
-Thin wrapper around the sequential bootstrapper.
-
-- Module path: `market/curves/calibration/piecewise.py`
-- Top-level classes/functions: `PiecewiseBootstrapper`
-
-### `market/curves/calibration/sequential.py`
-
-Sequential curve bootstrapper.
-
-- Module path: `market/curves/calibration/sequential.py`
-- Top-level classes/functions: `_to_decimal`, `_float`, `_tenor_years`, `CalibrationInstrumentResult`, `CalibrationResult`, `SequentialBootstrapper`
-
-### `market/curves/conversion.py`
-
-Value conversion utilities for curve primitives.
-
-- Module path: `market/curves/conversion.py`
-- Top-level classes/functions: `_require_positive`, `_require_probability`, `ValueConverter`
-
-### `market/curves/credit/__init__.py`
-
-Specialized credit-curve calibration helpers.
-
-- Module path: `market/curves/credit/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/credit/bootstrap.py`
-
-Bootstrap CDS-implied credit curves.
-
-- Module path: `market/curves/credit/bootstrap.py`
-- Top-level classes/functions: `_to_decimal`, `_coerce_currency`, `_coerce_frequency`, `_coerce_day_count`, `_coerce_calendar`, `_coerce_business_day_convention`, `_instrument_key`, `CdsBootstrapPoint`, `CdsBootstrapResult`, `_BootstrapInstrument`, `_lookup_reference_data`, `_build_credit_curve`, `_resolve_tenor`, `_resolve_recovery_rate`, `_build_bootstrap_instruments`, `bootstrap_credit_curve`
-
-### `market/curves/delegated.py`
-
-Delegated curves that fall back to a secondary source.
-
-- Module path: `market/curves/delegated.py`
-- Top-level classes/functions: `DelegationFallback`, `_YieldCurveTermStructure`, `_as_term_structure`, `DelegatedCurve`
-
-### `market/curves/derived.py`
-
-Derived curves built from a base curve and simple transforms.
-
-- Module path: `market/curves/derived.py`
-- Top-level classes/functions: `_to_decimal`, `CurveTransformKind`, `CurveTransform`, `DerivedCurve`
-
-### `market/curves/discrete.py`
-
-Discrete pillar-based curve implementation.
-
-- Module path: `market/curves/discrete.py`
-- Top-level classes/functions: `InterpolationMethod`, `ExtrapolationMethod`, `_PiecewiseConstantInterpolator`, `_as_1d_float_array`, `DiscreteCurve`
-
-### `market/curves/errors.py`
-
-Exception hierarchy for :mod:`fuggers_py.market.curves`.
-
-- Module path: `market/curves/errors.py`
-- Top-level classes/functions: `CurvesError`, `CurveConstructionError`, `InvalidCurveInput`, `TenorOutOfBounds`, `UnsupportedValueType`, `MissingCurveError`, `BuilderError`, `MixedPillarTypes`
-
-### `market/curves/fitted_bonds/__init__.py`
-
-Cross-sectional fitted bond curves and fair-value helpers.
-
-- Module path: `market/curves/fitted_bonds/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/fitted_bonds/_splines.py`
-
-Internal spline helpers for fitted bond curves.
-
-- Module path: `market/curves/fitted_bonds/_splines.py`
-- Top-level classes/functions: `NaturalCubicSplineGrid`, `cached_natural_cubic_spline_grid`
-
-### `market/curves/fitted_bonds/fair_value.py`
-
-Fair-value helpers for fitted bond curves.
-
-- Module path: `market/curves/fitted_bonds/fair_value.py`
-- Top-level classes/functions: `_to_decimal`, `BondFairValueRequest`, `BondFairValueResult`, `dirty_price_from_curve`, `clean_price_from_curve`, `fair_value_from_curve`, `fair_value_from_fit`
-
-### `market/curves/fitted_bonds/model.py`
-
-Bond-curve shapes and typed calibration records.
-
-- Module path: `market/curves/fitted_bonds/model.py`
-- Top-level classes/functions: `_to_decimal`, `_decimal_tuple`, `FittedBondCurveFamily`, `BondCurveDiagnostics`, `BondCurvePoint`, `_normalize_spline_knot_tenors`, `_validate_spline_range`, `_support_knot_array`, `_cached_spline_grid`, `ExponentialSplineZeroRateCurve`, `CubicSplineZeroRateCurve`, `ExponentialSplineCurveModel`, `CubicSplineZeroRateCurveModel`
-
-### `market/curves/fitted_bonds/bond_curve.py`
-
-Concrete calibrated nominal bond curve.
-
-- Module path: `market/curves/fitted_bonds/bond_curve.py`
-- Top-level classes/functions: `_to_decimal`, `BondCurve`
-
-### `market/curves/fitted_bonds/notional_benchmarks.py`
-
-Notional benchmark helpers for fitted bond-curve analytics.
-
-- Module path: `market/curves/fitted_bonds/notional_benchmarks.py`
-- Top-level classes/functions: `_to_decimal`, `BenchmarkComponent`, `NotionalBenchmark`, `build_notional_benchmark`
-
-### `market/curves/fitted_bonds/optimization.py`
-
-Private optimization helpers for calibrated bond curves.
-
-- Module path: `market/curves/fitted_bonds/optimization.py`
-- Top-level classes/functions: `_to_decimal`, `_resolve_reference_date`, `_maturity_date`, `_maturity_years`, `_coupon_rate`, `_weighted_linear_least_squares`, `_ProfiledCurveEvaluation`, `_BondCurveCalibration`, `_fit_bond_curve`, `BondCurveFitter`
-
-### `market/curves/yield_curve.py`
-
-Common calibrated yield-curve abstractions.
-
-- Module path: `market/curves/yield_curve.py`
-- Top-level classes/functions: `_to_decimal`, `CurveObjective`, `CurveDiagnostics`, `YieldCurve`
-
-### `market/curves/fitted_bonds/par_curve.py`
-
-Direct par-yield helpers built from fitted bond curves.
-
-- Module path: `market/curves/fitted_bonds/par_curve.py`
-- Top-level classes/functions: `_to_decimal`, `ParCurveSpec`, `FittedParYieldCurve`
-
-### `market/curves/fitted_bonds/pricing_adapters.py`
-
-Pricing adapters for fitted bond curves.
-
-- Module path: `market/curves/fitted_bonds/pricing_adapters.py`
-- Top-level classes/functions: `BondCurvePricingAdapter`, `_quote_basis_error`, `NominalGovernmentBondPricingAdapter`, `TipsRealBondPricingAdapter`
-
-### `market/curves/fitted_bonds/regression.py`
-
-Regression helpers for fitted bond curves.
-
-- Module path: `market/curves/fitted_bonds/regression.py`
-- Top-level classes/functions: `_to_decimal`, `_normalize_name`, `_normalized_exposure_map`, `build_regression_matrix`, `evaluate_regression_adjustment`
-
-### `market/curves/forward.py`
-
-Forward curve wrapper for discount-factor implied forward rates.
-
-- Module path: `market/curves/forward.py`
-- Top-level classes/functions: `ForwardCurve`
-
-### `market/curves/funding/__init__.py`
-
-Specialized funding-curve helpers.
-
-- Module path: `market/curves/funding/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/funding/repo_curve.py`
-
-Repo-curve wrapper helpers.
-
-- Module path: `market/curves/funding/repo_curve.py`
-- Top-level classes/functions: `_to_decimal`, `RepoCurve`
-
-### `market/curves/inflation/__init__.py`
-
-Specialized inflation-curve helpers.
-
-- Module path: `market/curves/inflation/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/inflation/bootstrap.py`
-
-Bootstrap inflation-index curves from zero-coupon inflation swaps.
-
-- Module path: `market/curves/inflation/bootstrap.py`
-- Top-level classes/functions: `_to_decimal`, `InflationBootstrapPoint`, `InflationBootstrapResult`, `bootstrap_inflation_curve`, `_validate_bootstrap_instruments`
-
-### `market/curves/inflation/breakeven.py`
-
-Dedicated zero-breakeven and par-breakeven curve objects.
-
-- Module path: `market/curves/inflation/breakeven.py`
-- Top-level classes/functions: `_to_decimal`, `_tenor`, `BreakevenZeroCurve`, `BreakevenParCurve`
-
-### `market/curves/inflation/curve.py`
-
-Inflation-index projection curves.
-
-- Module path: `market/curves/inflation/curve.py`
-- Top-level classes/functions: `_to_decimal`, `InflationIndexCurve`
-
-### `market/curves/models/__init__.py`
-
-Optional advanced curve-model overlays.
-
-- Module path: `market/curves/models/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/models/jump_diffusion.py`
-
-Optional deterministic jump-diffusion curve overlays.
-
-- Module path: `market/curves/models/jump_diffusion.py`
-- Top-level classes/functions: `_to_decimal`, `JumpDiffusionAdjustment`, `JumpDiffusionCurve`
-
-### `market/curves/models/shadow_rate.py`
-
-Optional shadow-rate curve overlays.
-
-- Module path: `market/curves/models/shadow_rate.py`
-- Top-level classes/functions: `_to_decimal`, `_softplus_floor`, `ShadowRateCurve`
-
-### `market/curves/models/short_rate_base.py`
-
-Base helpers for optional short-rate-inspired curve overlays.
-
-- Module path: `market/curves/models/short_rate_base.py`
-- Top-level classes/functions: `_to_decimal`, `ShortRateModelPoint`, `ShortRateModelCurve`
-
-### `market/curves/multicurve/__init__.py`
-
-Multi-curve helpers for discount and projection curve lookups.
-
-- Module path: `market/curves/multicurve/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/multicurve/environment.py`
-
-Multi-curve environment helpers.
-
-- Module path: `market/curves/multicurve/environment.py`
-- Top-level classes/functions: `MultiCurveEnvironment`, `MultiCurveEnvironmentBuilder`
-
-### `market/curves/multicurve/index.py`
-
-Index identifiers for multi-curve environments.
-
-- Module path: `market/curves/multicurve/index.py`
-- Top-level classes/functions: `CurrencyPair`, `RateIndex`
-
-### `market/curves/segmented.py`
-
-Segmented curves with per-segment interpolation and sources.
-
-- Module path: `market/curves/segmented.py`
-- Top-level classes/functions: `SegmentSource`, `_CallableTermStructure`, `_Segment`, `SegmentBuilder`, `SegmentedCurve`
-
-### `market/curves/term_structure.py`
-
-Term-structure interface for curve primitives.
-
-- Module path: `market/curves/term_structure.py`
-- Top-level classes/functions: `TermStructure`
-
-### `market/curves/value_type.py`
-
-Curve value-type definitions.
-
-- Module path: `market/curves/value_type.py`
-- Top-level classes/functions: `ValueTypeKind`, `ValueType`
-
-### `market/curves/wrappers/__init__.py`
-
-Convenience wrappers for curve primitives.
-
-- Module path: `market/curves/wrappers/__init__.py`
-- Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `market/curves/wrappers/credit_curve.py`
-
-Credit-curve wrapper helpers.
-
-- Module path: `market/curves/wrappers/credit_curve.py`
-- Top-level classes/functions: `_to_decimal`, `CreditCurve`
-
-### `market/curves/wrappers/curve_ref.py`
-
-Lightweight wrapper for curve references.
-
-- Module path: `market/curves/wrappers/curve_ref.py`
-- Top-level classes/functions: `CurveRef`
-
-### `market/curves/wrappers/rate_curve.py`
-
-Rate-curve wrapper helpers.
-
-- Module path: `market/curves/wrappers/rate_curve.py`
-- Top-level classes/functions: `_decimal_from_float`, `RateCurve`
 
 ### `market/indices/__init__.py`
 
@@ -1232,7 +842,7 @@ VaR result types (`fuggers_py.measures.risk.var.types`).
 
 ### `measures/rv/__init__.py`
 
-Relative-value analytics for fitted-bond and cross-asset workflows.
+Relative-value analytics for bond and cross-asset workflows.
 
 - Module path: `measures/rv/__init__.py`
 - Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
@@ -1260,14 +870,14 @@ Bond-switch construction from local rich/cheap signals.
 
 ### `measures/rv/butterfly.py`
 
-Butterfly construction from fitted bond-curve residuals.
+Butterfly construction from bond residual signals.
 
 - Module path: `measures/rv/butterfly.py`
 - Top-level classes/functions: `_yield_from_decimal`, `ButterflyTrade`, `construct_butterfly`
 
 ### `measures/rv/constant_maturity.py`
 
-Constant-maturity benchmark generation from fitted bond curves.
+Constant-maturity benchmark generation.
 
 - Module path: `measures/rv/constant_maturity.py`
 - Top-level classes/functions: `_to_decimal`, `ConstantMaturityBenchmark`, `generate_constant_maturity_benchmark`
@@ -1281,7 +891,7 @@ Global bond RV workflows built on basis-swapped bond views.
 
 ### `measures/rv/neutrality.py`
 
-Deterministic neutrality helpers for fitted-bond RV trades.
+Deterministic neutrality helpers for RV trades.
 
 - Module path: `measures/rv/neutrality.py`
 - Top-level classes/functions: `_to_decimal`, `_yield_from_decimal`, `NeutralityTarget`, `TradeLeg`, `NeutralizedTradeExpression`, `_point_risk`, `_point_from_choice`, `_trade_leg`, `neutralize_choices`, `neutralize_bond_pair`
@@ -1295,14 +905,14 @@ Hypothetical new-issue fair-value estimation.
 
 ### `measures/rv/rich_cheap.py`
 
-Local rich/cheap ranking from fitted bond-curve residuals.
+Local rich/cheap ranking from bond residual signals.
 
 - Module path: `measures/rv/rich_cheap.py`
 - Top-level classes/functions: `_to_decimal`, `RichCheapSignal`, `rank_rich_cheap`
 
 ### `measures/rv/selection.py`
 
-Deterministic hooks from external signals into fitted-bond choices.
+Deterministic hooks from external signals into RV choices.
 
 - Module path: `measures/rv/selection.py`
 - Top-level classes/functions: `_to_decimal`, `SignalDirection`, `_resolved_direction`, `_point_metadata`, `MaturitySignal`, `BondSignal`, `MaturityChoice`, `BondChoice`, `_eligible_points`, `select_maturity_choice`, `select_maturity_choices`, `select_bond_choice`, `select_bond_choices`
@@ -1404,13 +1014,6 @@ Discount-margin helpers.
 
 - Module path: `measures/spreads/discount_margin.py`
 - Top-level classes/functions: `_to_decimal`, `DiscountMarginCalculator`, `simple_margin`, `z_discount_margin`
-
-### `measures/spreads/government_curve.py`
-
-Government-curve helpers for spread analytics.
-
-- Module path: `measures/spreads/government_curve.py`
-- Top-level classes/functions: `GovernmentBenchmark`, `GovernmentCurve`
 
 ### `measures/spreads/gspread.py`
 
@@ -1944,13 +1547,6 @@ Rates valuation engines and low-level risk algorithms.
 
 - Module path: `pricers/rates/__init__.py`
 - Top-level classes/functions: none; this module primarily defines exports, imports, or package-level constants.
-
-### `pricers/rates/_curve_resolver.py`
-
-Internal curve resolution and bump helpers for rates pricing.
-
-- Module path: `pricers/rates/_curve_resolver.py`
-- Top-level classes/functions: `_to_decimal`, `_curve_supports_discounting`, `_curve_supports_forward_projection`, `_curve_supports_projection`, `_curve_supports_inflation_projection`, `_ForwardProjectionWrapper`, `_projection_keys`, `_inflation_projection_keys`, `forward_rate_from_curve`, `resolve_discount_curve`, `resolve_projection_curve`, `resolve_inflation_projection`, `_parallel_bump_curve`, `_key_rate_bump_curve`, `analytics_curves_with_parallel_bump`, `analytics_curves_with_key_rate_bump`, `curve_zero_rate`
 
 ### `pricers/rates/asset_swap.py`
 

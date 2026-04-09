@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import TypedDict, cast
 
-from fuggers_py.core.traits import YieldCurve
+from fuggers_py.market.curves.term_structure import TermStructure
 from fuggers_py.core.types import Date
 from fuggers_py.reference.bonds.types import CreditRating
 
@@ -168,7 +168,7 @@ class RiskMetrics:
     cs01: Decimal
 
 
-CurveLike = YieldCurve | None
+CurveLike = TermStructure | None
 
 
 def _metrics(portfolio: Portfolio, *, curve: CurveLike, settlement_date: Date) -> PortfolioMetrics:

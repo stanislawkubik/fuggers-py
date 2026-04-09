@@ -11,9 +11,9 @@ from __future__ import annotations
 from decimal import Decimal
 
 from fuggers_py.products.bonds.traits import Bond
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Yield
 from fuggers_py.market.curves.bumping import ParallelBump
+from fuggers_py.market.curves.term_structure import TermStructure
 
 from ...pricing import BondPricer
 from .effective import effective_duration
@@ -28,7 +28,7 @@ def _to_decimal(value: object) -> Decimal:
 
 def _spread_duration_from_curve(
     bond: Bond,
-    curve: YieldCurve,
+    curve: TermStructure,
     settlement_date: Date,
     *,
     spread: object | None = None,
@@ -60,7 +60,7 @@ def spread_duration(
     settlement_date: Date,
     *,
     bump: float = 1e-4,
-    curve: YieldCurve | None = None,
+    curve: TermStructure | None = None,
     spread: object | None = None,
 ) -> Decimal:
     """Return spread duration using curve-bump or yield-bump logic.
@@ -75,7 +75,7 @@ def spread_duration(
         Settlement date for pricing.
     bump : float, optional
         Symmetric bump size used in the finite-difference approximation.
-    curve : YieldCurve or None, optional
+    curve : TermStructure or None, optional
         If supplied, the curve-bump path is used.
     spread : object or None, optional
         Parallel spread shift applied before the bump when ``curve`` is given.

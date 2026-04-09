@@ -15,7 +15,6 @@ from typing import TYPE_CHECKING, Mapping
 from fuggers_py.market.quotes import BondQuote
 from fuggers_py.pricers.bonds import BondPricer
 from fuggers_py.products.bonds.traits import Bond
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Price
 from fuggers_py.core.ids import InstrumentId
 from fuggers_py.reference.reference_data import BondReferenceData
@@ -70,17 +69,11 @@ class BondFairValueResult:
     regression_adjustment: Decimal
 
 
-def _discount_factor_from_curve(curve: YieldCurve | TermStructure, date: Date) -> Decimal:
-    if isinstance(curve, TermStructure):
-        tenor_years = curve.date_to_tenor(date)
-        if tenor_years <= 0.0:
-            return Decimal(1)
-        zero_rate = float(curve.value_at_tenor(tenor_years))
-        return Decimal(str(math.exp(-tenor_years * zero_rate)))
+def _discount_factor_from_curve(curve: TermStructure, date: Date) -> Decimal:
     return curve.discount_factor(date)
 
 
-def dirty_price_from_curve(bond: Bond, curve: YieldCurve | TermStructure, settlement_date: Date) -> Decimal:
+def dirty_price_from_curve(bond: Bond, curve: TermStructure, settlement_date: Date) -> Decimal:
     """Return the curve-implied dirty price in percent of par.
 
     The price is the discounted sum of remaining cash flows from the settlement
@@ -92,7 +85,7 @@ def dirty_price_from_curve(bond: Bond, curve: YieldCurve | TermStructure, settle
     return present_value
 
 
-def clean_price_from_curve(bond: Bond, curve: YieldCurve | TermStructure, settlement_date: Date) -> Decimal:
+def clean_price_from_curve(bond: Bond, curve: TermStructure, settlement_date: Date) -> Decimal:
     """Return the curve-implied clean price in percent of par.
 
     The clean price is the dirty price minus accrued interest at the settlement
@@ -101,7 +94,7 @@ def clean_price_from_curve(bond: Bond, curve: YieldCurve | TermStructure, settle
     return dirty_price_from_curve(bond, curve, settlement_date) - bond.accrued_interest(settlement_date)
 
 
-def fair_value_from_curve(bond: Bond, curve: YieldCurve | TermStructure, settlement_date: Date) -> BondFairValueResult:
+def fair_value_from_curve(bond: Bond, curve: TermStructure, settlement_date: Date) -> BondFairValueResult:
     """Return a fair-value result without any regression adjustment.
 
     The curve-implied clean price is converted back to a yield so callers can

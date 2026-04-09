@@ -11,9 +11,9 @@ from decimal import Decimal
 
 from fuggers_py.reference.bonds.types import Tenor
 from fuggers_py.products.bonds.traits import Bond
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
 from fuggers_py.market.curves.bumping import KeyRateBump
+from fuggers_py.market.curves.term_structure import TermStructure
 from fuggers_py.measures.pricing import BondPricer
 
 STANDARD_KEY_RATE_TENORS = [
@@ -82,7 +82,7 @@ class KeyRateDurationCalculator:
     def calculate(
         self,
         bond: Bond,
-        curve: YieldCurve,
+        curve: TermStructure,
         settlement_date: Date,
         tenors: list[Tenor] | None = None,
     ) -> KeyRateDurations:
@@ -118,7 +118,7 @@ class KeyRateDurationCalculator:
 
 def key_rate_duration_at_tenor(
     bond: Bond,
-    curve: YieldCurve,
+    curve: TermStructure,
     settlement_date: Date,
     *,
     tenor: Tenor,

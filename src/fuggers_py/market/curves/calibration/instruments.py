@@ -16,10 +16,10 @@ from fuggers_py.products.bonds.cashflows import Schedule, ScheduleConfig
 from fuggers_py.reference.bonds.types import CalendarId, StubPeriodRules, Tenor
 from fuggers_py.core.calendars import BusinessDayConvention
 from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Frequency
 
 from ..errors import InvalidCurveInput
+from ..term_structure import TermStructure
 
 
 def _to_decimal(value: object, *, field_name: str) -> Decimal:
@@ -45,7 +45,7 @@ class CalibrationInstrument(Protocol):
         """Return the maturity date used to place the calibration pillar."""
         ...
 
-    def par_rate(self, curve: YieldCurve) -> Decimal:
+    def par_rate(self, curve: TermStructure) -> Decimal:
         """Return the model par quote implied by ``curve``."""
         ...
 
@@ -81,7 +81,7 @@ class Deposit:
         """Return the deposit maturity date."""
         return self._maturity_date
 
-    def par_rate(self, curve: YieldCurve) -> Decimal:
+    def par_rate(self, curve: TermStructure) -> Decimal:
         """Return the raw decimal deposit rate implied by the curve."""
         day_count = self.day_count.to_day_count()
         tau = float(day_count.year_fraction(self._start_date, self._maturity_date))
@@ -127,7 +127,7 @@ class Fra:
         """Return the FRA fixing maturity date."""
         return self._end_date
 
-    def par_rate(self, curve: YieldCurve) -> Decimal:
+    def par_rate(self, curve: TermStructure) -> Decimal:
         """Return the raw decimal FRA rate implied by the curve."""
         day_count = self.day_count.to_day_count()
         tau = float(day_count.year_fraction(self._start_date, self._end_date))
@@ -190,7 +190,7 @@ class Swap:
         )
         return Schedule.generate(config)
 
-    def par_rate(self, curve: YieldCurve) -> Decimal:
+    def par_rate(self, curve: TermStructure) -> Decimal:
         """Return the raw decimal fixed rate that prices the swap at par."""
         schedule = self._fixed_leg_schedule()
         day_count = self.fixed_day_count.to_day_count()
@@ -266,7 +266,7 @@ class Ois:
         )
         return Schedule.generate(config)
 
-    def par_rate(self, curve: YieldCurve) -> Decimal:
+    def par_rate(self, curve: TermStructure) -> Decimal:
         """Return the raw decimal OIS fixed rate implied by the curve.
 
         The overnight leg is approximated by the discount-factor change
@@ -343,7 +343,7 @@ class Future:
         """Return the quoted forward rate adjusted for convexity in bps."""
         return self.quoted_forward_rate() - self.convexity_adjustment_bps / Decimal(10_000)
 
-    def par_rate(self, curve: YieldCurve) -> Decimal:
+    def par_rate(self, curve: TermStructure) -> Decimal:
         """Return the model forward rate plus convexity adjustment in bps."""
         forward = curve.forward_rate(self._start_date, self._end_date)
         return forward + self.convexity_adjustment_bps / Decimal(10_000)
@@ -389,11 +389,11 @@ class BasisSwap:
         """Return the basis-swap maturity date."""
         return self._maturity_date
 
-    def par_rate(self, curve: YieldCurve) -> Decimal:
+    def par_rate(self, curve: TermStructure) -> Decimal:
         """Return the par basis spread against a single discount curve."""
         return self.par_basis(curve, curve)
 
-    def par_basis(self, pay_curve: YieldCurve, receive_curve: YieldCurve) -> Decimal:
+    def par_basis(self, pay_curve: TermStructure, receive_curve: TermStructure) -> Decimal:
         """Return the raw decimal basis spread between two curves."""
         receive_leg = self._floating_leg_pv(receive_curve)
         pay_leg = self._floating_leg_pv(pay_curve)
@@ -414,7 +414,7 @@ class BasisSwap:
         )
         return Schedule.generate(config)
 
-    def _annuity(self, curve: YieldCurve) -> Decimal:
+    def _annuity(self, curve: TermStructure) -> Decimal:
         schedule = self._schedule(self.pay_frequency)
         day_count = self.day_count.to_day_count()
         annuity = Decimal(0)
@@ -426,7 +426,7 @@ class BasisSwap:
             annuity += tau * curve.discount_factor(pay_date) / curve.discount_factor(self._start_date)
         return annuity
 
-    def _floating_leg_pv(self, curve: YieldCurve) -> Decimal:
+    def _floating_leg_pv(self, curve: TermStructure) -> Decimal:
         start_df = curve.discount_factor(self._start_date)
         end_df = curve.discount_factor(self._maturity_date)
         return start_df - end_df

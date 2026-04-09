@@ -1,9 +1,10 @@
 """Base helpers for optional short-rate-inspired curve overlays.
 
 These models intentionally sit beside the default production curve path.
-They wrap an existing :class:`~fuggers_py.core.traits.YieldCurve` and expose
-the same discount-factor / zero-rate interface, but they do not participate in
-the repository's standard bootstrap or fitted-curve workflows.
+They wrap an existing
+:class:`~fuggers_py.market.curves.term_structure.TermStructure` and expose the
+same discount-factor / zero-rate interface, but they do not participate in the
+repository's standard bootstrap or fitted-curve workflows.
 """
 
 from __future__ import annotations
@@ -13,10 +14,11 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Compounding, Date, Yield
 
 from ..conversion import ValueConverter
+from ..term_structure import TermStructure
+from ..value_type import ValueType
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -46,7 +48,7 @@ class ShortRateModelPoint:
 
 
 @dataclass(frozen=True, slots=True)
-class ShortRateModelCurve(YieldCurve, ABC):
+class ShortRateModelCurve(TermStructure, ABC):
     """Base class for optional model-based curve overlays.
 
     Implementations are expected to provide an adjusted continuously
@@ -54,7 +56,8 @@ class ShortRateModelCurve(YieldCurve, ABC):
     available for diagnostics and comparison.
     """
 
-    base_curve: YieldCurve
+    base_curve: TermStructure
+    _value_type = ValueType.continuous_zero()
 
     def date(self) -> Date:
         """Return the date of the base curve."""
@@ -93,6 +96,30 @@ class ShortRateModelCurve(YieldCurve, ABC):
     def adjusted_zero_rate_at_tenor(self, tenor_years: object) -> Decimal:
         """Return the model-adjusted continuously compounded zero rate."""
 
+    def zero_rate_at_tenor(
+        self,
+        tenor_years: float,
+        *,
+        compounding: Compounding = Compounding.CONTINUOUS,
+    ) -> float:
+        """Return the adjusted zero rate at tenor ``tenor_years``."""
+
+        tenor = _to_decimal(tenor_years)
+        if tenor <= Decimal(0):
+            return 0.0
+        adjusted = float(self.adjusted_zero_rate_at_tenor(tenor))
+        if compounding is Compounding.CONTINUOUS:
+            return adjusted
+        return ValueConverter.convert_compounding(adjusted, Compounding.CONTINUOUS, compounding)
+
+    def zero_rate(self, date: Date) -> Yield:
+        """Return the exact adjusted continuous zero rate at ``date``."""
+
+        tenor = self.tenor_in_years(date)
+        if tenor <= Decimal(0):
+            return Yield.new(Decimal(0), Compounding.CONTINUOUS)
+        return Yield.new(self.adjusted_zero_rate_at_tenor(tenor), Compounding.CONTINUOUS)
+
     def adjustment_at_tenor(self, tenor_years: object) -> Decimal:
         """Return the model adjustment over the base curve at a tenor."""
         tenor = _to_decimal(tenor_years)
@@ -110,20 +137,13 @@ class ShortRateModelCurve(YieldCurve, ABC):
             adjustment=adjusted_zero - base_zero,
         )
 
-    def zero_rate(self, date: Date) -> Yield:
-        """Return the adjusted continuously compounded zero rate."""
-        tenor = self.tenor_in_years(date)
-        if tenor <= Decimal(0):
-            return Yield.new(Decimal(0), Compounding.CONTINUOUS)
-        return Yield.new(self.adjusted_zero_rate_at_tenor(tenor), Compounding.CONTINUOUS)
+    def value_at_tenor(self, tenor_years: float) -> float:
+        """Return the adjusted continuous zero rate at tenor ``tenor_years``."""
 
-    def discount_factor(self, date: Date) -> Decimal:
-        """Return the discount factor implied by the adjusted zero rate."""
-        tenor = self.tenor_in_years(date)
+        tenor = _to_decimal(tenor_years)
         if tenor <= Decimal(0):
-            return Decimal(1)
-        zero_rate = self.adjusted_zero_rate_at_tenor(tenor)
-        return _to_decimal(ValueConverter.zero_to_df(float(zero_rate), float(tenor), Compounding.CONTINUOUS))
+            return 0.0
+        return float(self.adjusted_zero_rate_at_tenor(tenor))
 
 
 __all__ = ["ShortRateModelCurve", "ShortRateModelPoint"]

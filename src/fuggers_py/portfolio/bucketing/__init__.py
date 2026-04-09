@@ -10,8 +10,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
+from fuggers_py.market.curves.term_structure import TermStructure
 
 from ..analytics import PortfolioAnalytics
 from ..portfolio import Portfolio
@@ -34,7 +34,7 @@ class Bucketing:
 
     def bucket_dv01(
         self,
-        curve: YieldCurve,
+        curve: TermStructure,
         settlement_date: Date,
         buckets=DEFAULT_BUCKETS,
     ) -> list[BucketResult]:
@@ -86,7 +86,7 @@ def summarize_bucket_assignments(
     portfolio: Portfolio,
     assignments: Mapping[str, Sequence[object]],
     *,
-    curve: YieldCurve,
+    curve: TermStructure,
     settlement_date: Date,
 ) -> dict[str, BucketResult]:
     """Summarize arbitrary bucket assignments into :class:`BucketResult`.
@@ -132,7 +132,7 @@ def summarize_bucket_assignments(
     return results
 
 
-def sector_bucket_metrics(portfolio: Portfolio, *, curve: YieldCurve, settlement_date: Date) -> dict[str, BucketResult]:
+def sector_bucket_metrics(portfolio: Portfolio, *, curve: TermStructure, settlement_date: Date) -> dict[str, BucketResult]:
     """Return bucket metrics grouped by sector."""
 
     return summarize_bucket_assignments(
@@ -143,7 +143,7 @@ def sector_bucket_metrics(portfolio: Portfolio, *, curve: YieldCurve, settlement
     )
 
 
-def rating_bucket_metrics(portfolio: Portfolio, *, curve: YieldCurve, settlement_date: Date) -> dict[str, BucketResult]:
+def rating_bucket_metrics(portfolio: Portfolio, *, curve: TermStructure, settlement_date: Date) -> dict[str, BucketResult]:
     """Return bucket metrics grouped by rating."""
 
     return summarize_bucket_assignments(
@@ -157,7 +157,7 @@ def rating_bucket_metrics(portfolio: Portfolio, *, curve: YieldCurve, settlement
 def maturity_bucket_metrics(
     portfolio: Portfolio,
     *,
-    curve: YieldCurve,
+    curve: TermStructure,
     settlement_date: Date,
     buckets=DEFAULT_BUCKETS,
 ) -> dict[str, BucketResult]:

@@ -23,13 +23,13 @@ def test_discount_curve_builder_default_interpolation_df_is_log_linear() -> None
         .add_pillar(2.0, math.exp(-0.05 * 2.0))
         .build()
     )
-    assert curve.curve.interpolation_method() is InterpolationMethod.LOG_LINEAR
+    assert curve.interpolation_method() is InterpolationMethod.LOG_LINEAR
 
 
 def test_discount_curve_builder_default_interpolation_zero_is_linear() -> None:
     ref = Date.from_ymd(2024, 1, 1)
     curve = DiscountCurveBuilder(reference_date=ref).add_zero_rate(1.0, 0.05).add_zero_rate(2.0, 0.05).build()
-    assert curve.curve.interpolation_method() is InterpolationMethod.LINEAR
+    assert curve.interpolation_method() is InterpolationMethod.LINEAR
 
 
 def test_discount_curve_builder_rejects_mixed_pillars() -> None:

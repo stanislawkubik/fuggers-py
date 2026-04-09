@@ -20,8 +20,8 @@ from fuggers_py.math.errors import ConvergenceFailed, InvalidBracket
 
 from ..discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
 from ..errors import CurveConstructionError, InvalidCurveInput
+from ..term_structure import TermStructure
 from ..value_type import ValueType, ValueTypeKind
-from ..wrappers import RateCurve
 from .instruments import CalibrationInstrument, InstrumentSet
 
 
@@ -56,7 +56,7 @@ class CalibrationInstrumentResult:
 class CalibrationResult:
     """Result of a sequential or piecewise curve bootstrap."""
 
-    curve: RateCurve
+    curve: TermStructure
     instrument_results: list[CalibrationInstrumentResult]
 
     @property
@@ -97,7 +97,7 @@ class SequentialBootstrapper:
             return 0.0, 1.0
         return 0.0, 0.0
 
-    def _build_curve(self, tenors: Iterable[float], values: Iterable[float]) -> RateCurve:
+    def _build_curve(self, tenors: Iterable[float], values: Iterable[float]) -> TermStructure:
         t_list = list(tenors)
         v_list = list(values)
         if not t_list:
@@ -124,7 +124,7 @@ class SequentialBootstrapper:
             interpolation_method=interpolation,
             extrapolation_method=self.extrapolation_method,
         )
-        return RateCurve(curve)
+        return curve
 
     def _residual_fn(
         self,

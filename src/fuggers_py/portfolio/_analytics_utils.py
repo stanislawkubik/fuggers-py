@@ -15,9 +15,9 @@ from fuggers_py.measures.spreads import OASCalculator, z_spread_from_curve
 from fuggers_py.measures.yields import current_yield_from_bond
 from fuggers_py.products.bonds.instruments import CallableBond
 from fuggers_py.products.bonds.traits import Bond
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Price
 from fuggers_py.market.curves.bumping import KeyRateBump
+from fuggers_py.market.curves.term_structure import TermStructure
 
 from .types import AnalyticsConfig, CashPosition, Holding, PortfolioMetrics, Position, PositionAnalytics, WeightingMethod
 
@@ -56,7 +56,7 @@ def _cash_position_analytics(position: CashPosition) -> PositionAnalytics:
     )
 
 
-def _clean_price_for(position: Position, settlement_date: Date, curve: YieldCurve | None, pricer: BondPricer) -> Price:
+def _clean_price_for(position: Position, settlement_date: Date, curve: TermStructure | None, pricer: BondPricer) -> Price:
     if position.clean_price is not None:
         if isinstance(position.clean_price, Price):
             return position.clean_price
@@ -94,10 +94,10 @@ def _weighted_optional_average(
 def position_analytics(
     position: Position | CashPosition,
     *,
-    curve: YieldCurve | None,
+    curve: TermStructure | None,
     settlement_date: Date,
     config: AnalyticsConfig,
-    spread_curve: YieldCurve | None = None,
+    spread_curve: TermStructure | None = None,
     oas_calculator: OASCalculator | None = None,
 ) -> PositionAnalytics:
     """Return analytics for a single position or cash holding."""

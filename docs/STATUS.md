@@ -20,14 +20,13 @@ It answers four questions:
 
 - `core/`: dates, prices, yields, spreads, identifiers, calendars, and day-count logic are central and well-covered.
 - `products/bonds/` and `pricers/bonds/`: bond definitions, cash flows, accrued interest, price and yield work, and bond risk are among the most mature parts of the repo.
-- `market/curves/`: base curve types, wrappers, conversions, calibration helpers, inflation curves, credit curves, and multi-curve environments are core parts of the library and already have broad test coverage.
+- `market/`: quotes, fixings, indices, and market-state records are core parts of the library and already have broad test coverage.
 - `measures/`: the main yield, spread, pricing, risk, and inflation analytics are in active use and are part of the curated public API.
 - Validation and packaging checks are already part of the repo: unit tests, integration tests, API contracts, docs checks, packaging checks, and CI workflows are all present.
 
 ## Usable, but still moving
 
-- `market/curves/fitted_bonds/`: the fitted-bond stack is usable today and already has examples and tests, but the API is still being simplified. This is an area where names and object shapes may still change before `1.x`.
-- `measures/rv/`: the fitted-curve RV tools are usable, but they depend on the fitted-bond surface, so they should also be treated as pre-`1.0` moving parts.
+- `measures/rv/`: the RV tools are usable, but this surface is still being simplified and should still be treated as pre-`1.0`.
 - `calc/`: the engine, routing, scheduling, and reactive runtime are functional, but this layer is broader than the core analytics and is more likely to keep changing as integration patterns settle.
 - `portfolio/`: the portfolio layer already covers holdings, attribution, ETF, stress, and risk workflows, but it is a large surface and should be treated as less settled than the core bond analytics.
 - `adapters/`: storage, file, and transport boundaries are useful and tested, but they are still infrastructure-facing surfaces rather than the most settled part of the analytics library.
@@ -41,7 +40,7 @@ It answers four questions:
 
 ## What still needs work before `1.x`
 
-- Freeze the package boundaries and naming in the places that are still moving, especially around fitted-bond workflows, market-data organization, and volatility.
+- Freeze the package boundaries and naming in the places that are still moving, especially around market-data organization and volatility.
 - Decide which compatibility shims should remain and which should be removed before the first compatibility promise.
 - Expand the volatility stack beyond storage objects and add clearer support for smiles, cubes, interpolation, and calibration.
 - Keep broadening validation and examples for options, RV, cross-market workflows, and the calc runtime.

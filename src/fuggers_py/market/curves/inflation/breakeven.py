@@ -8,7 +8,6 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Sequence
 
 from fuggers_py.core import Compounding, Date
-from fuggers_py.core.traits import YieldCurve as CoreYieldCurve
 
 from ..conversion import ValueConverter
 from ..term_structure import TermStructure
@@ -42,8 +41,8 @@ class BreakevenZeroCurve(TermStructure):
     greater than 1 when implied inflation is positive.
     """
 
-    nominal_curve: CoreYieldCurve | TermStructure
-    real_curve: CoreYieldCurve | TermStructure
+    nominal_curve: TermStructure
+    real_curve: TermStructure
     compounding: Compounding = Compounding.CONTINUOUS
 
     def __post_init__(self) -> None:

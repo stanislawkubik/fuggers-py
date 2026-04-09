@@ -8,12 +8,12 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
 from fuggers_py.core import InstrumentId
 from fuggers_py.reference.inflation.reference_index import reference_cpi
 
 from ..discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
+from ..term_structure import TermStructure
 from ..value_type import ValueType
 from .curve import InflationIndexCurve
 
@@ -71,7 +71,7 @@ def bootstrap_inflation_curve(
     swaps: Sequence["ZeroCouponInflationSwap"],
     *,
     fixing_source: object,
-    discount_curve: YieldCurve,
+    discount_curve: TermStructure,
 ) -> InflationBootstrapResult:
     """Bootstrap a projected inflation-index curve from ZC inflation swaps.
 

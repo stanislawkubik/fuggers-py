@@ -16,9 +16,10 @@ from numpy.typing import NDArray
 
 from fuggers_py.core.types import Date
 from fuggers_py.core.ids import InstrumentId
+from fuggers_py.market.curves.curve_metadata import CurveDiagnostics
 from fuggers_py.market.curves.errors import InvalidCurveInput
 from fuggers_py.market.curves.term_structure import TermStructure
-from fuggers_py.market.curves.yield_curve import CurveDiagnostics
+from fuggers_py.market.curves.value_type import ValueType
 from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.reference.reference_data import BondReferenceData
 
@@ -136,6 +137,8 @@ class ExponentialSplineZeroRateCurve(TermStructure):
     needs them.
     """
 
+    _value_type = ValueType.continuous_zero()
+
     _reference_date: Date
     coefficients: NDArray[np.float64]
     decay_factors: NDArray[np.float64]
@@ -176,6 +179,8 @@ class CubicSplineZeroRateCurve(TermStructure):
     spline grid and derives discount factors analytically from those zero
     rates.
     """
+
+    _value_type = ValueType.continuous_zero()
 
     _reference_date: Date
     knot_tenors: NDArray[np.float64]

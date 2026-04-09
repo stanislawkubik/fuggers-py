@@ -11,8 +11,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py.products.bonds.instruments import FixedBond
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
+from fuggers_py.market.curves.term_structure import TermStructure
 
 from .par_par import ParParAssetSwap
 
@@ -21,7 +21,7 @@ from .par_par import ParParAssetSwap
 class ProceedsAssetSwap:
     """Proceeds-style asset-swap spread calculator."""
 
-    curve: YieldCurve
+    curve: TermStructure
 
     def calculate(self, bond: FixedBond, dirty_price: object, settlement_date: Date) -> Decimal:
         """Return the proceeds-style asset-swap spread as a raw decimal.

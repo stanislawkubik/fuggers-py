@@ -12,7 +12,6 @@ from fuggers_py.core.types import Compounding, Date
 
 from .errors import InvalidCurveInput
 from .term_structure import TermStructure
-from .wrappers import RateCurve
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,11 +26,11 @@ class ForwardCurve(TermStructure):
         Forward horizon in years. The horizon must be strictly positive.
     """
 
-    discount_curve: RateCurve
+    discount_curve: TermStructure
     _forward_tenor: float
 
     @classmethod
-    def new(cls, discount_curve: RateCurve, forward_tenor: float) -> "ForwardCurve":
+    def new(cls, discount_curve: TermStructure, forward_tenor: float) -> "ForwardCurve":
         """Construct a forward curve for a fixed tenor horizon."""
         tenor = float(forward_tenor)
         if tenor <= 0.0:
@@ -39,7 +38,7 @@ class ForwardCurve(TermStructure):
         return cls(discount_curve=discount_curve, _forward_tenor=tenor)
 
     @classmethod
-    def from_months(cls, discount_curve: RateCurve, months: int) -> "ForwardCurve":
+    def from_months(cls, discount_curve: TermStructure, months: int) -> "ForwardCurve":
         """Construct a forward curve from a tenor expressed in months."""
         m = int(months)
         if m <= 0:

@@ -10,11 +10,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 from math import isnan
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
 
 from .term_structure import TermStructure
-from .wrappers import RateCurve
 
 
 class DelegationFallback(str, Enum):
@@ -26,24 +24,8 @@ class DelegationFallback(str, Enum):
     ALWAYS_FALLBACK = "ALWAYS_FALLBACK"
 
 
-@dataclass(frozen=True, slots=True)
-class _YieldCurveTermStructure(TermStructure):
-    curve: YieldCurve
-
-    def date(self) -> Date:
-        return self.curve.date()
-
-    def value_at_tenor(self, t: float) -> float:
-        date = self.tenor_to_date(t)
-        return float(self.curve.zero_rate(date).value())
-
-
-def _as_term_structure(source: TermStructure | YieldCurve) -> TermStructure:
-    if isinstance(source, TermStructure):
-        return source
-    if isinstance(source, RateCurve):
-        return source.curve
-    return _YieldCurveTermStructure(source)
+def _as_term_structure(source: TermStructure) -> TermStructure:
+    return source
 
 
 def _supports_tenor(curve: TermStructure, tenor: float) -> bool:
@@ -82,8 +64,8 @@ class DelegatedCurve(TermStructure):
     the fallback.
     """
 
-    primary: TermStructure | YieldCurve
-    fallback: TermStructure | YieldCurve
+    primary: TermStructure
+    fallback: TermStructure
     fallback_mode: DelegationFallback = DelegationFallback.OUT_OF_RANGE_OR_MISSING
     _primary_curve: TermStructure = field(init=False, repr=False)
     _fallback_curve: TermStructure = field(init=False, repr=False)
@@ -95,6 +77,11 @@ class DelegatedCurve(TermStructure):
     def date(self) -> Date:
         """Return the primary curve date."""
         return self._primary_curve.date()
+
+    def value_type(self):
+        """Return the primary value semantics when available."""
+
+        return self._primary_curve.value_type() or self._fallback_curve.value_type()
 
     def _use_fallback_for_tenor(self, tenor: float) -> bool:
         if self.fallback_mode is DelegationFallback.ALWAYS_FALLBACK:

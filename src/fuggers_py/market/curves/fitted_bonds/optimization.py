@@ -22,6 +22,7 @@ from fuggers_py.math.optimization import OptimizationConfig, OptimizationResult,
 from fuggers_py.market.quotes import BondQuote
 from fuggers_py.reference.reference_data import BondReferenceData
 
+from ..curve_metadata import CurveObjective
 from ..term_structure import TermStructure
 from .model import (
     BondCurveDiagnostics,
@@ -32,7 +33,6 @@ from .model import (
 )
 from .pricing_adapters import BondCurvePricingAdapter, NominalGovernmentBondPricingAdapter
 from .regression import build_regression_matrix
-from ..yield_curve import CurveObjective
 
 
 def _to_decimal(value: object) -> Decimal:

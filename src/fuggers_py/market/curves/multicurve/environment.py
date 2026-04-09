@@ -10,10 +10,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Currency
 
 from ..errors import MissingCurveError
+from ..term_structure import TermStructure
 from .index import RateIndex
 
 
@@ -29,10 +29,10 @@ class MultiCurveEnvironment:
         Mapping from :class:`RateIndex` to projection curve.
     """
 
-    discount_curves: dict[Currency, YieldCurve]
-    projection_curves: dict[RateIndex, YieldCurve]
+    discount_curves: dict[Currency, TermStructure]
+    projection_curves: dict[RateIndex, TermStructure]
 
-    def discount_curve(self, currency: Currency) -> YieldCurve:
+    def discount_curve(self, currency: Currency) -> TermStructure:
         """Return the discount curve for ``currency``.
 
         Parameters
@@ -46,7 +46,7 @@ class MultiCurveEnvironment:
         except KeyError as exc:  # pragma: no cover - simple
             raise MissingCurveError(f"Missing discount curve for currency {currency}.") from exc
 
-    def projection_curve(self, index: RateIndex) -> YieldCurve:
+    def projection_curve(self, index: RateIndex) -> TermStructure:
         """Return the projection curve for ``index``.
 
         Parameters
@@ -65,16 +65,16 @@ class MultiCurveEnvironment:
 class MultiCurveEnvironmentBuilder:
     """Incrementally assemble a :class:`MultiCurveEnvironment`."""
 
-    _discount_curves: dict[Currency, YieldCurve] = field(default_factory=dict)
-    _projection_curves: dict[RateIndex, YieldCurve] = field(default_factory=dict)
+    _discount_curves: dict[Currency, TermStructure] = field(default_factory=dict)
+    _projection_curves: dict[RateIndex, TermStructure] = field(default_factory=dict)
 
-    def add_discount_curve(self, currency: Currency, curve: YieldCurve) -> "MultiCurveEnvironmentBuilder":
+    def add_discount_curve(self, currency: Currency, curve: TermStructure) -> "MultiCurveEnvironmentBuilder":
         """Register a discount curve for ``currency``."""
 
         self._discount_curves[currency] = curve
         return self
 
-    def add_projection_curve(self, index: RateIndex, curve: YieldCurve) -> "MultiCurveEnvironmentBuilder":
+    def add_projection_curve(self, index: RateIndex, curve: TermStructure) -> "MultiCurveEnvironmentBuilder":
         """Register a projection curve for ``index``."""
 
         self._projection_curves[index] = curve

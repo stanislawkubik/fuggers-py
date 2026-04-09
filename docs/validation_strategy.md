@@ -8,7 +8,6 @@ Validation is split into two layers.
 
 - bond pricing and accrued-interest edge cases
 - callable and floating-rate analytics
-- curve conversions and calibration
 - portfolio analytics and ETF workflows
 - engine scheduler and reactive flows
 
@@ -23,6 +22,6 @@ Validation is split into two layers.
 
 ## Tolerances
 
-- Tight scalar tolerances are used for deterministic bond and curve cases.
+- Tight scalar tolerances are used for deterministic bond cases.
 - Exact or near-exact `Decimal` tolerances are used for many portfolio aggregates.
 - Wider explicit tolerances are reserved for model-driven workflows such as callable OAS and floating-rate discount-margin checks.

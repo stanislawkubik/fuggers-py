@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from math import exp, log, sqrt
 
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
+from fuggers_py.market.curves.term_structure import TermStructure
 
 from ..errors import ModelError
 
@@ -24,7 +24,7 @@ class HullWhiteModel:
 
     mean_reversion: Decimal
     volatility: Decimal
-    term_structure: YieldCurve
+    term_structure: TermStructure
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "mean_reversion", _to_decimal(self.mean_reversion))

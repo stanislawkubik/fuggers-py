@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Protocol, runtime_checkable
 
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
+from fuggers_py.market.curves.term_structure import TermStructure
 from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.reference.inflation.reference_index import reference_cpi
 from fuggers_py.products.rates import StandardCouponInflationSwap, ZeroCouponInflationSwap
@@ -116,7 +116,7 @@ class InflationSwapPricer:
         swap: InflationSwapInstrument,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
     ) -> Decimal:
         """Return the discounted PV of the fixed leg."""
 
@@ -129,7 +129,7 @@ class InflationSwapPricer:
         swap: InflationSwapInstrument,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> Decimal:
         """Return the discounted PV of the inflation leg."""
@@ -153,7 +153,7 @@ class InflationSwapPricer:
         swap: InflationSwapInstrument,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> Decimal:
         """Return the total present value of the swap."""
@@ -174,7 +174,7 @@ class InflationSwapPricer:
         swap: InflationSwapInstrument,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> Decimal:
         """Return the fixed rate that zeros the swap PV."""
@@ -193,7 +193,7 @@ class InflationSwapPricer:
         swap: InflationSwapInstrument,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         bump: object = Decimal("0.0001"),
     ) -> Decimal:
         """Return the fixed-rate PV change per one basis point."""
@@ -209,7 +209,7 @@ class InflationSwapPricer:
         swap: InflationSwapInstrument,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
     ) -> Decimal:
         """Return the discounted fixed-leg accrual amount per unit rate."""
 
@@ -250,7 +250,7 @@ class InflationSwapPricer:
         swap: InflationSwapInstrument,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> InflationSwapPricingResult:
         """Return the full pricing decomposition."""
@@ -274,7 +274,7 @@ class InflationSwapPricer:
         swap: ZeroCouponInflationSwap,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
     ) -> Decimal:
         curve = self._resolve_discount_curve(swap, curves, discount_curve)
         return (
@@ -290,7 +290,7 @@ class InflationSwapPricer:
         swap: ZeroCouponInflationSwap,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> Decimal:
         curve = self._resolve_discount_curve(swap, curves, discount_curve)
@@ -314,7 +314,7 @@ class InflationSwapPricer:
         swap: ZeroCouponInflationSwap,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> ZeroCouponInflationSwapPricingResult:
         curve = self._resolve_discount_curve(swap, curves, discount_curve)
@@ -356,7 +356,7 @@ class InflationSwapPricer:
         swap: StandardCouponInflationSwap,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> tuple[StandardCouponInflationSwapPeriodPricing, ...]:
         curve = self._resolve_discount_curve(swap, curves, discount_curve)
@@ -401,7 +401,7 @@ class InflationSwapPricer:
         swap: StandardCouponInflationSwap,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
     ) -> Decimal:
         fixed_leg_annuity = self.fixed_leg_annuity(swap, curves, discount_curve=discount_curve)
         return swap.fixed_leg_sign() * fixed_leg_annuity * swap.fixed_rate
@@ -411,7 +411,7 @@ class InflationSwapPricer:
         swap: StandardCouponInflationSwap,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> Decimal:
         return sum(
@@ -429,7 +429,7 @@ class InflationSwapPricer:
         swap: StandardCouponInflationSwap,
         curves: AnalyticsCurves | None = None,
         *,
-        discount_curve: YieldCurve | None = None,
+        discount_curve: TermStructure | None = None,
         inflation_projection: object | None = None,
     ) -> StandardCouponInflationSwapPricingResult:
         periods = self._standard_coupon_period_pricings(
@@ -455,8 +455,8 @@ class InflationSwapPricer:
     def _resolve_discount_curve(
         swap: InflationSwapInstrument,
         curves: AnalyticsCurves | None,
-        discount_curve: YieldCurve | None,
-    ) -> YieldCurve:
+        discount_curve: TermStructure | None,
+    ) -> TermStructure:
         if discount_curve is not None:
             return discount_curve
         if curves is None:

@@ -1,8 +1,4 @@
-"""Repo-curve wrapper helpers.
-
-The wrapper provides discount factors, zero rates, and forward repo rates
-derived from an underlying term structure or rate curve.
-"""
+"""Repo-curve helpers built on a term structure."""
 
 from __future__ import annotations
 
@@ -12,7 +8,6 @@ from decimal import Decimal
 from fuggers_py.core.daycounts import DayCountConvention
 from fuggers_py.core.types import Date
 from fuggers_py.market.curves.term_structure import TermStructure
-from fuggers_py.market.curves.wrappers import RateCurve
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -38,15 +33,11 @@ class RepoCurve:
         Day-count convention used to annualize forward repo rates.
     """
 
-    curve: object
+    curve: TermStructure
     forward_day_count: DayCountConvention = DayCountConvention.ACT_360
 
-    def __post_init__(self) -> None:
-        if isinstance(self.curve, TermStructure):
-            object.__setattr__(self, "curve", RateCurve(self.curve))
-
     @classmethod
-    def of(cls, curve: object | "RepoCurve") -> "RepoCurve":
+    def of(cls, curve: TermStructure | "RepoCurve") -> "RepoCurve":
         """Return ``curve`` unchanged when already wrapped."""
 
         if isinstance(curve, cls):

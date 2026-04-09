@@ -14,8 +14,9 @@ from fuggers_py.products.bonds.cashflows import Schedule, ScheduleConfig
 from fuggers_py.reference.bonds.types import CalendarId, PriceQuote, StubPeriodRules
 from fuggers_py.core.calendars import BusinessDayConvention
 from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Currency, Date, Frequency
+
+from ..term_structure import TermStructure
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -50,7 +51,7 @@ class GovernmentZeroCoupon:
         pct = _price_to_percentage(price)
         return pct / Decimal(100)
 
-    def repriced_discount_factor(self, curve: YieldCurve, *, settlement_date: Date | None = None) -> Decimal:
+    def repriced_discount_factor(self, curve: TermStructure, *, settlement_date: Date | None = None) -> Decimal:
         """Return the discount factor from settlement to maturity implied by ``curve``."""
 
         settle = settlement_date or curve.date()
@@ -60,7 +61,7 @@ class GovernmentZeroCoupon:
             return Decimal(0)
         return df / df_settle
 
-    def repriced_quote(self, curve: YieldCurve, *, settlement_date: Date | None = None) -> Decimal:
+    def repriced_quote(self, curve: TermStructure, *, settlement_date: Date | None = None) -> Decimal:
         """Return the clean price implied by the curve (percent-of-par)."""
 
         df = self.repriced_discount_factor(curve, settlement_date=settlement_date)
@@ -105,7 +106,7 @@ class GovernmentCouponBond:
         )
         return Schedule.generate(config)
 
-    def price_from_curve(self, curve: YieldCurve, *, settlement_date: Date | None = None) -> Decimal:
+    def price_from_curve(self, curve: TermStructure, *, settlement_date: Date | None = None) -> Decimal:
         """Compute a clean price (percent-of-par) from a discount curve.
 
         Assumes settlement at the curve reference date unless overridden and
@@ -133,7 +134,7 @@ class GovernmentCouponBond:
 
         return (pv / self.notional) * Decimal(100)
 
-    def repriced_quote(self, curve: YieldCurve, *, settlement_date: Date | None = None) -> Decimal:
+    def repriced_quote(self, curve: TermStructure, *, settlement_date: Date | None = None) -> Decimal:
         """Return the synthetic clean price implied by ``curve``."""
 
         return self.price_from_curve(curve, settlement_date=settlement_date)

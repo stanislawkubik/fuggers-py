@@ -7,10 +7,10 @@ from decimal import Decimal
 
 from fuggers_py.reference.bonds.types import Tenor
 from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Currency, Date
 from fuggers_py.market.curves.bumping import KeyRateBump, ParallelBump
 from fuggers_py.market.curves.multicurve import MultiCurveEnvironment, RateIndex
+from fuggers_py.market.curves.term_structure import TermStructure
 from fuggers_py.market.state import AnalyticsCurves
 
 
@@ -44,7 +44,7 @@ def _curve_supports_inflation_projection(curve: object | None) -> bool:
 
 @dataclass(frozen=True, slots=True)
 class _ForwardProjectionWrapper:
-    curve: YieldCurve
+    curve: TermStructure
 
     def date(self) -> Date:
         return self.curve.date()
@@ -123,7 +123,7 @@ def forward_rate_from_curve(
     return (df_start / df_end - Decimal(1)) / tau
 
 
-def resolve_discount_curve(curves: AnalyticsCurves, currency: Currency) -> YieldCurve:
+def resolve_discount_curve(curves: AnalyticsCurves, currency: Currency) -> TermStructure:
     """Return the discount curve used for the given currency."""
 
     environment = curves.multicurve_environment
@@ -144,7 +144,7 @@ def resolve_projection_curve(
     currency: Currency,
     index_name: str,
     index_tenor: Tenor | None,
-) -> YieldCurve:
+) -> object:
     """Return the projection curve for the supplied rate index."""
 
     environment = curves.multicurve_environment
@@ -309,7 +309,7 @@ def analytics_curves_with_key_rate_bump(
     )
 
 
-def curve_zero_rate(curve: YieldCurve, date: Date) -> Decimal:
+def curve_zero_rate(curve: TermStructure, date: Date) -> Decimal:
     """Return the curve zero rate as a raw decimal."""
 
     resolved = curve.zero_rate(date)

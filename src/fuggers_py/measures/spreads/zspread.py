@@ -11,8 +11,8 @@ from decimal import Decimal
 from math import exp
 
 from fuggers_py.products.bonds.traits import Bond, BondCashFlow
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Price
+from fuggers_py.market.curves.term_structure import TermStructure
 from fuggers_py.math import SolverConfig, brent, newton_raphson
 from fuggers_py.math.errors import ConvergenceFailed, DivisionByZero, InvalidBracket
 
@@ -31,7 +31,7 @@ def _prepare_cashflows(
     cashflows: list[BondCashFlow],
     *,
     settlement_date: Date,
-    curve: YieldCurve,
+    curve: TermStructure,
 ) -> list[tuple[float, float]]:
     df_settle = float(curve.discount_factor(settlement_date))
     if df_settle == 0.0:
@@ -52,7 +52,7 @@ def z_spread_from_curve(
     cashflows: list[BondCashFlow],
     *,
     dirty_price: object,
-    curve: YieldCurve,
+    curve: TermStructure,
     settlement_date: Date,
 ) -> Decimal:
     """Solve the Z-spread in raw decimal form from dirty price and cash flows."""
@@ -97,7 +97,7 @@ def z_spread_from_curve(
 def z_spread(
     bond: Bond,
     price: Price,
-    curve: YieldCurve,
+    curve: TermStructure,
     settlement_date: Date,
 ) -> Decimal:
     """Solve the Z-spread in raw decimal form using a clean bond price.
@@ -125,7 +125,7 @@ class ZSpreadCalculator:
         Curve used to discount future bond cash flows.
     """
 
-    curve: YieldCurve
+    curve: TermStructure
 
     def spread_bps(self, bond: Bond, price: Price, settlement_date: Date) -> Decimal:
         """Return the Z-spread in basis points for a clean price input."""

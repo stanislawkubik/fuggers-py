@@ -16,7 +16,6 @@ from fuggers_py.core.types import Compounding
 from fuggers_py.market.curves import DiscountCurveBuilder, InterpolationMethod
 from fuggers_py.market.curves.term_structure import TermStructure
 from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.curves.wrappers import RateCurve
 
 from fuggers_py.core.ids import CurveId
 from fuggers_py.market.snapshot import CurveInputs, CurvePoint
@@ -42,7 +41,7 @@ class ForwardRateCurve:
     accessors for code that expects a forward-curve interface.
     """
 
-    curve: RateCurve
+    curve: TermStructure
 
     def date(self):
         """Return the curve date."""
@@ -130,20 +129,18 @@ def _single_pillar_curve(
     reference_date,
     *,
     discount_factor: bool,
-) -> RateCurve:
+) -> TermStructure:
     point = sorted(points, key=lambda item: item.tenor)[0]
     value_type = (
         ValueType.discount_factor()
         if discount_factor
         else ValueType.zero_rate(Compounding.CONTINUOUS, DayCountConvention.ACT_365_FIXED)
     )
-    return RateCurve(
-        _FlatTermStructure(
-            _reference_date=reference_date,
-            _value=float(point.value),
-            _max_tenor=float(point.tenor),
-            _value_type=value_type,
-        )
+    return _FlatTermStructure(
+        _reference_date=reference_date,
+        _value=float(point.value),
+        _max_tenor=float(point.tenor),
+        _value_type=value_type,
     )
 
 
@@ -166,7 +163,7 @@ class CurveBuilder:
         reference_date,
         *,
         interpolation: str = "linear",
-    ) -> RateCurve:
+    ) -> TermStructure:
         """Build and store a zero curve from raw curve points.
 
         The input points are sorted by tenor before calibration, and a single
@@ -199,7 +196,7 @@ class CurveBuilder:
         reference_date,
         *,
         interpolation: str = "log_linear",
-    ) -> RateCurve:
+    ) -> TermStructure:
         """Build and store a discount curve from raw curve points.
 
         The input points are sorted by tenor before calibration, and a single

@@ -1,9 +1,9 @@
-"""Curve infrastructure for market data, calibration, and wrappers.
+"""Curve infrastructure for market data and calibration.
 
 This package exposes the public curve primitives used throughout the library:
 term structures, builders, bumping helpers, calibration routines, and the
-specialized rate, credit, inflation, repo, and fitted-bond adapters built on
-top of them.
+specialized credit, inflation, repo, and fitted-bond adapters built on top of
+them.
 """
 
 from __future__ import annotations
@@ -60,6 +60,7 @@ from .calibration import (
 )
 from .conversion import ValueConverter
 from .credit import CdsBootstrapPoint, CdsBootstrapResult, bootstrap_credit_curve
+from .curve_metadata import CurveDiagnostics, CurveObjective
 from .delegated import DelegatedCurve, DelegationFallback
 from .derived import CurveTransform, DerivedCurve
 from .discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
@@ -104,14 +105,10 @@ from .models import JumpDiffusionAdjustment, JumpDiffusionCurve, ShadowRateCurve
 from .multicurve import CurrencyPair, MissingCurveError, MultiCurveEnvironment, MultiCurveEnvironmentBuilder, RateIndex
 from .segmented import SegmentSource, SegmentedCurve
 from .term_structure import TermStructure
-from .yield_curve import CurveDiagnostics, CurveObjective, YieldCurve
 from .value_type import ValueType, ValueTypeKind
-from .wrappers import CreditCurve, CurveRef, DiscountCurve, RateCurve
+from .wrappers import CreditCurve
 
-Curve = TermStructure
 CurveError = CurvesError
-RateCurveDyn = RateCurve
-ZeroCurve = RateCurve
 
 __all__ = [
     "Compounding",
@@ -119,23 +116,16 @@ __all__ = [
     "Tenor",
     "CurveDiagnostics",
     "CurveObjective",
-    "YieldCurve",
     "ValueTypeKind",
     "ValueType",
     "ValueConverter",
-    "Curve",
-    "CurveRef",
     "CurveError",
     "TermStructure",
     "InterpolationMethod",
     "ExtrapolationMethod",
     "DiscreteCurve",
     "ForwardCurve",
-    "DiscountCurve",
-    "RateCurve",
     "CreditCurve",
-    "RateCurveDyn",
-    "ZeroCurve",
     "Interpolator",
     "LinearInterpolator",
     "LogLinearInterpolator",

@@ -28,10 +28,9 @@ from fuggers_py.market.indices import IndexFixingStore
 from fuggers_py.products.bonds.instruments import CallableBond, FixedBond, FloatingRateNote, TipsBond, ZeroCouponBond
 from fuggers_py.pricers.bonds.options import HullWhiteModel
 from fuggers_py.pricers.bonds import TipsPricer
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Price
 from fuggers_py.market.curves.bumping import ParallelBump
-from fuggers_py.market.curves.wrappers import RateCurve
+from fuggers_py.market.curves.term_structure import TermStructure
 from fuggers_py.core.ids import CurveId, InstrumentId
 from fuggers_py.market.snapshot import MarketDataSnapshot
 from fuggers_py.market.sources import (
@@ -599,7 +598,7 @@ class PricingRouter:
         *,
         market_price: object | None,
         market_price_is_dirty: bool,
-        discount_curve: YieldCurve | None,
+        discount_curve: TermStructure | None,
     ) -> tuple[Decimal, Decimal, Decimal]:
         accrued = instrument.accrued_interest(settlement_date)
         if market_price is not None:
@@ -768,7 +767,7 @@ class PricingRouter:
     def _key_rate_durations(
         self,
         instrument,
-        curve: YieldCurve | None,
+        curve: TermStructure | None,
         settlement_date: Date,
         spec: PricingSpec,
     ) -> dict[str, Decimal]:
@@ -823,7 +822,7 @@ class PricingRouter:
         i_value = None
         asw_value = None
         if curves.benchmark_curve is not None:
-            if isinstance(curves.benchmark_curve, RateCurve) or hasattr(curves.benchmark_curve, "zero_rate"):
+            if hasattr(curves.benchmark_curve, "zero_rate"):
                 i_value = i_spread(ytm, curves.benchmark_curve.zero_rate(instrument.maturity_date()).value())
             if spec.include_asset_swap and isinstance(instrument, FixedBond):
                 calculator = ParParAssetSwap(curves.benchmark_curve)

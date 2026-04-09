@@ -2,7 +2,8 @@
 
 The base curve is treated as an unconstrained "shadow" rate term structure.
 The exported curve applies a smooth lower bound to produce an observable rate
-curve while preserving the standard :class:`YieldCurve` interface.
+curve while preserving the standard
+:class:`~fuggers_py.market.curves.term_structure.TermStructure` interface.
 """
 
 from __future__ import annotations

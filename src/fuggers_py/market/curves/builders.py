@@ -1,9 +1,9 @@
 """Simple builders for common rate curves.
 
-The builders in this module construct
-:class:`~fuggers_py.market.curves.wrappers.RateCurve` instances from tenor-based
-or date-based inputs. Node values are raw decimals and tenors are interpreted
-as year fractions from the reference date.
+The builders in this module construct concrete
+:class:`~fuggers_py.market.curves.term_structure.TermStructure` objects from
+tenor-based or date-based inputs. Node values are raw decimals and tenors are
+interpreted as year fractions from the reference date.
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ from fuggers_py.core.types import Compounding, Date
 from .builder import CurveBuilder, CurveFamily, SegmentBuilder
 from .discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
 from .errors import BuilderError, MixedPillarTypes
+from .term_structure import TermStructure
 from .value_type import ValueType
-from .wrappers import RateCurve
 
 
 def _float(x: object) -> float:
@@ -92,8 +92,8 @@ class DiscountCurveBuilder:
         self.extrapolation_method = method
         return self
 
-    def build(self) -> RateCurve:
-        """Return the configured discount curve as a yield-curve wrapper."""
+    def build(self) -> TermStructure:
+        """Return the configured discount curve."""
 
         if not self._tenors:
             raise BuilderError("No pillars added.")
@@ -117,7 +117,7 @@ class DiscountCurveBuilder:
             interpolation_method=interpolation,
             extrapolation_method=self.extrapolation_method,
         )
-        return RateCurve(curve)
+        return curve
 
 
 @dataclass(slots=True)
@@ -167,8 +167,8 @@ class ZeroCurveBuilder:
         self.extrapolation_method = method
         return self
 
-    def build(self) -> RateCurve:
-        """Return the configured zero curve as a yield-curve wrapper."""
+    def build(self) -> TermStructure:
+        """Return the configured zero curve."""
 
         if not self._dates:
             raise BuilderError("No rates added.")
@@ -185,7 +185,7 @@ class ZeroCurveBuilder:
             interpolation_method=self.interpolation_method,
             extrapolation_method=self.extrapolation_method,
         )
-        return RateCurve(curve)
+        return curve
 
 
 __all__ = [

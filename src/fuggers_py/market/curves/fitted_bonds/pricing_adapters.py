@@ -12,7 +12,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Price
 from fuggers_py.market.quotes import BondQuote
 from fuggers_py.market.sources import InflationFixingSource
@@ -85,7 +84,7 @@ class BondCurvePricingAdapter(ABC):
         """Return the observed yield implied by the quote."""
 
     @abstractmethod
-    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve | TermStructure, *, settlement_date: Date) -> Decimal:
+    def curve_dirty_price(self, quote: BondQuote, curve: TermStructure, *, settlement_date: Date) -> Decimal:
         """Return the curve-implied dirty price."""
 
     @abstractmethod
@@ -93,7 +92,7 @@ class BondCurvePricingAdapter(ABC):
         self,
         quote: BondQuote,
         fitted_clean_price: Decimal,
-        curve: YieldCurve | TermStructure,
+        curve: TermStructure,
         *,
         settlement_date: Date,
     ) -> Decimal:
@@ -131,7 +130,7 @@ class NominalGovernmentBondPricingAdapter:
             settlement_date,
         ).ytm.value()
 
-    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve | TermStructure, *, settlement_date: Date) -> Decimal:
+    def curve_dirty_price(self, quote: BondQuote, curve: TermStructure, *, settlement_date: Date) -> Decimal:
         bond = self._validate_bond(quote)
         return dirty_price_from_curve(bond, curve, settlement_date)
 
@@ -139,7 +138,7 @@ class NominalGovernmentBondPricingAdapter:
         self,
         quote: BondQuote,
         fitted_clean_price: Decimal,
-        curve: YieldCurve | TermStructure,
+        curve: TermStructure,
         *,
         settlement_date: Date,
     ) -> Decimal:
@@ -199,7 +198,7 @@ class TipsRealBondPricingAdapter:
             fixing_source=self._fixing_source,
         ).ytm.value()
 
-    def curve_dirty_price(self, quote: BondQuote, curve: YieldCurve | TermStructure, *, settlement_date: Date) -> Decimal:
+    def curve_dirty_price(self, quote: BondQuote, curve: TermStructure, *, settlement_date: Date) -> Decimal:
         tips_bond = self._tips_bond(quote)
         present_value = Decimal(0)
         for cash_flow in tips_bond.projected_cash_flows(
@@ -213,7 +212,7 @@ class TipsRealBondPricingAdapter:
         self,
         quote: BondQuote,
         fitted_clean_price: Decimal,
-        curve: YieldCurve | TermStructure,
+        curve: TermStructure,
         *,
         settlement_date: Date,
     ) -> Decimal:

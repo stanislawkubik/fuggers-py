@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py.products.bonds.traits import Bond
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date
+from fuggers_py.market.curves.term_structure import TermStructure
 
 from .benchmark import _to_decimal
 from ..errors import AnalyticsError
@@ -43,7 +43,7 @@ class ISpreadCalculator:
         Curve used to extract the swap rate at maturity.
     """
 
-    curve: YieldCurve
+    curve: TermStructure
 
     def spread_decimal(self, bond: Bond, bond_yield: object, settlement_date: Date | None = None) -> Decimal:
         """Return the I-spread as a raw decimal for ``bond``."""

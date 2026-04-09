@@ -36,6 +36,6 @@ This page defines the shared public conventions used across `fuggers-py`.
 
 - Bond `dv01` may be computed from a bond-yield or YTM-based bump path,
   depending on the bond analytics being used.
-- Rates `dv01` is typically computed from a parallel curve bump.
+- Rates `dv01` is typically computed from a parallel rate bump.
 - The naming and sign convention stay aligned even when the underlying bump
   methodology differs.

@@ -9,10 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.core.traits import YieldCurve
-from fuggers_py.core.types import Compounding, Date, Yield
+from fuggers_py.core.types import Compounding, Date
 
-from ..conversion import ValueConverter
+from ..term_structure import TermStructure
+from ..value_type import ValueType
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -26,11 +26,12 @@ def _tenor_from_date(reference_date: Date, date: Date) -> float:
 
 
 @dataclass(frozen=True, slots=True)
-class BumpedCurve(YieldCurve):
+class BumpedCurve(TermStructure):
     """Curve with a constant raw decimal zero-rate bump."""
 
-    base_curve: YieldCurve
+    base_curve: TermStructure
     bump: float
+    _value_type = ValueType.continuous_zero()
 
     def date(self) -> Date:
         """Return the date of the underlying curve."""
@@ -40,25 +41,13 @@ class BumpedCurve(YieldCurve):
         """Return the constant bump applied to tenor ``t``."""
         return float(self.bump)
 
-    def zero_rate_at_tenor(self, t: float) -> float:
+    def value_at_tenor(self, t: float) -> float:
         """Return the bumped continuous zero rate at tenor ``t``."""
-        date = self.date().add_days(int(round(float(t) * 365.0)))
-        return float(self.zero_rate(date).value())
 
-    def zero_rate(self, date: Date) -> Yield:
-        """Return the continuously compounded bumped zero rate."""
+        tenor = max(float(t), 0.0)
+        date = self.tenor_to_date(tenor)
         base_zero = self.base_curve.zero_rate(date).convert_to(Compounding.CONTINUOUS).value()
-        bumped = float(base_zero) + float(self.bump)
-        return Yield.new(_to_decimal(bumped), Compounding.CONTINUOUS)
-
-    def discount_factor(self, date: Date) -> Decimal:
-        """Return the discount factor implied by the bumped zero rate."""
-        t = _tenor_from_date(self.date(), date)
-        if t <= 0.0:
-            return Decimal(1)
-        zero = self.zero_rate(date).value()
-        df = ValueConverter.zero_to_df(float(zero), float(t), Compounding.CONTINUOUS)
-        return _to_decimal(df)
+        return float(base_zero) + float(self.bump)
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,7 +56,7 @@ class ParallelBump:
 
     bump: float
 
-    def apply(self, curve: YieldCurve) -> BumpedCurve:
+    def apply(self, curve: TermStructure) -> BumpedCurve:
         """Apply the stored raw decimal shift to ``curve``."""
         return BumpedCurve(base_curve=curve, bump=self.bump)
 

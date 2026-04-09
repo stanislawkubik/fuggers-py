@@ -22,7 +22,7 @@ from fuggers_py.math.optimization import OptimizationConfig, OptimizationResult,
 from ..conversion import ValueConverter
 from ..errors import InvalidCurveInput
 from ..term_structure import TermStructure
-from ..wrappers import RateCurve
+from ..value_type import ValueType
 from .instruments import CalibrationInstrument, InstrumentSet
 
 
@@ -73,7 +73,7 @@ class FitterConfig:
 class GlobalFitResult:
     """Result of a global parametric fit."""
 
-    curve: RateCurve
+    curve: TermStructure
     parameters: NDArray[np.float64]
     objective_value: float
     iterations: int
@@ -122,6 +122,10 @@ class ParametricZeroCurve(TermStructure):
     compounding: Compounding
     day_count: DayCountConvention
     max_t: float
+    _value_type: ValueType = ValueType.continuous_zero()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "_value_type", ValueType.zero_rate(self.compounding, self.day_count))
 
     def date(self) -> Date:  # type: ignore[override]
         """Return the curve date."""
@@ -254,15 +258,13 @@ class GlobalFitter:
 
         opt = self._fit(residuals, initial)
         max_t = float(t.max())
-        curve = RateCurve(
-            ParametricZeroCurve(
-                _reference_date=self.reference_date,
-                parameters=opt.parameters,
-                model=self.config.model,
-                compounding=self.config.compounding,
-                day_count=self.config.day_count,
-                max_t=max_t,
-            )
+        curve = ParametricZeroCurve(
+            _reference_date=self.reference_date,
+            parameters=opt.parameters,
+            model=self.config.model,
+            compounding=self.config.compounding,
+            day_count=self.config.day_count,
+            max_t=max_t,
         )
         return GlobalFitResult(
             curve=curve,
@@ -294,30 +296,26 @@ class GlobalFitter:
         def residuals(raw_params: NDArray[np.float64]) -> NDArray[np.float64]:
             params = self._decode_parameters(raw_params)
             max_t = float(maturities.max())
-            curve = RateCurve(
-                ParametricZeroCurve(
-                    _reference_date=self.reference_date,
-                    parameters=params,
-                    model=self.config.model,
-                    compounding=self.config.compounding,
-                    day_count=self.config.day_count,
-                    max_t=max_t,
-                )
+            curve = ParametricZeroCurve(
+                _reference_date=self.reference_date,
+                parameters=params,
+                model=self.config.model,
+                compounding=self.config.compounding,
+                day_count=self.config.day_count,
+                max_t=max_t,
             )
             modeled = np.array([float(inst.par_rate(curve)) for inst in insts], dtype=float)
             return modeled - quotes
 
         opt = self._fit(residuals, initial)
         max_t = float(maturities.max())
-        curve = RateCurve(
-            ParametricZeroCurve(
-                _reference_date=self.reference_date,
-                parameters=opt.parameters,
-                model=self.config.model,
-                compounding=self.config.compounding,
-                day_count=self.config.day_count,
-                max_t=max_t,
-            )
+        curve = ParametricZeroCurve(
+            _reference_date=self.reference_date,
+            parameters=opt.parameters,
+            model=self.config.model,
+            compounding=self.config.compounding,
+            day_count=self.config.day_count,
+            max_t=max_t,
         )
         return GlobalFitResult(
             curve=curve,

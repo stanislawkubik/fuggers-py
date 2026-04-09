@@ -11,8 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Date, Price, Yield
+from fuggers_py.market.curves.term_structure import TermStructure
 
 from fuggers_py.pricers.bonds import BondPricer as _BondPricer
 from fuggers_py.pricers.bonds import TipsPricer as _TipsPricer
@@ -49,7 +49,7 @@ class BondPricer:
 
     _delegate: _BondPricer = _BondPricer()
 
-    def price_from_curve(self, bond: Bond, curve: YieldCurve, settlement_date: Date) -> PriceResult:
+    def price_from_curve(self, bond: Bond, curve: TermStructure, settlement_date: Date) -> PriceResult:
         """Price a bond off a curve using settlement-relative discounting.
 
         The resulting dirty price is computed relative to settlement by

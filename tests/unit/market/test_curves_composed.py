@@ -18,11 +18,11 @@ from fuggers_py.market.curves import (
     SegmentedCurve,
     SegmentBuilder,
     STANDARD_KEY_TENORS,
+    TermStructure,
     key_rate_profile,
 )
 from fuggers_py.market.curves import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
 from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.curves.wrappers import RateCurve
 
 
 def test_curve_builder_builds_segmented_discount_curve() -> None:
@@ -49,7 +49,7 @@ def test_curve_builder_builds_segmented_discount_curve() -> None:
         .build()
     )
 
-    assert isinstance(curve.curve, SegmentedCurve)
+    assert isinstance(curve, SegmentedCurve)
     assert float(curve.discount_factor(ref.add_days(365 * 7))) < 1.0
 
 
@@ -77,15 +77,14 @@ def test_delegated_curve_falls_back_out_of_range() -> None:
 
 def test_derived_curve_applies_parallel_shift() -> None:
     ref = Date.from_ymd(2024, 1, 1)
-    base = RateCurve(
-        DiscreteCurve(
-            ref,
-            [1.0, 30.0],
-            [0.03, 0.03],
-            value_type=ValueType.zero_rate(Compounding.CONTINUOUS),
-            interpolation_method=InterpolationMethod.LINEAR,
-        )
+    base = DiscreteCurve(
+        ref,
+        [1.0, 30.0],
+        [0.03, 0.03],
+        value_type=ValueType.zero_rate(Compounding.CONTINUOUS),
+        interpolation_method=InterpolationMethod.LINEAR,
     )
+    assert isinstance(base, TermStructure)
     shifted = DerivedCurve.from_curve(base, CurveTransform.parallel_shift(Decimal("0.0025")))
     date = ref.add_days(365 * 10)
     assert float(shifted.zero_rate(date).value()) == pytest.approx(0.0325, abs=1e-12)

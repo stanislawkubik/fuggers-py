@@ -10,10 +10,10 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core.traits import YieldCurve
-from fuggers_py.core.types import Compounding, Date, Yield
+from fuggers_py.core.types import Compounding, Date
 
-from ..conversion import ValueConverter
+from ..term_structure import TermStructure
+from ..value_type import ValueType
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -83,17 +83,18 @@ class KeyRateBump:
             return float(self.bump) * (right - t) / (right - key)
         return 0.0
 
-    def apply(self, curve: YieldCurve) -> "KeyRateBumpedCurve":
+    def apply(self, curve: TermStructure) -> "KeyRateBumpedCurve":
         """Apply the key-rate bump to a curve."""
         return KeyRateBumpedCurve(base_curve=curve, key_rate_bump=self)
 
 
 @dataclass(frozen=True, slots=True)
-class KeyRateBumpedCurve(YieldCurve):
+class KeyRateBumpedCurve(TermStructure):
     """Curve with a localized key-rate zero-rate bump."""
 
-    base_curve: YieldCurve
+    base_curve: TermStructure
     key_rate_bump: KeyRateBump
+    _value_type = ValueType.continuous_zero()
 
     def date(self) -> Date:
         """Return the date of the underlying curve."""
@@ -103,21 +104,13 @@ class KeyRateBumpedCurve(YieldCurve):
         """Return the raw decimal bump applied at tenor ``t``."""
         return self.key_rate_bump.bump_at(t)
 
-    def zero_rate(self, date: Date) -> Yield:
-        """Return the continuously compounded bumped zero rate."""
-        base_zero = self.base_curve.zero_rate(date).convert_to(Compounding.CONTINUOUS).value()
-        t = _tenor_from_date(self.date(), date)
-        bumped = float(base_zero) + self.key_rate_bump.bump_at(t)
-        return Yield.new(_to_decimal(bumped), Compounding.CONTINUOUS)
+    def value_at_tenor(self, t: float) -> float:
+        """Return the continuously compounded bumped zero rate at tenor ``t``."""
 
-    def discount_factor(self, date: Date) -> Decimal:
-        """Return the discount factor implied by the bumped zero rate."""
-        t = _tenor_from_date(self.date(), date)
-        if t <= 0.0:
-            return Decimal(1)
-        zero = self.zero_rate(date).value()
-        df = ValueConverter.zero_to_df(float(zero), float(t), Compounding.CONTINUOUS)
-        return _to_decimal(df)
+        tenor = max(float(t), 0.0)
+        date = self.tenor_to_date(tenor)
+        base_zero = self.base_curve.zero_rate(date).convert_to(Compounding.CONTINUOUS).value()
+        return float(base_zero) + self.key_rate_bump.bump_at(tenor)
 
 
 __all__ = ["KeyRateBump", "KeyRateBumpedCurve"]

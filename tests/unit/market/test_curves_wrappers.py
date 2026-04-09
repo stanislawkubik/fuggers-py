@@ -8,10 +8,9 @@ from fuggers_py.core.types import Date
 from fuggers_py.market.curves.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
 from fuggers_py.market.curves.errors import InvalidCurveInput
 from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.curves.wrappers import RateCurve
 
 
-def test_rate_curve_from_discount_factors_df_zero_forward() -> None:
+def test_term_structure_from_discount_factors_df_zero_forward() -> None:
     ref = Date.from_ymd(2024, 1, 1)
     r = 0.05
     tenors = [1.0, 2.0]
@@ -25,7 +24,7 @@ def test_rate_curve_from_discount_factors_df_zero_forward() -> None:
         interpolation_method=InterpolationMethod.LOG_LINEAR,
         extrapolation_method=ExtrapolationMethod.FLAT,
     )
-    curve = RateCurve(inner)
+    curve = inner
 
     df_1y = curve.discount_factor(ref.add_days(365))
     assert float(df_1y) == pytest.approx(math.exp(-0.05), abs=1e-12)
@@ -36,11 +35,11 @@ def test_rate_curve_from_discount_factors_df_zero_forward() -> None:
     fwd_1y_2y = curve.forward_rate_at_tenors(1.0, 2.0)
     assert fwd_1y_2y == pytest.approx(0.05, abs=1e-12)
 
-    with pytest.raises(InvalidCurveInput):
+    with pytest.raises(ValueError):
         _ = curve.forward_rate_at_tenors(2.0, 1.0)
 
 
-def test_rate_curve_from_zero_rates_discount_factor() -> None:
+def test_term_structure_from_zero_rates_discount_factor() -> None:
     ref = Date.from_ymd(2024, 1, 1)
     r = 0.05
     inner = DiscreteCurve(
@@ -51,6 +50,5 @@ def test_rate_curve_from_zero_rates_discount_factor() -> None:
         interpolation_method=InterpolationMethod.LINEAR,
         extrapolation_method=ExtrapolationMethod.FLAT,
     )
-    curve = RateCurve(inner)
+    curve = inner
     assert float(curve.discount_factor(ref.add_days(365))) == pytest.approx(math.exp(-0.05), abs=1e-12)
-

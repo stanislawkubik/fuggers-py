@@ -1,9 +1,10 @@
 """Optional advanced curve-model overlays.
 
-These research overlays sit on top of a base :class:`~fuggers_py.core.traits.YieldCurve`
-and preserve the same zero-rate and discount-factor interface. They are
-intended for alternative curve views such as shadow-rate floors and
-deterministic jump-diffusion adjustments, not for the standard bootstrap path.
+These research overlays sit on top of a base
+:class:`~fuggers_py.market.curves.term_structure.TermStructure` and preserve
+the same zero-rate and discount-factor interface. They are intended for
+alternative curve views such as shadow-rate floors and deterministic
+jump-diffusion adjustments, not for the standard bootstrap path.
 """
 
 from __future__ import annotations

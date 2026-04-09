@@ -2,8 +2,8 @@
 
 This builder mirrors the higher-level curve construction API used by the
 analytics layer. Inputs are raw decimals and tenors are expressed in years
-from the reference date, so the resulting wrapper is ready for market-layer
-consumers without additional conversion.
+from the reference date, so the resulting term structure is ready for
+market-layer consumers without additional conversion.
 """
 
 from __future__ import annotations
@@ -18,18 +18,18 @@ from fuggers_py.core.types import Compounding, Date
 
 from ..calibration.instruments import CalibrationInstrument
 from ..discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from ..segmented import SegmentedCurve
 from ..errors import BuilderError, MixedPillarTypes
+from ..segmented import SegmentBuilder, SegmentedCurve
+from ..term_structure import TermStructure
 from ..value_type import ValueType
-from ..wrappers import CreditCurve, RateCurve
-from ..segmented import SegmentBuilder
+from ..wrappers import CreditCurve
 
 
 class CurveFamily(str, Enum):
     """Curve families supported by :class:`CurveBuilder`.
 
     The family determines the semantic value type used by the constructed
-    curve and which wrapper is returned.
+    curve and which object is returned.
     """
 
     DISCOUNT = "DISCOUNT"
@@ -76,8 +76,8 @@ class CurveBuilder:
     :class:`~fuggers_py.market.curves.value_type.ValueType` from the configured
     family. Credit families return
     :class:`~fuggers_py.market.curves.wrappers.CreditCurve` wrappers; all other
-    families return :class:`~fuggers_py.market.curves.wrappers.RateCurve`
-    wrappers.
+    families return raw
+    :class:`~fuggers_py.market.curves.term_structure.TermStructure` objects.
 
     Attributes
     ----------
@@ -184,11 +184,7 @@ class CurveBuilder:
         return self
 
     def build(self):
-        """Return the configured curve wrapper.
-
-        Depending on the family, the result is wrapped as a rate curve or a
-        credit curve so callers can use the standard market-layer traits.
-        """
+        """Return the configured curve object."""
 
         value_type = self._resolve_value_type()
         interpolation = self.interpolation_method or self._default_interpolation(value_type=value_type)
@@ -233,8 +229,8 @@ class CurveBuilder:
             return InterpolationMethod.LOG_LINEAR
         return InterpolationMethod.LINEAR
 
-    def _wrap_curve(self, curve):
-        """Wrap the concrete curve in the public rate or credit adapter."""
+    def _wrap_curve(self, curve: TermStructure):
+        """Wrap credit curves and leave rate curves as raw term structures."""
 
         if self.family in {
             CurveFamily.CREDIT,
@@ -243,7 +239,7 @@ class CurveBuilder:
             CurveFamily.CREDIT_SPREAD,
         }:
             return CreditCurve(curve, recovery_rate=self.recovery_rate)
-        return RateCurve(curve)
+        return curve
 
 
 __all__ = [

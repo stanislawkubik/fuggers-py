@@ -14,7 +14,6 @@ from decimal import Decimal
 from typing import Sequence
 
 from fuggers_py.core import Currency, Date, Frequency, Price
-from fuggers_py.core.traits import YieldCurve as CoreYieldCurve
 from fuggers_py.pricers.bonds import BondPricer
 from fuggers_py.products.bonds import FixedBondBuilder
 from fuggers_py.products.bonds.traits import Bond
@@ -67,7 +66,7 @@ class ParCurveSpec:
 class FittedParYieldCurve:
     """Direct par-yield curve built from a fitted bond discount or zero curve."""
 
-    curve: CoreYieldCurve | TermStructure
+    curve: TermStructure
     spec: ParCurveSpec = field(default_factory=ParCurveSpec)
     pricer: BondPricer = field(default_factory=BondPricer)
 

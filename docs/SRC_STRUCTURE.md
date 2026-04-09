@@ -21,7 +21,6 @@ from fuggers_py import (
     products,
     reference,
 )
-from fuggers_py.market.curves import DiscountCurveBuilder
 from fuggers_py.products.bonds import FixedBondBuilder
 ```
 
@@ -38,7 +37,7 @@ from fuggers_py.products.bonds import FixedBondBuilder
 - External boundaries and persistence layers.
 - `file.py`: file-backed loaders, file-backed market-data sources, and no-op output publishers.
 - `json_codec.py`: JSON codecs used at the library boundary.
-- `storage.py`, `sqlite_storage.py`, `portfolio_store.py`: persistence protocols and concrete stores for curves, config, audits, and portfolios.
+- `storage.py`, `sqlite_storage.py`, `portfolio_store.py`: persistence protocols and concrete stores for market data, config, audits, and portfolios.
 - `transport.py`: transport and caching interfaces for remote or deferred IO.
 
 ### `calc/`
@@ -46,7 +45,6 @@ from fuggers_py.products.bonds import FixedBondBuilder
 - Orchestration and runtime wiring.
 - `pricing_specs.py` and `output.py`: typed engine inputs and outputs.
 - `pricing_router.py`, `rates_pricing_router.py`, `funding_pricing_router.py`: routing from products and market inputs into pricers.
-- `curve_builder.py`: runtime curve-building coordination that wraps the curve package for engine use.
 - `market_data_listener.py`, `calc_graph.py`, `reactive.py`, `scheduler.py`: reactive runtime, update propagation, and scheduling.
 - `builder.py`, `config.py`, `coordination.py`: engine assembly and runtime config or service coordination.
 
@@ -54,7 +52,7 @@ from fuggers_py.products.bonds import FixedBondBuilder
 
 - Shared primitives used everywhere else.
 - `types.py`: dates, currencies, prices, yields, spreads, cashflow records, and other shared value objects.
-- `ids.py`: canonical identifiers such as `InstrumentId`, `CurveId`, and `VolSurfaceId`.
+- `ids.py`: canonical identifiers such as `InstrumentId`, `PortfolioId`, and `VolSurfaceId`.
 - `calendars.py` and `daycounts.py`: date adjustment, holiday logic, and accrual conventions.
 - `traits.py`: low-level protocols used across pricing and analytics layers.
 - `errors.py`: the common exception root and only the truly shared primitive exceptions.
@@ -64,17 +62,16 @@ from fuggers_py.products.bonds import FixedBondBuilder
 - Dynamic market inputs and runtime market state.
 - In this repo, `market` means observed market data and assembled pricing state. It does not mean every finance-related module.
 - `quotes.py`: raw and typed market quote records for bonds, swaps, repos, FX, futures, CDS, and related instruments.
-- `snapshot.py`: immutable market-data snapshots that bundle curves, fixings, FX rates, ETF records, and volatility surfaces.
-- `sources.py`: market-data provider protocols and in-memory source implementations for quotes, curves, fixings, FX, inflation, and ETFs.
-- `state.py`: runtime bundles of curves, projection sets, inflation curves, quote side, and optional vol surfaces passed into pricing and measures.
+- `snapshot.py`: immutable market-data snapshots that bundle fixings, FX rates, ETF records, and volatility surfaces.
+- `sources.py`: market-data provider protocols and in-memory source implementations for quotes, fixings, FX, inflation, and ETFs.
+- `state.py`: runtime market-state bundles passed into pricing and measures.
 - `indices/`: fixing stores, index conventions, overnight compounding helpers, and bond-index wrappers.
-- `curves/`: the full term-structure namespace, including base curve types, calibration, builders, bumping, multicurve, inflation, credit, funding, and fitted-bond tools.
 - `vol_surfaces/`: volatility surface records, quote conventions, and in-memory volatility surface sources. This is the canonical volatility namespace now, but it is still an early-scope package rather than a full smile or cube modeling stack.
 
 ### `math/`
 
 - Numerical infrastructure.
-- `interpolation/` and `extrapolation/`: interpolation schemes and extrapolation policies used by curves and analytics.
+- `interpolation/` and `extrapolation/`: interpolation schemes and extrapolation policies used by numerical routines across the library.
 - `solvers/`: root finders and generic solver interfaces.
 - `optimization/`: lightweight optimizers and fit result records.
 - `linear_algebra/`: small linear-algebra helpers used by numerical routines.
@@ -103,7 +100,7 @@ from fuggers_py.products.bonds import FixedBondBuilder
 
 - Low-level valuation and risk engines.
 - `bonds/`: bond pricing, accrued-interest logic, bond option models, and bond risk helpers.
-- `rates/`: swap, FRA, futures, and rates-option pricers plus curve-resolution helpers and rates risk modules.
+- `rates/`: swap, FRA, futures, and rates-option pricers plus rates risk modules.
 - `credit/`: credit default swap pricing and related credit valuation helpers.
 
 ### `products/`
@@ -124,11 +121,6 @@ from fuggers_py.products.bonds import FixedBondBuilder
 
 ## Notable subdirectories
 
-### `market/curves/`
-
-- Single home for generic and specialized curve logic.
-- Base term-structure types, conversion/value semantics, discrete/derived/forward/delegated/segmented curves, calibration helpers, builders, and specialized curve families.
-
 ### `market/indices/`
 
 - Bond-index and fixing-store infrastructure plus overnight index conventions.
@@ -144,7 +136,7 @@ from fuggers_py.products.bonds import FixedBondBuilder
 
 ### `pricers/rates/`
 
-- Rates valuation logic, futures and option pricers, risk helpers, and the market-input resolution code that binds curves or vol surfaces into the pricing models.
+- Rates valuation logic, futures and option pricers, risk helpers, and the market-input resolution code that binds market state into the pricing models.
 
 ### `products/rates/`
 
@@ -165,8 +157,8 @@ from fuggers_py.products.bonds import FixedBondBuilder
 ## Error placement rules
 
 - `core/errors.py` owns `FuggersError` and only the shared primitive exceptions used by core value types, calendars, and day-count logic.
-- Package-specific failures live in that package's `errors.py`, or in a public subpackage `errors.py` when the public error boundary is narrower than the package, such as `reference/bonds/errors.py`, `market/curves/errors.py`, and `pricers/bonds/options/errors.py`.
-- All library-defined exceptions must subclass `FuggersError`, either directly or through a package-specific root such as `BondError`, `CurvesError`, `MathError`, `AnalyticsError`, or `EngineError`.
+- Package-specific failures live in that package's `errors.py`, or in a public subpackage `errors.py` when the public error boundary is narrower than the package, such as `reference/bonds/errors.py`, `math/errors.py`, and `pricers/bonds/options/errors.py`.
+- All library-defined exceptions must subclass `FuggersError`, either directly or through a package-specific root such as `BondError`, `MathError`, `AnalyticsError`, or `EngineError`.
 - Feature modules raise exceptions imported from their package error module. They should not define new exception classes inline when the package already has an error namespace.
 - If a package does not need a stable package-specific error surface, do not add an `errors.py` file just for symmetry.
 

@@ -12,11 +12,11 @@ from decimal import Decimal
 from enum import Enum
 from typing import Callable
 
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.core.types import Compounding, Date, Yield
 
 from .conversion import ValueConverter
-from .wrappers import RateCurve
+from .term_structure import TermStructure
+from .value_type import ValueType
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -54,7 +54,7 @@ class CurveTransform:
 
     kind: CurveTransformKind
     amount: Decimal = Decimal(0)
-    overlay: YieldCurve | None = None
+    overlay: TermStructure | None = None
     fn: Callable[[float, float], float] | None = None
 
     @classmethod
@@ -68,7 +68,7 @@ class CurveTransform:
         return cls(kind=CurveTransformKind.MULTIPLICATIVE, amount=_to_decimal(factor))
 
     @classmethod
-    def spread_overlay(cls, overlay: YieldCurve) -> "CurveTransform":
+    def spread_overlay(cls, overlay: TermStructure) -> "CurveTransform":
         """Create an additive overlay using the overlay curve's zero rate."""
         return cls(kind=CurveTransformKind.SPREAD_OVERLAY, overlay=overlay)
 
@@ -101,60 +101,54 @@ class CurveTransform:
 
 
 @dataclass(frozen=True, slots=True)
-class DerivedCurve(YieldCurve):
+class DerivedCurve(TermStructure):
     """Curve derived from a base curve via a sequence of transforms.
 
     The curve keeps the base curve's date anchors and applies each transform in
     order to the base continuously compounded zero rate.
     """
 
-    base_curve: YieldCurve
+    base_curve: TermStructure
     transforms: tuple[CurveTransform, ...]
+    _value_type = ValueType.continuous_zero()
 
     @classmethod
-    def from_curve(cls, base_curve: YieldCurve, *transforms: CurveTransform) -> "DerivedCurve":
+    def from_curve(cls, base_curve: TermStructure, *transforms: CurveTransform) -> "DerivedCurve":
         """Construct a derived curve from a base curve and transforms."""
         return cls(base_curve=base_curve, transforms=tuple(transforms))
 
     @classmethod
-    def parallel_shift(cls, base_curve: YieldCurve, amount: object) -> "DerivedCurve":
+    def parallel_shift(cls, base_curve: TermStructure, amount: object) -> "DerivedCurve":
         """Construct a derived curve with a single parallel shift."""
         return cls.from_curve(base_curve, CurveTransform.parallel_shift(amount))
 
     @classmethod
-    def spread_overlay(cls, base_curve: YieldCurve, overlay: YieldCurve) -> "DerivedCurve":
+    def spread_overlay(cls, base_curve: TermStructure, overlay: TermStructure) -> "DerivedCurve":
         """Construct a derived curve with a zero-rate spread overlay."""
         return cls.from_curve(base_curve, CurveTransform.spread_overlay(overlay))
 
     @classmethod
     def transformed(
         cls,
-        base_curve: YieldCurve | RateCurve,
+        base_curve: TermStructure,
         fn: Callable[[float, float], float],
     ) -> "DerivedCurve":
         """Construct a derived curve backed by an arbitrary callable."""
-        curve = base_curve if isinstance(base_curve, YieldCurve) else RateCurve(base_curve)
-        return cls.from_curve(curve, CurveTransform.function(fn))
+        return cls.from_curve(base_curve, CurveTransform.function(fn))
 
     def date(self) -> Date:
         """Return the date of the base curve."""
         return self.base_curve.date()
 
-    def zero_rate(self, date: Date) -> Yield:
-        """Return the transformed continuously compounded zero rate."""
-        tenor = max(float(self.date().days_between(date)) / 365.0, 0.0)
+    def value_at_tenor(self, t: float) -> float:
+        """Return the transformed continuous zero rate at tenor ``t``."""
+
+        tenor = max(float(t), 0.0)
+        date = self.tenor_to_date(tenor)
         zero = float(self.base_curve.zero_rate(date).convert_to(Compounding.CONTINUOUS).value())
         for transform in self.transforms:
             zero = transform.apply(tenor=tenor, base_zero=zero, date=date)
-        return Yield.new(_to_decimal(zero), Compounding.CONTINUOUS)
-
-    def discount_factor(self, date: Date) -> Decimal:
-        """Return the discount factor implied by the transformed zero rate."""
-        tenor = max(float(self.date().days_between(date)) / 365.0, 0.0)
-        if tenor <= 0.0:
-            return Decimal(1)
-        zero = float(self.zero_rate(date).value())
-        return _to_decimal(ValueConverter.zero_to_df(zero, tenor, Compounding.CONTINUOUS))
+        return zero
 
 
 __all__ = ["CurveTransform", "CurveTransformKind", "DerivedCurve"]

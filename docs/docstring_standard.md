@@ -97,7 +97,7 @@ Good:
 
 - "Return accrual periods for the schedule."
 - "Plain fixed-for-floating interest-rate swap."
-- "Return the instrument DV01 from a parallel curve bump."
+- "Return the instrument DV01 from a parallel rate bump."
 
 Avoid vague summaries such as:
 
@@ -112,7 +112,7 @@ output should be read.
 
 Good reasons to include it:
 
-- the function bumps a curve rather than a yield
+- the function bumps a rate rather than a yield
 - accrual uses unadjusted dates while payment uses adjusted dates
 - a measure is quoted in percent-of-par but stored internally in raw decimals
 - the routine mutates state, publishes events, or caches results
@@ -168,7 +168,7 @@ Examples:
 Document exceptions that matter to users of the API:
 
 - invalid conventions or unsupported aliases
-- missing curve inputs
+- missing market inputs
 - out-of-range interpolation when extrapolation is disallowed
 - scheduling or routing failures in calc-layer code
 
@@ -283,23 +283,23 @@ This is the target level of detail for an important public measure:
 ```python
 def dv01(
     instrument: Bond,
-    curve: ZeroCurve,
+    yield_to_maturity: Decimal,
     bump_size: Decimal = Decimal("0.0001"),
 ) -> Decimal:
-    """Return the instrument DV01 from a parallel curve bump.
+    """Return the instrument DV01 from a parallel yield bump.
 
-    The instrument is repriced on the base curve and on a bumped curve. The
-    result follows the library sign convention: DV01 is positive when PV rises
-    as rates fall.
+    The instrument is repriced at the base yield and at a bumped yield. The
+    result follows the library sign convention: DV01 is positive when PV rises as
+    yields fall.
 
     Parameters
     ----------
     instrument:
         Instrument to reprice.
-    curve:
-        Curve used for base and bumped valuation.
+    yield_to_maturity:
+        Base yield used for valuation.
     bump_size:
-        Parallel bump in raw decimal units. ``0.0001`` means 1 bp.
+        Parallel yield bump in raw decimal units. ``0.0001`` means 1 bp.
 
     Returns
     -------

@@ -11,10 +11,7 @@ from fuggers_py.market.curves import (
     Compounding,
     CubicSpline,
     Currency,
-    Curve,
     CurveError,
-    CurveRef,
-    DiscountCurve,
     DiscountCurveBuilder,
     Interpolator,
     LinearInterpolator,
@@ -22,10 +19,11 @@ from fuggers_py.market.curves import (
     MonotoneConvex,
     NelsonSiegel,
     Svensson,
+    TermStructure,
     Tenor,
 )
-from fuggers_py.market.curves import RateCurve, TermStructure, ZeroCurveBuilder
 from fuggers_py.market.curves import JumpDiffusionCurve, ShadowRateCurve
+from fuggers_py.market.curves import ZeroCurveBuilder
 
 
 def _eval_interpolator(interpolator: Interpolator, x: float) -> float:
@@ -35,31 +33,23 @@ def _eval_interpolator(interpolator: Interpolator, x: float) -> float:
 def test_curves_root_imports_expose_public_surface() -> None:
     tenor = Tenor.parse("5Y")
 
-    assert Curve is TermStructure
-    assert DiscountCurve is RateCurve
     assert Compounding is core_compounding
     assert Currency.USD.code() == "USD"
     assert str(tenor) == "5Y"
 
 
-def test_curve_ref_wraps_discount_and_term_structure_aliases() -> None:
+def test_discount_curve_builder_returns_term_structure() -> None:
     reference_date = Date.from_ymd(2024, 1, 1)
-    discount_curve = (
+    curve = (
         DiscountCurveBuilder(reference_date=reference_date)
         .add_pillar(1.0, math.exp(-0.04))
         .add_pillar(2.0, math.exp(-0.08))
         .build()
     )
-    curve_ref = CurveRef.of(discount_curve)
 
-    assert isinstance(discount_curve, DiscountCurve)
-    assert curve_ref.unwrap() is discount_curve
-    assert curve_ref.as_discount_curve() is discount_curve
-    assert isinstance(curve_ref.as_curve(), Curve)
-    assert curve_ref.date() == reference_date
-    assert curve_ref.discount_factor(reference_date.add_days(365)) == discount_curve.discount_factor(
-        reference_date.add_days(365)
-    )
+    assert isinstance(curve, TermStructure)
+    assert curve.date() == reference_date
+    assert curve.discount_factor(reference_date.add_days(365)) < 1
 
 
 def test_curves_root_reexports_interpolators_and_parametric_models() -> None:
@@ -78,7 +68,7 @@ def test_curves_root_reexports_interpolators_and_parametric_models() -> None:
     assert 0.0 < svensson.interpolate(5.0) < 0.1
 
 
-def test_existing_curve_builders_remain_compatible_with_new_aliases() -> None:
+def test_existing_curve_builders_return_term_structures() -> None:
     reference_date = Date.from_ymd(2024, 1, 1)
     curve = (
         DiscountCurveBuilder(reference_date=reference_date)
@@ -87,8 +77,7 @@ def test_existing_curve_builders_remain_compatible_with_new_aliases() -> None:
         .build()
     )
 
-    assert isinstance(curve, RateCurve)
-    assert isinstance(curve, DiscountCurve)
+    assert isinstance(curve, TermStructure)
     assert float(curve.discount_factor(reference_date.add_days(365))) == pytest.approx(math.exp(-0.03), rel=1e-4)
 
 
