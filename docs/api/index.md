@@ -13,6 +13,7 @@ before `1.x`.
 core
 reference
 market
+market_curves
 products
 pricers
 measures

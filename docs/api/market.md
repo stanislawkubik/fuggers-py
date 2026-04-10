@@ -48,6 +48,12 @@ Market state, quotes, fixings, and indices.
 
 `fuggers_py.market.curves` is intentionally small right now.
 
+If you want the detailed explanation of the package structure, read
+[the dedicated `market.curves` guide](market_curves.md) first. That page
+explains what each object means, what belongs in each file, and how to think
+about the difference between `RatesTermStructure`, `DiscountingCurve`, and
+`YieldCurve`.
+
 The package currently exposes the public rates curve root and the small set of
 objects that define what a rates curve means:
 
@@ -56,6 +62,9 @@ objects that define what a rates curve means:
 - `RateSpace`: the meaning of the rate returned by the curve
 - `ExtrapolationPolicy`: the rule for tenors past the curve domain
 - `RatesTermStructure`: the public base class for rates curves
+- `DiscountingCurve`: the public base class for curves that can discount cash flows
+- `YieldCurve`: the concrete public class for discounting-style rates curves
+- `RelativeRateCurve`: the public root for non-discounting rate curves such as spreads
 
 The key contract is simple:
 
@@ -63,6 +72,7 @@ The key contract is simple:
 - `curve.rate_at(tenor)` returns the rate at that tenor in the curve's `rate_space`
 - `curve.max_t()` returns the last supported tenor
 - `curve.validate_rate(tenor)` checks the tenor domain and verifies that the returned rate is finite
+- if the curve is a `DiscountingCurve`, it also supports `discount_factor_at(tenor)`, `zero_rate_at(tenor)`, and `forward_rate_between(start_tenor, end_tenor)`
 
 In plain language, this is the point:
 
@@ -76,14 +86,26 @@ So you should read the API like this:
 - `curve.rate_at(5.0)` answers "what is your 5-year number?"
 - `curve.rate_space` answers "what kind of number is it?"
 
-That keeps the root contract honest. At this stage the base curve only promises:
+That keeps the root contract honest. At the root level the base curve only promises:
 
 - a tenor-to-rate mapping
 - a clear meaning for the returned rate
 - a clear tenor domain
 
-It does not yet promise that every curve can discount cash flows. That comes
-later with discounting-style subclasses.
+Discounting behavior now sits on the separate `DiscountingCurve` branch. That
+is the point of the Step 3 split:
+
+- `RatesTermStructure` means "a tenor-to-rate object"
+- `DiscountingCurve` means "a tenor-to-rate object that can also discount cash flows"
+- `RelativeRateCurve` means "a tenor-to-rate object that should not be used as a discount curve"
+
+`YieldCurve` now sits on top of that split as the concrete public discounting
+object. It always exposes a public zero-rate view:
+
+- `yield_curve.rate_space` is always `RateSpace.ZERO`
+- `yield_curve.rate_at(tenor)` returns the zero / spot-rate view for positive tenor
+- `yield_curve.discount_factor_at(tenor)` delegates to one internal kernel
+- `yield_curve.calibration_report` may carry one optional fit report attachment
 
 The package also keeps a few shared helpers:
 
@@ -91,8 +113,44 @@ The package also keeps a few shared helpers:
 - `errors.py`: shared curve exceptions such as `InvalidCurveInput` and `TenorOutOfBounds`
 - `multicurve/`: identifiers used for later multi-curve assembly, currently `RateIndex` and `CurrencyPair`
 
-Today the public tree stops at `RatesTermStructure`. Discounting curves,
-breakeven curves, and fit engines are not in the rebuilt public module yet.
+Today the public operation roots exist, and `YieldCurve` is now a real runtime
+object backed by one internal kernel plus one optional report. What is still
+missing is the rest of the deeper implementation layer: concrete parametric and
+bond calibrators, richer fit reports, and the later fitted-spline kernel
+family. In particular, breakeven curves and par-yield curves are
+still later steps. Concrete internal kernel families now exist in
+`market.curves.rates.kernels.nodes` and
+`market.curves.rates.kernels.parametric`. The node family includes the rebuilt linear-zero,
+log-linear-discount, piecewise-constant-zero, piecewise-flat-forward,
+cubic-spline-zero, and monotone-convex kernels. The shared kernel contract is
+still intentionally small: internal kernels define the fitted rate curve on a
+tenor domain, and discount factors are derived from that rate curve. The
+parametric family includes
+`NelsonSiegelKernel` and `SvenssonKernel`, which wrap the existing parametric
+math primitives behind the same internal `CurveKernel` contract while keeping
+an explicit finite `max_t`. The first
+real fitting path now exists in
+`market.curves.rates.calibrators.bootstrap`. That bootstrap calibrator takes
+typed node observations, reads a `KernelSpec`, builds one internal kernel, and
+returns one `CalibrationReport` with per-observation residual rows.
+
+Short package map:
+
+- `market.curves`: narrow public export surface
+- `market.curves.rates.enums`: public enum meanings
+- `market.curves.rates.spec`: curve identity record
+- `market.curves.rates.base`: public class hierarchy
+- `market.curves.rates.reports`: internal home for fit reports
+- `market.curves.rates.kernels.*`: internal home for mathematical discounting representations
+- `market.curves.rates.kernels.base`: shared internal kernel family enum, config, and rate-first kernel contract
+- `market.curves.rates.kernels.nodes`: concrete node-based discounting kernels
+- `market.curves.rates.kernels.parametric`: concrete parametric discounting kernels
+- `market.curves.rates.calibrators.base`: shared calibrator contract and objective enum
+- `market.curves.rates.calibrators.observations`: typed bootstrap observations
+- `market.curves.rates.calibrators.bootstrap`: bootstrap calibrator and solver choice
+- `market.curves.errors`: curve-package errors
+- `market.curves.conversion`: numeric conversion helpers
+- `market.curves.multicurve.index`: identifiers such as `RateIndex` and `CurrencyPair`
 
 ```{eval-rst}
 .. automodule:: fuggers_py.market.curves
@@ -136,6 +194,33 @@ breakeven curves, and fit engines are not in the rebuilt public module yet.
    :member-order: bysource
    :no-index:
 ```
+
+## Internal Curve Modules
+
+The modules below are part of the current curve package structure, but they are
+not public pricing API.
+
+They are documented in plain language in [the dedicated `market.curves`
+guide](market_curves.md), because that guide is the right place to explain what
+belongs where without making internal placeholders look like stable public
+interfaces.
+
+Current internal homes:
+
+- `fuggers_py.market.curves.rates.reports`
+- `fuggers_py.market.curves.rates.kernels`
+- `fuggers_py.market.curves.rates.kernels.base`
+- `fuggers_py.market.curves.rates.kernels.nodes`
+- `fuggers_py.market.curves.rates.kernels.parametric`
+- `fuggers_py.market.curves.rates.kernels.spline`
+- `fuggers_py.market.curves.rates.kernels.composite`
+- `fuggers_py.market.curves.rates.kernels.decorators`
+- `fuggers_py.market.curves.rates.calibrators`
+- `fuggers_py.market.curves.rates.calibrators.base`
+- `fuggers_py.market.curves.rates.calibrators.observations`
+- `fuggers_py.market.curves.rates.calibrators.bootstrap`
+- `fuggers_py.market.curves.rates.calibrators.parametric`
+- `fuggers_py.market.curves.rates.calibrators.bonds`
 
 ## `fuggers_py.market.curves.errors`
 

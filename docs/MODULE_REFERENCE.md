@@ -10,7 +10,7 @@ For each module, it records:
 
 Use [SRC_STRUCTURE.md](SRC_STRUCTURE.md) for the package/directory map and this document for the file-level reference.
 
-Curve-related module entries are intentionally omitted while that part of the library is being rewritten.
+Curve-related module entries are intentionally omitted while that part of the library is being rewritten. For the live narrative explanation of the current curve package, see [docs/api/market_curves.md](api/market_curves.md).
 
 ## Root package files
 

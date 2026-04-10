@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
+from math import log
 
 from fuggers_py.core.types import Date
 
 from ..errors import InvalidCurveInput, TenorOutOfBounds
 from .enums import ExtrapolationPolicy, RateSpace
+from .kernels import CurveKernel
+from .reports import CalibrationReport
 from .spec import CurveSpec
 
 
@@ -77,4 +80,128 @@ class RatesTermStructure(ABC):
         return value
 
 
-__all__ = ["RatesTermStructure"]
+class DiscountingCurve(RatesTermStructure, ABC):
+    """Public contract for curves that can discount future cash flows."""
+
+    @abstractmethod
+    def discount_factor_at(self, tenor: float) -> float:
+        """Return the discount factor at tenor ``tenor`` in years."""
+
+    def zero_rate_at(self, tenor: float) -> float:
+        """Return the continuously compounded zero rate at ``tenor``."""
+
+        checked_tenor = float(tenor)
+        if not math.isfinite(checked_tenor) or checked_tenor <= 0.0:
+            raise InvalidCurveInput("tenor must be finite and > 0.")
+        self._check_t(checked_tenor)
+        discount_factor = float(self.discount_factor_at(checked_tenor))
+        if not math.isfinite(discount_factor) or discount_factor <= 0.0:
+            raise InvalidCurveInput("discount_factor_at(tenor) must be finite and > 0.")
+        return -log(discount_factor) / checked_tenor
+
+    def forward_rate_between(self, start_tenor: float, end_tenor: float) -> float:
+        """Return the continuously compounded forward rate between two tenors."""
+
+        start = float(start_tenor)
+        end = float(end_tenor)
+        if not math.isfinite(start) or not math.isfinite(end):
+            raise InvalidCurveInput("start_tenor and end_tenor must be finite.")
+        if end <= start:
+            raise InvalidCurveInput("end_tenor must be greater than start_tenor.")
+        self._check_t(start)
+        self._check_t(end)
+        discount_factor_start = float(self.discount_factor_at(start))
+        discount_factor_end = float(self.discount_factor_at(end))
+        if (
+            not math.isfinite(discount_factor_start)
+            or not math.isfinite(discount_factor_end)
+            or discount_factor_start <= 0.0
+            or discount_factor_end <= 0.0
+        ):
+            raise InvalidCurveInput("discount_factor_at(...) must be finite and > 0.")
+        return log(discount_factor_start / discount_factor_end) / (end - start)
+
+
+class YieldCurve(DiscountingCurve):
+    """Concrete public discounting curve backed by one internal kernel.
+
+    ``YieldCurve`` is the public object callers should hold for discounting-
+    style rates curves. It always exposes a public zero-rate view through
+    ``rate_at(tenor)`` and delegates the fitted rate shape to one internal
+    :class:`CurveKernel`.
+    """
+
+    __slots__ = ("_kernel", "_calibration_report")
+
+    def __init__(
+        self,
+        *,
+        spec: CurveSpec,
+        kernel: CurveKernel,
+        calibration_report: CalibrationReport | None = None,
+    ) -> None:
+        super().__init__(spec)
+        if not isinstance(kernel, CurveKernel):
+            raise InvalidCurveInput("kernel must be a CurveKernel.")
+        if calibration_report is not None and not isinstance(calibration_report, CalibrationReport):
+            raise InvalidCurveInput("calibration_report must be a CalibrationReport or None.")
+        self._kernel = kernel
+        self._calibration_report = calibration_report
+
+    @property
+    def rate_space(self) -> RateSpace:
+        """Return the public rate-space view of the yield curve.
+
+        In the simplified ontology, every public ``YieldCurve`` exposes a
+        zero-rate view even if the internal kernel stores its math differently.
+        """
+
+        return RateSpace.ZERO
+
+    def max_t(self) -> float:
+        """Return the inclusive upper tenor bound delegated from the kernel."""
+
+        max_t = float(self._kernel.max_t())
+        if not math.isfinite(max_t) or max_t < 0.0:
+            raise InvalidCurveInput("kernel.max_t() must return a finite value >= 0.")
+        return max_t
+
+    def rate_at(self, tenor: float) -> float:
+        """Return the public zero-rate view implied by the kernel."""
+
+        checked_tenor = float(tenor)
+        if not math.isfinite(checked_tenor) or checked_tenor <= 0.0:
+            raise InvalidCurveInput("tenor must be finite and > 0.")
+        self._check_t(checked_tenor)
+        rate = float(self._kernel.rate_at(checked_tenor))
+        if not math.isfinite(rate):
+            raise InvalidCurveInput("kernel.rate_at(tenor) must be finite.")
+        return rate
+
+    def discount_factor_at(self, tenor: float) -> float:
+        """Return the discount factor implied by the kernel at ``tenor``."""
+
+        checked_tenor = float(tenor)
+        self._check_t(checked_tenor)
+        discount_factor = float(self._kernel.discount_factor_at(checked_tenor))
+        if not math.isfinite(discount_factor) or discount_factor <= 0.0:
+            raise InvalidCurveInput("kernel.discount_factor_at(tenor) must be finite and > 0.")
+        return discount_factor
+
+    @property
+    def calibration_report(self) -> CalibrationReport | None:
+        """Return the optional calibration report attached to this curve."""
+
+        return self._calibration_report
+
+
+class RelativeRateCurve(RatesTermStructure):
+    """Public root for rate curves that are not standalone discounting curves."""
+
+
+__all__ = [
+    "DiscountingCurve",
+    "RatesTermStructure",
+    "RelativeRateCurve",
+    "YieldCurve",
+]

@@ -56,7 +56,7 @@ from fuggers_py.products.bonds import FixedBondBuilder
 - `snapshot.py`: immutable market-data snapshots that bundle fixings, FX rates, ETF records, and volatility surfaces.
 - `sources.py`: market-data provider protocols and in-memory source implementations for quotes, fixings, FX, inflation, and ETFs.
 - `state.py`: runtime market-state bundles passed into pricing and measures.
-- `curves/`: the current rates curve skeleton. The root package exports only `CurveSpec`, `CurveType`, `ExtrapolationPolicy`, `RateSpace`, and `RatesTermStructure`. `rates/spec.py` holds the curve identity record. `rates/base.py` defines the public root where `rate_at(tenor)` returns the rate at a tenor in the curve's `rate_space`, `max_t()` gives the last supported tenor, and `validate_rate(tenor)` enforces the domain and finite-value rules. `conversion.py` and `errors.py` are shared helpers. `multicurve/` currently holds identifiers such as `RateIndex` and `CurrencyPair`.
+- `curves/`: the current rates curve skeleton. The root package now exports `CurveSpec`, `CurveType`, `ExtrapolationPolicy`, `RateSpace`, `RatesTermStructure`, `DiscountingCurve`, `YieldCurve`, and `RelativeRateCurve`. `rates/spec.py` holds the curve identity record. `rates/base.py` defines the public roots: `rate_at(tenor)` returns the rate at a tenor in the curve's `rate_space`, `max_t()` gives the last supported tenor, and `validate_rate(tenor)` enforces the domain and finite-value rules. `DiscountingCurve` adds `discount_factor_at(tenor)`, `zero_rate_at(tenor)`, and `forward_rate_between(start_tenor, end_tenor)`. `YieldCurve` is now the concrete public discounting object: it wraps one internal kernel, fixes its public `rate_space` to `RateSpace.ZERO`, and exposes the public zero-rate view through `rate_at(tenor)`. `rates/reports.py` now holds `CalibrationPoint` and `CalibrationReport`. `rates/kernels/base.py` now defines the shared internal kernel vocabulary: `CurveKernelKind`, `KernelSpec`, and `CurveKernel`. The shared kernel contract is now rate-first: kernels define the fitted rate curve and derive discount factors from it. `rates/kernels/nodes.py` now holds the node-based internal kernel family: linear-zero, log-linear-discount, piecewise-constant-zero, piecewise-flat-forward, cubic-spline-zero, and monotone-convex kernels. `rates/kernels/parametric.py` now holds the parametric internal kernel family: `NelsonSiegelKernel` and `SvenssonKernel`, each with an explicit finite `max_t` even though the underlying formulas can evaluate beyond it. `rates/calibrators/base.py` defines `CalibrationObjective` and `CurveCalibrator`. `rates/calibrators/observations.py` defines `BootstrapObservationKind` and `BootstrapObservation`. `rates/calibrators/bootstrap.py` defines the first real fitting path: `BootstrapSolverKind` and `BootstrapCalibrator`. `rates/kernels/spline.py` is still the internal home for later fitted-spline work, and `rates/calibrators/parametric.py` and `rates/calibrators/bonds.py` are still later fitting paths. `conversion.py` and `errors.py` are shared helpers. `multicurve/` currently holds identifiers such as `RateIndex` and `CurrencyPair`.
 - `indices/`: fixing stores, index conventions, overnight compounding helpers, and bond-index wrappers.
 - `vol_surfaces/`: volatility surface records, quote conventions, and in-memory volatility surface sources. This is the canonical volatility namespace now, but it is still an early-scope package rather than a full smile or cube modeling stack.
 
@@ -120,13 +120,21 @@ from fuggers_py.products.bonds import FixedBondBuilder
 ### `market/curves/`
 
 - The curves package is intentionally narrow right now.
+- Read [docs/api/market_curves.md](api/market_curves.md) if you want the detailed narrative explanation of the current curve ontology.
 - The public API is rates-specific. It starts with `RatesTermStructure`, not a generic term-structure type.
 - `CurveSpec` identifies one curve snapshot by name, reference date, day-count rule, currency, economic curve type, optional reference label, and extrapolation policy.
 - `RateSpace` tells you what `rate_at(tenor)` means. For example, the returned rate may be a zero rate, an instantaneous forward rate, a par yield, or a spread.
 - `RatesTermStructure.rate_at(tenor)` returns the rate at a given tenor in the curve's `rate_space`.
 - `RatesTermStructure.validate_rate(tenor)` checks the tenor domain and makes sure the returned rate is finite.
+- `DiscountingCurve` is the branch for curves that can discount cash flows. It adds `discount_factor_at(tenor)`, `zero_rate_at(tenor)`, and `forward_rate_between(start_tenor, end_tenor)`.
+- `YieldCurve` is now the public class name for discounting-style rates curves.
+- `RelativeRateCurve` is the root for rate curves that are meaningful as rates or spreads but should not be used as discount curves.
+- `rates/reports.py` now exists as the internal report layer home.
+- `rates/kernels/` now exists as the internal mathematical-representation layer home, and `rates/kernels/base.py` already defines the shared internal kernel contract and config.
+- That shared kernel contract is intentionally small. Kernels only need to provide discount factors on a tenor domain. They do not expose their internal storage format through the shared interface.
+- `rates/calibrators/` now exists as the internal fitting-layer home.
 - `multicurve/index.py` is separate from the public curve class tree. It only defines stable identifiers such as `RateIndex` and `CurrencyPair`.
-- The rebuilt package does not yet include discounting-style curve subclasses, calibrators, or kernels. Those are planned next.
+- The rebuilt package still does not include breakeven curves, par-yield curves, fitted-spline kernels, parametric calibrators, bond calibrators, or richer concrete fit reports. The public ontology, the node kernels, the parametric kernels, and the bootstrap calibrator now exist.
 
 ### `market/vol_surfaces/`
 
