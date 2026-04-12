@@ -15,7 +15,7 @@ from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.reference.bonds.types import CompoundingKind, YieldCalculationRules, YieldConvention
 from fuggers_py.core.daycounts import DayCountConvention
 from fuggers_py.core.types import Compounding, Date, Price, Yield
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curves import DiscountingCurve
 
 from .errors import AnalyticsError
 from .pricing import BondPricer
@@ -370,7 +370,7 @@ def calculate_yield_to_maturity(bond: Bond, price: Price, settlement_date: Date)
 def calculate_z_spread(
     bond: Bond,
     price: Price,
-    curve: TermStructure,
+    curve: DiscountingCurve,
     settlement_date: Date,
 ) -> Decimal:
     """Return z-spread as a raw decimal spread over ``curve``."""

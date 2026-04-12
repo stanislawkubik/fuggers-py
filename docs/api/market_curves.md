@@ -15,19 +15,26 @@ Right now the package is intentionally narrow. It contains:
 2. the public curve identity record
 3. the public curve base classes
 4. the shared internal kernel contract and kernel config
-5. the live internal node and parametric kernel families
-6. the first internal fitting path and report layer
+5. the live internal node, parametric, and spline kernel families
+6. the live internal fitting paths and report layer
 7. shared curve errors and numeric conversions
 8. multi-curve identifiers
 
-It does **not** yet contain the full rebuilt fitting stack, the fitted-spline
-path, the parametric calibrator path, or the later specialized curve views.
-Those come later.
+It does **not** yet contain the repo-wide upstream migration, the later
+relative / par public curve views, or any heavier optional report layer beyond
+the generic calibration report.
 
 That is why the package may feel smaller than the historical curve stack. The
 old broad curve tree was removed first. The new public contract came back
-first. Two internal kernel families and the first fitting path are now in
-place, and the rest will be rebuilt behind that contract.
+first. Three internal kernel families and two fitting paths are now in place,
+and the next work is mainly about moving the rest of the repo onto that
+contract.
+
+That migration now happens mostly outside this package. The public curve API
+stays tenor-based. Older pricing code that still works in dates now bridges
+through
+[`market/curve_support.py`](/Users/butterflytrading/AI-tests/fuggers-py/src/fuggers_py/market/curve_support.py)
+instead of asking `market.curves` to grow the old date-based methods again.
 
 ## Current File Layout
 
@@ -58,7 +65,7 @@ src/fuggers_py/market/curves/
     └── calibrators/
         ├── __init__.py
         ├── base.py
-        ├── observations.py
+        ├── _quotes.py
         ├── bootstrap.py
         ├── parametric.py
         └── bonds.py
@@ -78,14 +85,14 @@ Read that tree like this:
    The public class hierarchy.
 5. `market.curves.rates.reports`
    The internal home for calibration and fit reports. The minimal
-   `CalibrationReport` object already lives here, and richer report types are
-   still later work.
+   `CalibrationReport` object already lives here. Richer report types are now
+   optional later work, not the next blocker.
 6. `market.curves.rates.kernels.*`
    The internal home for mathematical discounting representations. The shared
    kernel contract now lives here.
 7. `market.curves.rates.calibrators.*`
-   The internal home for fitting logic. The bootstrap fitting path already
-   lives here now.
+   The internal home for fitting logic. Both the node-bootstrap path and the
+   global-fit path live here now.
 8. `market.curves.errors`
    Shared curve-package exceptions.
 9. `market.curves.conversion`
@@ -100,11 +107,22 @@ Important current boundary:
 2. the kernel layer is no longer just an empty placeholder
 3. `rates.kernels.base` now defines the shared internal kernel vocabulary:
    `CurveKernelKind`, `KernelSpec`, and `CurveKernel`
-4. `rates.kernels.nodes` and `rates.kernels.parametric` now provide the live
-   concrete kernel families
-5. `rates.calibrators.base`, `rates.calibrators.observations`, and
-   `rates.calibrators.bootstrap` now provide the first real fitting path
-6. the fitted-spline kernel family and the later fitting paths are still later steps
+4. `rates.kernels.nodes`, `rates.kernels.parametric`, and
+   `rates.kernels.spline` now provide the live concrete kernel families
+5. `rates.calibrators.base` now defines the shared fitting layer, and
+   `rates.calibrators.bootstrap` and `rates.calibrators.parametric` now
+   provide the live quote-driven fitting paths
+6. bond quotes are now part of those live quote-driven fitting paths
+
+Known migration blockers found outside this package:
+
+1. some old upstream code still imports deleted legacy curve helpers such as
+   `fitted_bonds`, `CreditCurve`, or `MultiCurveEnvironmentBuilder`
+2. calc no longer builds curves, so upstream code now needs an explicit
+   finished-curve handoff into calc instead of expecting calc to construct
+   curves from raw point inputs
+3. those are upstream migration gaps, not reasons to grow the new public curve
+   package again unless we explicitly choose to restore those legacy exports
 
 ## The Mental Model
 
@@ -168,10 +186,12 @@ objects.
 
 The intended flow is:
 
-1. today a caller can already build a `YieldCurve` directly from `CurveSpec` and a built kernel
-2. today the bootstrap calibrator can also read typed observations plus a `KernelSpec`
-3. that calibrator builds one `CurveKernel` and one `CalibrationReport`
-4. pricers still only depend on `DiscountingCurve`
+1. today a caller can still wrap a built kernel directly when needed
+2. the normal public construction path is `YieldCurve.fit(...)`
+3. that classmethod reads market quotes, one `CurveSpec`, and one `KernelSpec`
+4. the fitting layer chooses the live calibrator path from `KernelSpec.kind`
+5. the calibrator builds one `CurveKernel` and one `CalibrationReport`
+6. pricers still only depend on `DiscountingCurve`
 
 So the kernel layer gives us freedom to change the math without changing the
 pricing-facing contract.
@@ -190,29 +210,98 @@ That makes the public story simpler too:
 2. forward rates will be derived from the same discount curve
 3. kernel family differences stay internal
 
-Today there are two live internal kernel families:
+Today there are three live internal kernel families:
 
 1. node-based kernels in `rates.kernels.nodes`
 2. parametric kernels in `rates.kernels.parametric`
+3. spline kernels in `rates.kernels.spline`
 
 The parametric family currently contains `NelsonSiegelKernel` and
 `SvenssonKernel`. These wrap the existing parametric math primitives behind the
 same `CurveKernel` interface and keep an explicit finite `max_t`, so they fit
 the same public-curve contract as the node kernels.
 
-The first fitting path already built on top of that internal layer is the
-bootstrap path:
+The spline family currently contains `ExponentialSplineKernel` and
+`CubicSplineKernel`. The exponential spline kernel uses a constant term
+plus exponential basis terms. The cubic spline kernel uses knot tenors and
+zero-rate values, inserts a zero-tenor anchor when needed, and evaluates a
+natural cubic spline through those knot values.
 
-1. `BootstrapObservationKind`
-   Says whether one input node is a zero rate or a discount factor.
-2. `BootstrapObservation`
-   One typed node observation with tenor, value, and identifier.
-3. `BootstrapSolverKind`
+Today there are two live fitting paths on top of that internal layer:
+
+1. `BootstrapSolverKind`
    The root-solver choice used when the calibrator has to convert between
    zero-rate and discount-factor space.
-4. `BootstrapCalibrator`
-   The first real calibrator. It sorts observations by tenor, solves them in
-   sequence, builds one internal kernel, and returns one `CalibrationReport`.
+2. `BootstrapCalibrator`
+   The first real calibrator. It normalizes supported market quotes into
+   internal fit rows, sorts them by tenor, solves them in sequence, builds one
+   internal kernel, and returns one `CalibrationReport`.
+3. `ParametricOptimizerKind`
+   The least-squares routine choice used by the parametric calibrator.
+4. `ParametricCalibrator`
+   The global parametric calibrator. It normalizes supported market quotes
+   into internal fit rows, converts quoted zero rates into continuous
+   compounding internally when needed, fits one global parameter vector,
+   builds one global-fit kernel, and returns one `CalibrationReport`.
+
+The global-fit path now covers:
+
+1. `NELSON_SIEGEL`
+2. `SVENSSON`
+3. `EXPONENTIAL_SPLINE`
+
+For `EXPONENTIAL_SPLINE`, the caller must pass fixed `decay_factors` in
+`KernelSpec.parameters`. The calibrator then fits the spline coefficients
+against those fixed decay factors.
+
+Today the live quote-driven path accepts:
+
+1. tenor-carrying `SwapQuote`
+2. tenor-carrying `RepoQuote`
+3. `BondQuote`
+
+For the bond side, the live rule is:
+
+1. `yield_to_maturity` stays a YTM target
+2. `clean_price` is converted to market YTM inside the calibrator
+3. `dirty_price` is converted to clean price and then to market YTM inside the
+   calibrator
+
+The public construction layer now puts those live methods in one place:
+
+1. `YieldCurve.fit(...)`
+   One public entry point that always returns `YieldCurve`.
+2. `KernelSpec` with a node or spline bootstrap-style kind
+   This is the current exact-fit route for the node-style families, including
+   the cubic-spline choice.
+3. `KernelSpec` with `NELSON_SIEGEL`, `SVENSSON`, or `EXPONENTIAL_SPLINE`
+   This is the current global-fit route for the coefficient-based families.
+
+## Why `CUBIC_SPLINE` And `EXPONENTIAL_SPLINE` Use Different Fit Paths
+
+This is the main implementation split that tends to look odd at first.
+
+`CUBIC_SPLINE` is still a node-based method.
+
+That means:
+
+1. the unknowns are zero-rate values at knot tenors
+2. the bootstrap path solves those node values
+3. the cubic spline then interpolates between the solved nodes
+
+So `CUBIC_SPLINE` belongs in the bootstrap module even though its runtime
+kernel lives in `rates.kernels.spline`.
+
+`EXPONENTIAL_SPLINE` is different.
+
+That means:
+
+1. the unknowns are one coefficient vector
+2. the basis shape is fixed by the supplied decay factors
+3. changing one coefficient moves the whole curve, not one local node
+
+So `EXPONENTIAL_SPLINE` cannot be solved one tenor at a time. It belongs on
+the global-fit path, alongside Nelson-Siegel and Svensson.
 
 ## The Core Question: What Does `rate_at(tenor)` Mean?
 
@@ -511,9 +600,9 @@ Right now this package should contain:
 
 Later, this package will also contain:
 
-1. the remaining internal kernel families such as fitted-spline kernels
-2. concrete internal calibrators beyond bootstrap
-3. richer concrete fit reports
+1. richer concrete fit reports if real downstream code still needs them
+2. optional composite or decorator helpers if they still prove useful
+3. later public relative / par curve views
 
 What does **not** belong in the current public root:
 
@@ -584,17 +673,25 @@ Use this module when you want the shared fitting contract directly.
 
 This is where `CalibrationObjective` and `CurveCalibrator` belong.
 
-### `fuggers_py.market.curves.rates.calibrators.observations`
-
-Use this module when you want typed bootstrap inputs directly.
-
-This is where `BootstrapObservationKind` and `BootstrapObservation` belong.
-
 ### `fuggers_py.market.curves.rates.calibrators.bootstrap`
 
-Use this module when you want the current concrete fitting path.
+Use this module when you want the node-bootstrap fitting path.
 
-This is where `BootstrapSolverKind` and `BootstrapCalibrator` belong.
+This is where `BootstrapSolverKind` and `BootstrapCalibrator` belong. The
+module now reads market quotes and normalizes supported quote types
+internally.
+
+### `fuggers_py.market.curves.rates.calibrators.parametric`
+
+Use this module when you want the global parametric fitting path.
+
+This is where `ParametricOptimizerKind` and `ParametricCalibrator` belong. The
+module now reads market quotes and normalizes supported quote types
+internally. It is the live fitter for the three coefficient-based families:
+
+1. Nelson-Siegel
+2. Svensson
+3. exponential spline
 
 ### `fuggers_py.market.curves.errors`
 
@@ -627,23 +724,27 @@ Implemented now:
 5. the concrete `YieldCurve` runtime object
 6. the node-based internal kernel family
 7. the parametric internal kernel family
-8. the bootstrap fitting path
-9. shared conversion and error helpers
-10. multi-curve identifiers
+8. the spline internal kernel family
+9. one public `YieldCurve.fit(...)` construction path
+10. the bootstrap fitting path
+11. the global-fit path for Nelson-Siegel, Svensson, and exponential spline
+12. quote-driven bond support on both live fitting paths
+13. shared conversion and error helpers
+14. multi-curve identifiers
 
 Not implemented yet:
 
-1. the later internal kernel families such as fitted-spline kernels
-2. the later fitting paths such as parametric and bond-price calibrators
-3. richer concrete report types
-4. `BreakevenCurve`
-5. `ParYieldCurve`
+1. the repo-wide upstream migration onto `DiscountingCurve` / `YieldCurve`
+2. any richer concrete report types beyond the generic `CalibrationReport`
+3. `BreakevenCurve`
+4. `ParYieldCurve`
 
 So the current package is best understood as:
 
 1. a finished public vocabulary
 2. a real discounting runtime
-3. the first real discount-curve fitting path
+3. one public construction path over two real discount-curve fitting paths that now read real rate and bond quotes
+4. a package whose next job is upstream adoption, not another core fitting rewrite
 
 ## Where To Read Next
 

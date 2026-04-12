@@ -11,11 +11,8 @@ from decimal import Decimal
 
 from fuggers_py.market.curves.fitted_bonds import BondCurve
 
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
+from ._fit_result import point_bp_residual, point_instrument_id, point_price_residual
+from ._shared import to_decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,8 +34,8 @@ def rank_rich_cheap(
     threshold_bps: object = Decimal(0),
 ) -> tuple[RichCheapSignal, ...]:
     """Rank fitted bonds from cheapest to richest using basis-point residuals."""
-    threshold = _to_decimal(threshold_bps)
-    residuals = [_to_decimal(point["bp_residual"]) for point in fit_result.bonds]
+    threshold = to_decimal(threshold_bps)
+    residuals = [point_bp_residual(point) for point in fit_result.bonds]
     mean = sum(residuals, start=Decimal(0)) / Decimal(len(residuals))
     variance = sum((residual - mean) ** 2 for residual in residuals) / Decimal(len(residuals))
     std = variance.sqrt() if variance > Decimal(0) else Decimal(0)
@@ -46,16 +43,16 @@ def rank_rich_cheap(
     ordered = sorted(
         fit_result.bonds,
         key=lambda point: (
-            _to_decimal(point["bp_residual"]),
-            -_to_decimal(point["price_residual"]),
-            point["instrument_id"].as_str(),
+            point_bp_residual(point),
+            -point_price_residual(point),
+            point_instrument_id(point).as_str(),
         ),
         reverse=True,
     )
     signals: list[RichCheapSignal] = []
     for rank, point in enumerate(ordered, start=1):
-        bp_residual = _to_decimal(point["bp_residual"])
-        price_residual = _to_decimal(point["price_residual"])
+        bp_residual = point_bp_residual(point)
+        price_residual = point_price_residual(point)
         if bp_residual > threshold:
             classification = "CHEAP"
         elif bp_residual < -threshold:
@@ -65,7 +62,7 @@ def rank_rich_cheap(
         z_score = Decimal(0) if std == Decimal(0) else (bp_residual - mean) / std
         signals.append(
             RichCheapSignal(
-                instrument_id=point["instrument_id"],
+                instrument_id=point_instrument_id(point),
                 rank=rank,
                 classification=classification,
                 cheapness_bps=bp_residual,

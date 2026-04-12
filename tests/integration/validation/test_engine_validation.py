@@ -16,10 +16,12 @@ from fuggers_py.calc import (
 )
 from fuggers_py.calc import QuoteSide
 from fuggers_py.core import CurveId, InstrumentId
+from fuggers_py.market.curves import CurveType
 from fuggers_py.market.quotes import RawQuote
 from fuggers_py.market.snapshot import CurveInputs, CurvePoint
 from fuggers_py.market.sources import MarketDataProvider
 from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
+from tests.helpers._public_curve_helpers import linear_zero_curve
 
 from ._helpers import D, assert_decimal_close, load_fixture
 
@@ -84,7 +86,16 @@ async def test_reactive_engine_reference_flow_matches_fixture() -> None:
             for point in fixture["curve_points"]
         ],
     )
-    reactive.curve_builder.add_from_inputs(curve_inputs)
+    reactive.curve_builder.add_curve(
+        fixture["curve_id"],
+        linear_zero_curve(
+            fixture["curve_id"],
+            curve_inputs.reference_date,
+            curve_inputs.points,
+            curve_type=CurveType.OVERNIGHT_DISCOUNT,
+        ),
+        curve_inputs=curve_inputs,
+    )
     reactive.listener.curve_source.add_curve_inputs(curve_inputs)
     reactive.register_pricing_node(
         NodeId(fixture["pricing_node_id"]),

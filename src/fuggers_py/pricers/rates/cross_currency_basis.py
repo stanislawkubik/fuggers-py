@@ -11,6 +11,7 @@ from decimal import Decimal
 
 from fuggers_py.core.types import Currency, Date
 from fuggers_py.core.ids import CurrencyPair
+from fuggers_py.market.curve_support import discount_factor_at_date
 from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.products.rates import CrossCurrencyBasisSwap, FloatingLegSpec, PayReceive
 
@@ -146,7 +147,11 @@ class CrossCurrencyBasisSwapPricer:
             return explicit
         pay_discount_curve = resolve_discount_curve(curves, swap.pay_leg.currency)
         receive_discount_curve = resolve_discount_curve(curves, swap.receive_leg.currency)
-        return swap.spot_fx_rate * pay_discount_curve.discount_factor(date) / receive_discount_curve.discount_factor(date)
+        return (
+            swap.spot_fx_rate
+            * discount_factor_at_date(pay_discount_curve, date)
+            / discount_factor_at_date(receive_discount_curve, date)
+        )
 
     def _fx_conversion_rate(
         self,
@@ -203,7 +208,7 @@ class CrossCurrencyBasisSwapPricer:
                 target_currency=valuation_currency,
                 date=period.payment_date,
             )
-            present_value += sign * coupon * fx_conversion * discount_curve.discount_factor(period.payment_date)
+            present_value += sign * coupon * fx_conversion * discount_factor_at_date(discount_curve, period.payment_date)
         return present_value
 
     def _principal_exchange_pv(
@@ -224,8 +229,9 @@ class CrossCurrencyBasisSwapPricer:
                     target_currency=valuation_currency,
                     date=swap.effective_date,
                 )
-                present_value += leg.pay_receive.sign() * leg.notional * fx_conversion * discount_curve.discount_factor(
-                    swap.effective_date
+                present_value += leg.pay_receive.sign() * leg.notional * fx_conversion * discount_factor_at_date(
+                    discount_curve,
+                    swap.effective_date,
                 )
         if swap.final_exchange:
             for leg in (swap.pay_leg, swap.receive_leg):
@@ -236,8 +242,9 @@ class CrossCurrencyBasisSwapPricer:
                     target_currency=valuation_currency,
                     date=swap.maturity_date,
                 )
-                present_value -= leg.pay_receive.sign() * leg.notional * fx_conversion * discount_curve.discount_factor(
-                    swap.maturity_date
+                present_value -= leg.pay_receive.sign() * leg.notional * fx_conversion * discount_factor_at_date(
+                    discount_curve,
+                    swap.maturity_date,
                 )
         return present_value
 
@@ -260,7 +267,10 @@ class CrossCurrencyBasisSwapPricer:
                 target_currency=valuation_currency,
                 date=period.payment_date,
             )
-            annuity += leg.notional * period.year_fraction * fx_conversion * discount_curve.discount_factor(period.payment_date)
+            annuity += leg.notional * period.year_fraction * fx_conversion * discount_factor_at_date(
+                discount_curve,
+                period.payment_date,
+            )
         if annuity == Decimal(0):
             raise ValueError("CrossCurrencyBasisSwap par spread requires a non-zero quoted-leg annuity.")
         return annuity

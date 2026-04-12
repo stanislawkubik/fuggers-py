@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from math import exp
 
+from fuggers_py.market.curve_support import discount_factor_at_date
+from fuggers_py.market.curves import DiscountingCurve
 from fuggers_py.products.bonds.instruments import FloatingRateNote
 from fuggers_py.core.types import Date, Price
 from fuggers_py.math import SolverConfig, brent, newton_raphson
@@ -45,7 +47,7 @@ class DiscountMarginCalculator:
     """
 
     forward_curve: object
-    discount_curve: object
+    discount_curve: DiscountingCurve
     solver_config: SolverConfig = DEFAULT_SOLVER_CONFIG
 
     def calculate(self, frn: FloatingRateNote, dirty_price: object, settlement_date: Date) -> Decimal:
@@ -86,14 +88,14 @@ class DiscountMarginCalculator:
             raise AnalyticsError.invalid_settlement("Settlement date is on or after maturity.")
 
         dm = _to_decimal(dm_decimal)
-        df_settle = self.discount_curve.discount_factor(settlement_date)
+        df_settle = discount_factor_at_date(self.discount_curve, settlement_date)
         if df_settle == 0:
             raise AnalyticsError.pricing_failed("Discount factor at settlement is zero.")
 
         present_value = Decimal(0)
         for cf in frn.projected_cash_flows(self.forward_curve, settlement_date):
             t = float(settlement_date.days_between(cf.date)) / 365.0
-            base_df = self.discount_curve.discount_factor(cf.date) / df_settle
+            base_df = discount_factor_at_date(self.discount_curve, cf.date) / df_settle
             spread_df = Decimal(str(exp(-float(dm) * t)))
             present_value += cf.factored_amount() * base_df * spread_df
         return present_value
@@ -115,11 +117,11 @@ class DiscountMarginCalculator:
         return dv01 / (price * Decimal("0.0001"))
 
     def _dm_derivative(self, projected_flows, dm_decimal: Decimal, settlement_date: Date) -> float:
-        df_settle = self.discount_curve.discount_factor(settlement_date)
+        df_settle = discount_factor_at_date(self.discount_curve, settlement_date)
         derivative = 0.0
         for cf in projected_flows:
             years = float(settlement_date.days_between(cf.date)) / 365.0
-            base_df = float(self.discount_curve.discount_factor(cf.date) / df_settle)
+            base_df = float(discount_factor_at_date(self.discount_curve, cf.date) / df_settle)
             derivative += -years * float(cf.factored_amount()) * base_df * exp(-float(dm_decimal) * years)
         return derivative
 

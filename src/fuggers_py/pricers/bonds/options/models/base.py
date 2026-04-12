@@ -5,14 +5,14 @@ from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 from fuggers_py.core.types import Date
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curves import DiscountingCurve
 
 
 @runtime_checkable
 class ShortRateModel(Protocol):
     """Protocol for short-rate models used by the tree pricers."""
 
-    term_structure: TermStructure
+    term_structure: DiscountingCurve
 
     def base_forward_rate(self, start: Date, end: Date) -> float:
         """Return the base forward rate between two event dates."""

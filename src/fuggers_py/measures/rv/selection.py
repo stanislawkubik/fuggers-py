@@ -11,14 +11,17 @@ from decimal import Decimal
 from enum import Enum
 from typing import Mapping
 
-from fuggers_py.market.curves.fitted_bonds import BondCurve
 from fuggers_py.core.ids import InstrumentId
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
+from ._fit_result import (
+    point_bp_residual,
+    point_instrument_id,
+    point_maturity_years,
+    point_metadata,
+    point_price_residual,
+)
+from ._shared import to_decimal
 
 
 class SignalDirection(str, Enum):
@@ -41,13 +44,6 @@ def _resolved_direction(direction: SignalDirection | str | None, *, score: Decim
     return SignalDirection.LONG if score >= Decimal(0) else SignalDirection.SHORT
 
 
-def _point_metadata(point: Mapping[str, object]) -> tuple[bool | None, Decimal | None]:
-    reference_data = point.get("reference_data")
-    if reference_data is None:
-        return (None, None)
-    return (reference_data.benchmark_flag, reference_data.liquidity_score)
-
-
 @dataclass(frozen=True, slots=True)
 class MaturitySignal:
     """Signal describing a desired maturity bucket and directional score."""
@@ -59,8 +55,8 @@ class MaturitySignal:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "name", self.name.strip())
-        object.__setattr__(self, "target_maturity_years", _to_decimal(self.target_maturity_years))
-        object.__setattr__(self, "score", _to_decimal(self.score))
+        object.__setattr__(self, "target_maturity_years", to_decimal(self.target_maturity_years))
+        object.__setattr__(self, "score", to_decimal(self.score))
         if self.direction is not None:
             object.__setattr__(self, "direction", SignalDirection.parse(self.direction))
         if not self.name:
@@ -85,7 +81,7 @@ class BondSignal:
     def __post_init__(self) -> None:
         object.__setattr__(self, "name", self.name.strip())
         object.__setattr__(self, "instrument_id", InstrumentId.parse(self.instrument_id))
-        object.__setattr__(self, "score", _to_decimal(self.score))
+        object.__setattr__(self, "score", to_decimal(self.score))
         if self.direction is not None:
             object.__setattr__(self, "direction", SignalDirection.parse(self.direction))
         if not self.name:
@@ -115,15 +111,15 @@ class MaturityChoice:
     def __post_init__(self) -> None:
         object.__setattr__(self, "signal_name", self.signal_name.strip())
         object.__setattr__(self, "direction", SignalDirection.parse(self.direction))
-        object.__setattr__(self, "score", _to_decimal(self.score))
+        object.__setattr__(self, "score", to_decimal(self.score))
         object.__setattr__(self, "instrument_id", InstrumentId.parse(self.instrument_id))
-        object.__setattr__(self, "target_maturity_years", _to_decimal(self.target_maturity_years))
-        object.__setattr__(self, "maturity_years", _to_decimal(self.maturity_years))
-        object.__setattr__(self, "maturity_gap_years", _to_decimal(self.maturity_gap_years))
-        object.__setattr__(self, "bp_residual", _to_decimal(self.bp_residual))
-        object.__setattr__(self, "price_residual", _to_decimal(self.price_residual))
+        object.__setattr__(self, "target_maturity_years", to_decimal(self.target_maturity_years))
+        object.__setattr__(self, "maturity_years", to_decimal(self.maturity_years))
+        object.__setattr__(self, "maturity_gap_years", to_decimal(self.maturity_gap_years))
+        object.__setattr__(self, "bp_residual", to_decimal(self.bp_residual))
+        object.__setattr__(self, "price_residual", to_decimal(self.price_residual))
         if self.liquidity_score is not None:
-            object.__setattr__(self, "liquidity_score", _to_decimal(self.liquidity_score))
+            object.__setattr__(self, "liquidity_score", to_decimal(self.liquidity_score))
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,13 +139,13 @@ class BondChoice:
     def __post_init__(self) -> None:
         object.__setattr__(self, "signal_name", self.signal_name.strip())
         object.__setattr__(self, "direction", SignalDirection.parse(self.direction))
-        object.__setattr__(self, "score", _to_decimal(self.score))
+        object.__setattr__(self, "score", to_decimal(self.score))
         object.__setattr__(self, "instrument_id", InstrumentId.parse(self.instrument_id))
-        object.__setattr__(self, "maturity_years", _to_decimal(self.maturity_years))
-        object.__setattr__(self, "bp_residual", _to_decimal(self.bp_residual))
-        object.__setattr__(self, "price_residual", _to_decimal(self.price_residual))
+        object.__setattr__(self, "maturity_years", to_decimal(self.maturity_years))
+        object.__setattr__(self, "bp_residual", to_decimal(self.bp_residual))
+        object.__setattr__(self, "price_residual", to_decimal(self.price_residual))
         if self.liquidity_score is not None:
-            object.__setattr__(self, "liquidity_score", _to_decimal(self.liquidity_score))
+            object.__setattr__(self, "liquidity_score", to_decimal(self.liquidity_score))
 
 
 def _eligible_points(
@@ -158,10 +154,10 @@ def _eligible_points(
     benchmark_only: bool = False,
     minimum_liquidity_score: object | None = None,
 ) -> tuple[Mapping[str, object], ...]:
-    minimum_liquidity = None if minimum_liquidity_score is None else _to_decimal(minimum_liquidity_score)
+    minimum_liquidity = None if minimum_liquidity_score is None else to_decimal(minimum_liquidity_score)
     candidates: list[Mapping[str, object]] = []
     for point in fit_result.bonds:
-        benchmark_flag, liquidity_score = _point_metadata(point)
+        benchmark_flag, liquidity_score = point_metadata(point)
         if benchmark_only and benchmark_flag is not True:
             continue
         if minimum_liquidity is not None:
@@ -189,27 +185,27 @@ def select_maturity_choice(
     chosen = min(
         candidates,
         key=lambda point: (
-            abs(_to_decimal(point["maturity_years"]) - signal.target_maturity_years),
+            abs(point_maturity_years(point) - signal.target_maturity_years),
             0 if point.get("reference_data") and point["reference_data"].benchmark_flag else 1,
             -(
                 point["reference_data"].liquidity_score
                 if point.get("reference_data") and point["reference_data"].liquidity_score is not None
                 else Decimal(0)
             ),
-            point["instrument_id"].as_str(),
+            point_instrument_id(point).as_str(),
         ),
     )
-    benchmark_flag, liquidity_score = _point_metadata(chosen)
+    benchmark_flag, liquidity_score = point_metadata(chosen)
     return MaturityChoice(
         signal_name=signal.name,
         direction=signal.resolved_direction(),
         score=signal.score,
-        instrument_id=chosen["instrument_id"],
+        instrument_id=point_instrument_id(chosen),
         target_maturity_years=signal.target_maturity_years,
-        maturity_years=_to_decimal(chosen["maturity_years"]),
-        maturity_gap_years=abs(_to_decimal(chosen["maturity_years"]) - signal.target_maturity_years),
-        bp_residual=_to_decimal(chosen["bp_residual"]),
-        price_residual=_to_decimal(chosen["price_residual"]),
+        maturity_years=point_maturity_years(chosen),
+        maturity_gap_years=abs(point_maturity_years(chosen) - signal.target_maturity_years),
+        bp_residual=point_bp_residual(chosen),
+        price_residual=point_price_residual(chosen),
         benchmark_flag=benchmark_flag,
         liquidity_score=liquidity_score,
     )
@@ -237,15 +233,15 @@ def select_maturity_choices(
 def select_bond_choice(fit_result: BondCurve, signal: BondSignal) -> BondChoice:
     """Select the fitted bond referenced by a bond signal."""
     point = fit_result.get_bond(signal.instrument_id)
-    benchmark_flag, liquidity_score = _point_metadata(point)
+    benchmark_flag, liquidity_score = point_metadata(point)
     return BondChoice(
         signal_name=signal.name,
         direction=signal.resolved_direction(),
         score=signal.score,
-        instrument_id=point["instrument_id"],
-        maturity_years=_to_decimal(point["maturity_years"]),
-        bp_residual=_to_decimal(point["bp_residual"]),
-        price_residual=_to_decimal(point["price_residual"]),
+        instrument_id=point_instrument_id(point),
+        maturity_years=point_maturity_years(point),
+        bp_residual=point_bp_residual(point),
+        price_residual=point_price_residual(point),
         benchmark_flag=benchmark_flag,
         liquidity_score=liquidity_score,
     )

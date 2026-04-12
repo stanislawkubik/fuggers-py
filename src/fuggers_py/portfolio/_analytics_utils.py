@@ -16,8 +16,8 @@ from fuggers_py.measures.yields import current_yield_from_bond
 from fuggers_py.products.bonds.instruments import CallableBond
 from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.core.types import Date, Price
-from fuggers_py.market.curves.bumping import KeyRateBump
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import key_rate_bumped_curve
+from fuggers_py.market.curves import DiscountingCurve
 
 from .types import AnalyticsConfig, CashPosition, Holding, PortfolioMetrics, Position, PositionAnalytics, WeightingMethod
 
@@ -56,7 +56,7 @@ def _cash_position_analytics(position: CashPosition) -> PositionAnalytics:
     )
 
 
-def _clean_price_for(position: Position, settlement_date: Date, curve: TermStructure | None, pricer: BondPricer) -> Price:
+def _clean_price_for(position: Position, settlement_date: Date, curve: DiscountingCurve | None, pricer: BondPricer) -> Price:
     if position.clean_price is not None:
         if isinstance(position.clean_price, Price):
             return position.clean_price
@@ -94,10 +94,10 @@ def _weighted_optional_average(
 def position_analytics(
     position: Position | CashPosition,
     *,
-    curve: TermStructure | None,
+    curve: DiscountingCurve | None,
     settlement_date: Date,
     config: AnalyticsConfig,
-    spread_curve: TermStructure | None = None,
+    spread_curve: DiscountingCurve | None = None,
     oas_calculator: OASCalculator | None = None,
 ) -> PositionAnalytics:
     """Return analytics for a single position or cash holding."""
@@ -157,8 +157,7 @@ def position_analytics(
     if curve is not None:
         base_dirty_unit = pricer.price_from_curve(bond, curve, settlement_date).dirty.as_percentage()
         for tenor in config.key_rate_tenors:
-            bump = KeyRateBump(list(config.key_rate_tenors), tenor, 1e-4)
-            bumped_curve = bump.apply(curve)
+            bumped_curve = key_rate_bumped_curve(curve, tenor_grid=config.key_rate_tenors, key_tenor=tenor, bump=1e-4)
             bumped_price = pricer.price_from_curve(bond, bumped_curve, settlement_date).dirty.as_percentage()
             key_rate_profile[str(tenor)] = (bumped_price - (base_dirty_unit)) * position.quantity
 

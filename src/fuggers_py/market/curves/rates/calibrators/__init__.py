@@ -2,13 +2,13 @@
 
 from .base import CalibrationObjective, CurveCalibrator
 from .bootstrap import BootstrapCalibrator, BootstrapSolverKind
-from .observations import BootstrapObservation, BootstrapObservationKind
+from .parametric import ParametricCalibrator, ParametricOptimizerKind
 
 __all__ = [
     "BootstrapCalibrator",
-    "BootstrapObservation",
-    "BootstrapObservationKind",
     "BootstrapSolverKind",
     "CalibrationObjective",
     "CurveCalibrator",
+    "ParametricCalibrator",
+    "ParametricOptimizerKind",
 ]

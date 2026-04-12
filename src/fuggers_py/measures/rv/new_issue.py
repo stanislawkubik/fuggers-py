@@ -18,11 +18,7 @@ from fuggers_py.reference.bonds.types import YieldCalculationRules
 from fuggers_py.core.types import Currency, Date, Frequency, Price
 from fuggers_py.market.curves.fitted_bonds import BondCurve, BondFairValueRequest, fair_value_from_fit
 
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
+from ._shared import to_decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,10 +38,10 @@ class NewIssueRequest:
     regression_exposures: Mapping[str, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "coupon_rate", _to_decimal(self.coupon_rate))
+        object.__setattr__(self, "coupon_rate", to_decimal(self.coupon_rate))
         object.__setattr__(self, "regression_exposures", dict(self.regression_exposures))
         if self.marketed_clean_price is not None:
-            object.__setattr__(self, "marketed_clean_price", _to_decimal(self.marketed_clean_price))
+            object.__setattr__(self, "marketed_clean_price", to_decimal(self.marketed_clean_price))
 
 
 @dataclass(frozen=True, slots=True)

@@ -7,8 +7,10 @@ from collections.abc import Sequence
 from enum import Enum, auto
 
 from fuggers_py.core.types import Compounding
+from fuggers_py.math.errors import ConvergenceFailed, DivisionByZero, InvalidBracket
+from fuggers_py.market.quotes import AnyInstrumentQuote
 from fuggers_py.math.solvers.brent import brent
-from fuggers_py.math.solvers.newton import newton_raphson
+from fuggers_py.math.solvers.newton import newton_raphson, newton_raphson_numerical
 from fuggers_py.math.solvers.types import SolverConfig, SolverResult
 
 from ...conversion import ValueConverter
@@ -23,10 +25,11 @@ from ..kernels.nodes import (
     PiecewiseConstantZeroKernel,
     PiecewiseFlatForwardKernel,
 )
+from ..kernels.spline import CubicSplineKernel
 from ..reports import CalibrationPoint, CalibrationReport
 from ..spec import CurveSpec
+from ._quotes import QuoteRow, QuoteValueKind, model_quote_value, normalized_quote_rows
 from .base import CalibrationObjective, CurveCalibrator
-from .observations import BootstrapObservation, BootstrapObservationKind
 
 _CONTINUOUS = Compounding.CONTINUOUS
 _ZERO_NODE_KINDS = {
@@ -34,6 +37,7 @@ _ZERO_NODE_KINDS = {
     CurveKernelKind.PIECEWISE_CONSTANT,
     CurveKernelKind.PIECEWISE_FLAT_FORWARD,
     CurveKernelKind.CUBIC_SPLINE_ZERO,
+    CurveKernelKind.CUBIC_SPLINE,
     CurveKernelKind.MONOTONE_CONVEX,
 }
 _DISCOUNT_NODE_KINDS = {CurveKernelKind.LOG_LINEAR_DISCOUNT}
@@ -53,19 +57,6 @@ class _BootstrapNodeSpace(Enum):
 
 def _allow_extrapolation(spec: CurveSpec) -> bool:
     return spec.extrapolation_policy is not ExtrapolationPolicy.ERROR
-
-
-def _sorted_observations(observations: Sequence[BootstrapObservation]) -> tuple[BootstrapObservation, ...]:
-    if not observations:
-        raise InvalidCurveInput("bootstrap calibration requires at least one observation.")
-    if not all(isinstance(observation, BootstrapObservation) for observation in observations):
-        raise InvalidCurveInput("all observations must be BootstrapObservation objects.")
-    sorted_observations = tuple(sorted(observations, key=lambda observation: observation.tenor))
-    tenors = [observation.tenor for observation in sorted_observations]
-    for left, right in zip(tenors, tenors[1:], strict=False):
-        if right <= left:
-            raise InvalidCurveInput("bootstrap observations must have strictly increasing tenors.")
-    return sorted_observations
 
 
 def _node_space_for_kind(kind: CurveKernelKind) -> _BootstrapNodeSpace:
@@ -97,17 +88,15 @@ def _build_kernel(
         return PiecewiseFlatForwardKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
     if kind is CurveKernelKind.CUBIC_SPLINE_ZERO:
         return CubicSplineZeroKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
+    if kind is CurveKernelKind.CUBIC_SPLINE:
+        return CubicSplineKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
     if kind is CurveKernelKind.MONOTONE_CONVEX:
         return MonotoneConvexKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
     raise CurveConstructionError(f"bootstrap calibration does not support kernel kind {kind.name}.")
 
 
-def _fitted_value(kernel: CurveKernel, observation: BootstrapObservation) -> float:
-    if observation.kind is BootstrapObservationKind.DISCOUNT_FACTOR:
-        return kernel.discount_factor_at(observation.tenor)
-    if observation.tenor == 0.0:
-        return 0.0
-    return kernel.rate_at(observation.tenor)
+def _fitted_value(kernel: CurveKernel, quote_row: QuoteRow, *, spec: CurveSpec) -> float:
+    return model_quote_value(kernel, quote_row, spec=spec)
 
 
 def _solve_zero_rate_from_discount_factor(
@@ -186,6 +175,97 @@ def _solve_discount_factor_from_zero_rate(
     raise CurveConstructionError("could not bracket discount-factor bootstrap solve.")
 
 
+def _initial_node_guess(quote_row: QuoteRow, *, node_space: _BootstrapNodeSpace) -> float:
+    if node_space is _BootstrapNodeSpace.ZERO_RATE:
+        if quote_row.value_kind is QuoteValueKind.DISCOUNT_FACTOR:
+            return ValueConverter.df_to_zero(quote_row.value, quote_row.tenor, _CONTINUOUS)
+        return quote_row.value
+    if quote_row.value_kind is QuoteValueKind.DISCOUNT_FACTOR:
+        return quote_row.value
+    return ValueConverter.zero_to_df(quote_row.value, quote_row.tenor, _CONTINUOUS)
+
+
+def _bootstrap_quote_residual(
+    candidate_node_value: float,
+    *,
+    quote_row: QuoteRow,
+    spec: CurveSpec,
+    kernel_spec: KernelSpec,
+    solved_tenors: Sequence[float],
+    solved_values: Sequence[float],
+) -> float:
+    kernel = _build_kernel(
+        kernel_spec=kernel_spec,
+        spec=spec,
+        tenors=(*solved_tenors, quote_row.tenor),
+        node_values=(*solved_values, candidate_node_value),
+    )
+    return model_quote_value(kernel, quote_row, spec=spec) - quote_row.value
+
+
+def _solve_node_from_quote(
+    *,
+    quote_row: QuoteRow,
+    spec: CurveSpec,
+    kernel_spec: KernelSpec,
+    node_space: _BootstrapNodeSpace,
+    solved_tenors: Sequence[float],
+    solved_values: Sequence[float],
+    solver_kind: BootstrapSolverKind,
+    solver_config: SolverConfig,
+) -> SolverResult:
+    guess = _initial_node_guess(quote_row, node_space=node_space)
+
+    def residual(candidate_node_value: float) -> float:
+        return _bootstrap_quote_residual(
+            candidate_node_value,
+            quote_row=quote_row,
+            spec=spec,
+            kernel_spec=kernel_spec,
+            solved_tenors=solved_tenors,
+            solved_values=solved_values,
+        )
+
+    if node_space is _BootstrapNodeSpace.ZERO_RATE and solver_kind is BootstrapSolverKind.NEWTON:
+        try:
+            return newton_raphson_numerical(residual, guess, config=solver_config)
+        except (ConvergenceFailed, DivisionByZero, InvalidCurveInput, CurveConstructionError):
+            pass
+
+    if node_space is _BootstrapNodeSpace.ZERO_RATE:
+        width = max(0.25, abs(guess) * 0.25 + 0.25)
+        lower = guess - width
+        upper = guess + width
+        for _ in range(32):
+            f_lower = residual(lower)
+            f_upper = residual(upper)
+            if f_lower == 0.0:
+                return SolverResult(root=lower, iterations=0, residual=0.0, converged=True)
+            if f_upper == 0.0:
+                return SolverResult(root=upper, iterations=0, residual=0.0, converged=True)
+            if f_lower * f_upper < 0.0:
+                return brent(residual, lower, upper, config=solver_config)
+            width *= 2.0
+            lower = guess - width
+            upper = guess + width
+        raise CurveConstructionError("could not bracket bootstrap solve for quote-driven bond fit.")
+
+    lower = max(1e-12, guess * 0.5)
+    upper = max(guess * 1.5, lower * 2.0)
+    for _ in range(32):
+        f_lower = residual(lower)
+        f_upper = residual(upper)
+        if f_lower == 0.0:
+            return SolverResult(root=lower, iterations=0, residual=0.0, converged=True)
+        if f_upper == 0.0:
+            return SolverResult(root=upper, iterations=0, residual=0.0, converged=True)
+        if f_lower * f_upper < 0.0:
+            return brent(residual, lower, upper, config=solver_config)
+        lower = max(1e-12, lower * 0.5)
+        upper = upper * 2.0
+    raise CurveConstructionError("could not bracket bootstrap solve for quote-driven bond fit.")
+
+
 class BootstrapCalibrator(CurveCalibrator):
     """Sequential bootstrap calibrator for node-based discount curves."""
 
@@ -208,7 +288,7 @@ class BootstrapCalibrator(CurveCalibrator):
 
     def fit(
         self,
-        observations: Sequence[BootstrapObservation],
+        quotes: Sequence[AnyInstrumentQuote],
         *,
         spec: CurveSpec,
         kernel_spec: KernelSpec,
@@ -220,51 +300,81 @@ class BootstrapCalibrator(CurveCalibrator):
         if self._objective is not CalibrationObjective.EXACT_FIT:
             raise CurveConstructionError("BootstrapCalibrator currently supports EXACT_FIT only.")
 
-        sorted_observations = _sorted_observations(observations)
+        quote_rows = normalized_quote_rows(
+            quotes,
+            spec=spec,
+            require_strictly_positive_tenor=False,
+        )
         node_space = _node_space_for_kind(kernel_spec.kind)
 
         solved_tenors: list[float] = []
         solved_values: list[float] = []
-        per_observation_iterations: list[int] = []
+        per_quote_iterations: list[int] = []
         total_iterations = 0
 
-        for observation in sorted_observations:
+        for quote_row in quote_rows:
             if node_space is _BootstrapNodeSpace.ZERO_RATE:
-                if observation.kind is BootstrapObservationKind.ZERO_RATE:
-                    node_value = observation.value
+                if quote_row.value_kind is QuoteValueKind.ZERO_RATE:
+                    node_value = quote_row.value
                     iterations = 0
-                elif observation.tenor == 0.0:
+                elif quote_row.value_kind is QuoteValueKind.BOND_YTM:
+                    result = _solve_node_from_quote(
+                        quote_row=quote_row,
+                        spec=spec,
+                        kernel_spec=kernel_spec,
+                        node_space=node_space,
+                        solved_tenors=solved_tenors,
+                        solved_values=solved_values,
+                        solver_kind=self._solver_kind,
+                        solver_config=self._solver_config,
+                    )
+                    node_value = result.root
+                    iterations = result.iterations
+                elif quote_row.tenor == 0.0:
                     node_value = 0.0
                     iterations = 0
                 else:
                     result = _solve_zero_rate_from_discount_factor(
-                        tenor=observation.tenor,
-                        target_discount_factor=observation.value,
+                        tenor=quote_row.tenor,
+                        target_discount_factor=quote_row.value,
                         solver_kind=self._solver_kind,
                         solver_config=self._solver_config,
                     )
                     node_value = result.root
                     iterations = result.iterations
             else:
-                if observation.kind is BootstrapObservationKind.DISCOUNT_FACTOR:
-                    node_value = observation.value
+                if quote_row.value_kind is QuoteValueKind.DISCOUNT_FACTOR:
+                    node_value = quote_row.value
                     iterations = 0
-                elif observation.tenor == 0.0:
+                elif quote_row.value_kind is QuoteValueKind.BOND_YTM:
+                    result = _solve_node_from_quote(
+                        quote_row=quote_row,
+                        spec=spec,
+                        kernel_spec=kernel_spec,
+                        node_space=node_space,
+                        solved_tenors=solved_tenors,
+                        solved_values=solved_values,
+                        solver_kind=self._solver_kind,
+                        solver_config=self._solver_config,
+                    )
+                    node_value = result.root
+                    iterations = result.iterations
+                elif quote_row.tenor == 0.0:
                     node_value = 1.0
                     iterations = 0
                 else:
                     result = _solve_discount_factor_from_zero_rate(
-                        tenor=observation.tenor,
-                        target_zero_rate=observation.value,
+                        tenor=quote_row.tenor,
+                        target_zero_rate=quote_row.value,
                         solver_kind=self._solver_kind,
                         solver_config=self._solver_config,
                     )
                     node_value = result.root
                     iterations = result.iterations
 
-            solved_tenors.append(observation.tenor)
+            solved_tenors.append(quote_row.tenor)
             solved_values.append(node_value)
-            per_observation_iterations.append(iterations)
+            per_quote_iterations.append(iterations)
             total_iterations += iterations
 
         kernel = _build_kernel(
@@ -276,16 +386,16 @@ class BootstrapCalibrator(CurveCalibrator):
 
         points = tuple(
             CalibrationPoint(
-                instrument_id=observation.instrument_id,
-                tenor=observation.tenor,
-                observed_value=observation.value,
-                fitted_value=(fitted_value := _fitted_value(kernel, observation)),
-                residual=fitted_value - observation.value,
-                observed_kind=observation.kind.name,
-                weight=observation.weight,
+                instrument_id=quote_row.instrument_id,
+                tenor=quote_row.tenor,
+                observed_value=quote_row.value,
+                fitted_value=(fitted_value := _fitted_value(kernel, quote_row, spec=spec)),
+                residual=fitted_value - quote_row.value,
+                observed_kind=quote_row.observed_kind,
+                weight=quote_row.weight,
                 solver_iterations=iterations,
             )
-            for observation, iterations in zip(sorted_observations, per_observation_iterations, strict=True)
+            for quote_row, iterations in zip(quote_rows, per_quote_iterations, strict=True)
         )
         max_abs_residual = max(abs(point.residual) for point in points) if points else 0.0
 

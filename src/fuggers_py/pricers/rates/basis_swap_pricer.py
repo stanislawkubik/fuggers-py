@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from fuggers_py.market.curve_support import discount_factor_at_date
 from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.products.rates import BasisSwap, FloatingLegSpec, PayReceive
 
@@ -65,14 +66,14 @@ class BasisSwapPricer:
                 day_count_convention=leg.day_count_convention,
             )
             coupon = leg.notional * (forward + spread) * period.year_fraction
-            present_value += sign * coupon * discount_curve.discount_factor(period.payment_date)
+            present_value += sign * coupon * discount_factor_at_date(discount_curve, period.payment_date)
         return present_value
 
     def _annuity(self, swap: BasisSwap, leg: FloatingLegSpec, periods, curves: AnalyticsCurves) -> Decimal:
         discount_curve = resolve_discount_curve(curves, swap.currency())
         annuity = Decimal(0)
         for period in periods:
-            annuity += leg.notional * period.year_fraction * discount_curve.discount_factor(period.payment_date)
+            annuity += leg.notional * period.year_fraction * discount_factor_at_date(discount_curve, period.payment_date)
         if annuity == Decimal(0):
             raise ValueError("BasisSwap par spread requires a non-zero quoted-leg annuity.")
         return annuity

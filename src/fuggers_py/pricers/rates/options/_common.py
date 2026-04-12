@@ -14,6 +14,7 @@ from typing import Iterable
 
 from fuggers_py.core.ids import YearMonth
 from fuggers_py.core.types import Date
+from fuggers_py.market.curve_support import curve_reference_date, discount_factor_at_date
 from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.vol_surfaces import VolPoint, VolQuoteType, VolatilitySurface
 from fuggers_py.pricers.rates.futures import DeliveryOptionModel, fair_futures_price
@@ -295,7 +296,7 @@ def swaption_context(
     """Return the swaption forward rate, annuity, and valuation date."""
     pricer = swap_pricer or SwapPricer()
     discount_curve = resolve_discount_curve(curves, swaption.currency())
-    resolved_valuation_date = valuation_date or discount_curve.date()
+    resolved_valuation_date = valuation_date or curve_reference_date(discount_curve)
     return (
         pricer.par_rate(swaption.underlying_swap, curves),
         pricer.annuity(swaption.underlying_swap, curves),
@@ -317,7 +318,7 @@ def cap_floor_context(
         index_name=cap_floor.floating_leg.index_name,
         index_tenor=cap_floor.floating_leg.index_tenor,
     )
-    resolved_valuation_date = valuation_date or discount_curve.date()
+    resolved_valuation_date = valuation_date or curve_reference_date(discount_curve)
     optionlets: list[_CapFloorletInputs] = []
     for period in cap_floor.optionlet_periods():
         optionlets.append(
@@ -332,7 +333,7 @@ def cap_floor_context(
                     day_count_convention=cap_floor.floating_leg.day_count_convention,
                 ),
                 accrual_factor=period.year_fraction,
-                discount_factor=discount_curve.discount_factor(period.payment_date),
+                discount_factor=discount_factor_at_date(discount_curve, period.payment_date),
                 expiry_years=_time_to_expiry(period.start_date, resolved_valuation_date),
             )
         )
@@ -365,8 +366,8 @@ def futures_option_context(
 
     if curves is not None:
         discount_curve = resolve_discount_curve(curves, option.currency())
-        resolved_valuation_date = valuation_date or discount_curve.date()
-        discount_factor = discount_curve.discount_factor(option.expiry_date)
+        resolved_valuation_date = valuation_date or curve_reference_date(discount_curve)
+        discount_factor = discount_factor_at_date(discount_curve, option.expiry_date)
     else:
         resolved_valuation_date = valuation_date or option.expiry_date
         discount_factor = Decimal(1)

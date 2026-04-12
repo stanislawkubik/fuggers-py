@@ -44,7 +44,6 @@ _MODULE_EXPORTS = {
     "EodScheduler": "fuggers_py.calc.scheduler",
     "EtfAnalyticsOutput": "fuggers_py.calc.output",
     "EtfPublisher": "fuggers_py.calc.output",
-    "ForwardRateCurve": "fuggers_py.calc.curve_builder",
     "FundingPricingRouter": "fuggers_py.calc.funding_pricing_router",
     "FutureQuoteOutput": "fuggers_py.calc.output",
     "FxRateUpdate": "fuggers_py.calc.market_data_listener",

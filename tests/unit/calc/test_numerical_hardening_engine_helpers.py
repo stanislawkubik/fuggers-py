@@ -20,10 +20,13 @@ from fuggers_py.calc.market_data_listener import (
 )
 from fuggers_py.calc.scheduler import NodeUpdate, ThrottleManager, UpdateSource
 from fuggers_py.core import CurrencyPair, InstrumentId, VolSurfaceId, YearMonth
+from fuggers_py.market.curve_support import forward_rate_between_dates
+from fuggers_py.market.curves import CurveType
 from fuggers_py.market.quotes import RawQuote
 from fuggers_py.calc.pricing_specs import QuoteSide
 from fuggers_py.market.snapshot import CurveInputs, CurvePoint, FxRate, InflationFixing
 from fuggers_py.market.vol_surfaces import VolSurfaceType, VolatilitySurface
+from tests.helpers._public_curve_helpers import linear_zero_curve, log_linear_discount_curve
 
 
 @pytest.mark.asyncio
@@ -170,32 +173,41 @@ async def test_market_data_listener_handles_curve_fx_inflation_and_volatility_pa
     assert vol_updates[0].source is UpdateSource.MARKET_DATA
 
 
-def test_curve_builder_single_pillar_curves_bundle_and_forward_interval_are_stable() -> None:
+def test_curve_builder_bundle_and_forward_interval_are_stable() -> None:
     reference_date = Date.from_ymd(2026, 3, 14)
     builder = CurveBuilder()
-    discount_curve = builder.add_discount_curve(
+    discount_points = [CurvePoint(Decimal("1.0"), Decimal("0.97"))]
+    zero_points = [CurvePoint(Decimal("1.0"), Decimal("0.03"))]
+    forward_points = [CurvePoint(Decimal("1.0"), Decimal("0.03")), CurvePoint(Decimal("2.0"), Decimal("0.05"))]
+
+    discount_curve = builder.add_curve(
         "usd.discount",
-        [CurvePoint(Decimal("1.0"), Decimal("0.97"))],
-        reference_date,
+        log_linear_discount_curve(
+            "usd.discount",
+            reference_date,
+            discount_points,
+            curve_type=CurveType.OVERNIGHT_DISCOUNT,
+        ),
+        curve_inputs=CurveInputs.from_points("usd.discount", reference_date, discount_points, curve_kind="discount"),
     )
-    zero_curve = builder.add_zero_curve(
+    zero_curve = builder.add_curve(
         "usd.zero",
-        [CurvePoint(Decimal("1.0"), Decimal("0.03"))],
-        reference_date,
+        linear_zero_curve("usd.zero", reference_date, zero_points, curve_type=CurveType.NOMINAL),
+        curve_inputs=CurveInputs.from_points("usd.zero", reference_date, zero_points, curve_kind="zero"),
     )
-    forward_curve = builder.add_forward_curve(
+    forward_curve = builder.add_curve(
         "usd.forward",
-        [CurvePoint(Decimal("1.0"), Decimal("0.03")), CurvePoint(Decimal("2.0"), Decimal("0.05"))],
-        reference_date,
+        linear_zero_curve("usd.forward", reference_date, forward_points, curve_type=CurveType.PROJECTION),
+        curve_inputs=CurveInputs.from_points("usd.forward", reference_date, forward_points, curve_kind="forward"),
     )
 
     start = reference_date.add_days(365)
     end = reference_date.add_days(365 * 2)
     bundle = builder.bundle(discount_curve="usd.discount", forward_curve="usd.forward")
 
-    assert discount_curve.discount_factor_at_tenor(0.5) == pytest.approx(0.97, abs=1e-12)
-    assert zero_curve.zero_rate_at_tenor(5.0) == pytest.approx(0.03, abs=1e-12)
-    assert forward_curve.forward_rate(start, end) == pytest.approx(0.07, abs=1e-12)
+    assert discount_curve.discount_factor_at(1.0) == pytest.approx(0.97, abs=1e-12)
+    assert zero_curve.zero_rate_at(1.0) == pytest.approx(0.03, abs=1e-12)
+    assert float(forward_rate_between_dates(forward_curve, start, end)) == pytest.approx(0.07, abs=1e-12)
     assert bundle.discount_curve is discount_curve
     assert bundle.forward_curve is forward_curve
     assert builder.inputs_for("usd.forward").curve_kind == "forward"

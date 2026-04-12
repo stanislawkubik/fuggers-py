@@ -12,7 +12,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py.core.types import Date, Price, Yield
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import discount_factor_at_date
+from fuggers_py.market.curves import DiscountingCurve
 
 from fuggers_py.pricers.bonds import BondPricer as _BondPricer
 from fuggers_py.pricers.bonds import TipsPricer as _TipsPricer
@@ -49,7 +50,7 @@ class BondPricer:
 
     _delegate: _BondPricer = _BondPricer()
 
-    def price_from_curve(self, bond: Bond, curve: TermStructure, settlement_date: Date) -> PriceResult:
+    def price_from_curve(self, bond: Bond, curve: DiscountingCurve, settlement_date: Date) -> PriceResult:
         """Price a bond off a curve using settlement-relative discounting.
 
         The resulting dirty price is computed relative to settlement by
@@ -63,13 +64,13 @@ class BondPricer:
         if not cashflows:
             raise AnalyticsError.pricing_failed("No future cashflows found for curve pricing.")
 
-        df_settle = curve.discount_factor(settlement_date)
+        df_settle = discount_factor_at_date(curve, settlement_date)
         if df_settle == 0:
             raise AnalyticsError.pricing_failed("Discount factor at settlement is zero.")
 
         pv = Decimal(0)
         for cf in cashflows:
-            df = curve.discount_factor(cf.date)
+            df = discount_factor_at_date(curve, cf.date)
             pv += cf.factored_amount() * df / df_settle
 
         accrued = bond.accrued_interest(settlement_date)

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from fuggers_py.measures.spreads import OASCalculator
 from fuggers_py.core.types import Date
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curves import DiscountingCurve
 
 from .._analytics_utils import aggregate_metrics, position_analytics
 from ..portfolio import Portfolio
@@ -30,11 +30,11 @@ class PortfolioAnalytics:
 
     def position_metrics(
         self,
-        curve: TermStructure | None,
+        curve: DiscountingCurve | None,
         settlement_date: Date,
         *,
         config: AnalyticsConfig | None = None,
-        spread_curve: TermStructure | None = None,
+        spread_curve: DiscountingCurve | None = None,
         oas_calculator: OASCalculator | None = None,
     ) -> list[PositionAnalytics]:
         """Return per-position analytics for the portfolio.
@@ -76,11 +76,11 @@ class PortfolioAnalytics:
 
     def metrics(
         self,
-        curve: TermStructure | None,
+        curve: DiscountingCurve | None,
         settlement_date: Date,
         *,
         config: AnalyticsConfig | None = None,
-        spread_curve: TermStructure | None = None,
+        spread_curve: DiscountingCurve | None = None,
         oas_calculator: OASCalculator | None = None,
     ) -> PortfolioMetrics:
         """Return portfolio-level aggregated analytics.

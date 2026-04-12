@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from math import log
 
 from fuggers_py.core.types import Date
+from fuggers_py.market.quotes import AnyInstrumentQuote
 
-from ..errors import InvalidCurveInput, TenorOutOfBounds
+from ..errors import CurveConstructionError, InvalidCurveInput, TenorOutOfBounds
 from .enums import ExtrapolationPolicy, RateSpace
-from .kernels import CurveKernel
+from .kernels import CurveKernel, CurveKernelKind, KernelSpec
 from .reports import CalibrationReport
 from .spec import CurveSpec
 
@@ -147,6 +149,53 @@ class YieldCurve(DiscountingCurve):
             raise InvalidCurveInput("calibration_report must be a CalibrationReport or None.")
         self._kernel = kernel
         self._calibration_report = calibration_report
+
+    @classmethod
+    def fit(
+        cls,
+        quotes: Sequence[AnyInstrumentQuote],
+        *,
+        spec: CurveSpec,
+        kernel_spec: KernelSpec,
+    ) -> "YieldCurve":
+        """Build one public yield curve from quotes and a kernel choice.
+
+        The public entry point stays the same no matter which live fitting path
+        is used. The caller chooses the internal curve family through
+        ``KernelSpec``, and the implementation routes to the matching fitting
+        path internally.
+        """
+
+        if not isinstance(spec, CurveSpec):
+            raise InvalidCurveInput("spec must be a CurveSpec.")
+        if not isinstance(kernel_spec, KernelSpec):
+            raise InvalidCurveInput("kernel_spec must be a KernelSpec.")
+
+        if kernel_spec.kind in {
+            CurveKernelKind.LINEAR_ZERO,
+            CurveKernelKind.LOG_LINEAR_DISCOUNT,
+            CurveKernelKind.PIECEWISE_CONSTANT,
+            CurveKernelKind.PIECEWISE_FLAT_FORWARD,
+            CurveKernelKind.MONOTONE_CONVEX,
+            CurveKernelKind.CUBIC_SPLINE_ZERO,
+            CurveKernelKind.CUBIC_SPLINE,
+        }:
+            from .calibrators import BootstrapCalibrator
+
+            calibrator = BootstrapCalibrator()
+        elif kernel_spec.kind in {
+            CurveKernelKind.NELSON_SIEGEL,
+            CurveKernelKind.SVENSSON,
+            CurveKernelKind.EXPONENTIAL_SPLINE,
+        }:
+            from .calibrators import ParametricCalibrator
+
+            calibrator = ParametricCalibrator()
+        else:
+            raise CurveConstructionError(f"no quote-driven fitting path exists for kernel kind {kernel_spec.kind.name}.")
+
+        kernel, report = calibrator.fit(quotes, spec=spec, kernel_spec=kernel_spec)
+        return cls(spec=spec, kernel=kernel, calibration_report=report)
 
     @property
     def rate_space(self) -> RateSpace:

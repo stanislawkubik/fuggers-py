@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py.core.types import Date
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curves import DiscountingCurve
 
 from .comparison import PortfolioBenchmark
 
@@ -73,7 +73,11 @@ class TrackingErrorEstimate:
         return self.estimate
 
 
-def estimate_tracking_error(benchmark: PortfolioBenchmark, curve: TermStructure, settlement_date: Date) -> TrackingErrorEstimate:
+def estimate_tracking_error(
+    benchmark: PortfolioBenchmark,
+    curve: DiscountingCurve,
+    settlement_date: Date,
+) -> TrackingErrorEstimate:
     """Estimate tracking error from active risk and holding dispersion.
 
     The result combines active duration, active spread, and a simple

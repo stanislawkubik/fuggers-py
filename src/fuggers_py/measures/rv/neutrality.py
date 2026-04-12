@@ -12,37 +12,13 @@ from decimal import Decimal
 from enum import Enum
 from typing import Mapping
 
-from fuggers_py.pricers.bonds.risk import RiskMetrics
-from fuggers_py.reference.bonds.types import CompoundingKind
-from fuggers_py.core.types import Compounding, Yield
-from fuggers_py.market.curves.fitted_bonds import BondCurve
 from fuggers_py.core.ids import InstrumentId
 from fuggers_py.core.types import Date
+from fuggers_py.market.curves.fitted_bonds import BondCurve
 
+from ._fit_result import point_bp_residual, point_dv01, point_fitted_yield, point_maturity_years, point_price_residual
+from ._shared import to_decimal
 from .selection import BondChoice, MaturityChoice, SignalDirection
-
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
-
-
-def _yield_from_decimal(bond, yield_value: Decimal) -> Yield:
-    method = bond.rules().compounding
-    if method.kind is CompoundingKind.CONTINUOUS:
-        compounding = Compounding.CONTINUOUS
-    elif method.kind in {CompoundingKind.SIMPLE, CompoundingKind.DISCOUNT}:
-        compounding = Compounding.SIMPLE
-    elif method.frequency == 1:
-        compounding = Compounding.ANNUAL
-    elif method.frequency == 2:
-        compounding = Compounding.SEMI_ANNUAL
-    elif method.frequency == 4:
-        compounding = Compounding.QUARTERLY
-    else:
-        compounding = Compounding.ANNUAL
-    return Yield.new(yield_value, compounding)
 
 
 class NeutralityTarget(str, Enum):
@@ -75,12 +51,12 @@ class TradeLeg:
     def __post_init__(self) -> None:
         object.__setattr__(self, "instrument_id", InstrumentId.parse(self.instrument_id))
         object.__setattr__(self, "direction", SignalDirection.parse(self.direction))
-        object.__setattr__(self, "notional", _to_decimal(self.notional))
-        object.__setattr__(self, "maturity_years", _to_decimal(self.maturity_years))
-        object.__setattr__(self, "fitted_yield", _to_decimal(self.fitted_yield))
-        object.__setattr__(self, "dv01_per_100", _to_decimal(self.dv01_per_100))
-        object.__setattr__(self, "price_residual", _to_decimal(self.price_residual))
-        object.__setattr__(self, "bp_residual", _to_decimal(self.bp_residual))
+        object.__setattr__(self, "notional", to_decimal(self.notional))
+        object.__setattr__(self, "maturity_years", to_decimal(self.maturity_years))
+        object.__setattr__(self, "fitted_yield", to_decimal(self.fitted_yield))
+        object.__setattr__(self, "dv01_per_100", to_decimal(self.dv01_per_100))
+        object.__setattr__(self, "price_residual", to_decimal(self.price_residual))
+        object.__setattr__(self, "bp_residual", to_decimal(self.bp_residual))
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,19 +74,11 @@ class NeutralizedTradeExpression:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "neutrality_target", NeutralityTarget.parse(self.neutrality_target))
-        object.__setattr__(self, "hedge_ratio", _to_decimal(self.hedge_ratio))
-        object.__setattr__(self, "gross_notional", _to_decimal(self.gross_notional))
-        object.__setattr__(self, "net_dv01", _to_decimal(self.net_dv01))
-        object.__setattr__(self, "expected_price_convergence", _to_decimal(self.expected_price_convergence))
-        object.__setattr__(self, "expected_bp_convergence", _to_decimal(self.expected_bp_convergence))
-
-
-def _point_risk(point: Mapping[str, object], *, settlement_date: Date) -> Decimal:
-    return RiskMetrics.from_bond(
-        point["bond"],
-        _yield_from_decimal(point["bond"], _to_decimal(point["fitted_yield"])),
-        settlement_date,
-    ).dv01
+        object.__setattr__(self, "hedge_ratio", to_decimal(self.hedge_ratio))
+        object.__setattr__(self, "gross_notional", to_decimal(self.gross_notional))
+        object.__setattr__(self, "net_dv01", to_decimal(self.net_dv01))
+        object.__setattr__(self, "expected_price_convergence", to_decimal(self.expected_price_convergence))
+        object.__setattr__(self, "expected_bp_convergence", to_decimal(self.expected_bp_convergence))
 
 
 def _point_from_choice(
@@ -131,11 +99,11 @@ def _trade_leg(
         instrument_id=point["instrument_id"],
         direction=direction,
         notional=notional,
-        maturity_years=_to_decimal(point["maturity_years"]),
-        fitted_yield=_to_decimal(point["fitted_yield"]),
-        dv01_per_100=_point_risk(point, settlement_date=settlement_date),
-        price_residual=_to_decimal(point["price_residual"]),
-        bp_residual=_to_decimal(point["bp_residual"]),
+        maturity_years=point_maturity_years(point),
+        fitted_yield=point_fitted_yield(point),
+        dv01_per_100=point_dv01(point, settlement_date=settlement_date),
+        price_residual=point_price_residual(point),
+        bp_residual=point_bp_residual(point),
     )
 
 
@@ -158,14 +126,14 @@ def neutralize_choices(
         raise ValueError("neutralize_choices requires short_choice.direction == SHORT.")
 
     target = NeutralityTarget.parse(neutrality_target)
-    base_notional = _to_decimal(base_long_notional)
+    base_notional = to_decimal(base_long_notional)
     if base_notional <= Decimal(0):
         raise ValueError("neutralize_choices requires a positive base_long_notional.")
 
     long_point = _point_from_choice(fit_result, long_choice)
     short_point = _point_from_choice(fit_result, short_choice)
-    long_dv01 = _point_risk(long_point, settlement_date=fit_result.date())
-    short_dv01 = _point_risk(short_point, settlement_date=fit_result.date())
+    long_dv01 = point_dv01(long_point, settlement_date=fit_result.date())
+    short_dv01 = point_dv01(short_point, settlement_date=fit_result.date())
 
     if target is NeutralityTarget.DV01:
         if short_dv01 == Decimal(0):
@@ -189,10 +157,10 @@ def neutralize_choices(
         settlement_date=fit_result.date(),
     )
     net_dv01 = (base_notional / Decimal(100)) * long_dv01 - (short_notional / Decimal(100)) * short_dv01
-    expected_price_convergence = (base_notional / Decimal(100)) * (-_to_decimal(long_point["price_residual"])) + (
+    expected_price_convergence = (base_notional / Decimal(100)) * (-point_price_residual(long_point)) + (
         short_notional / Decimal(100)
-    ) * _to_decimal(short_point["price_residual"])
-    expected_bp_convergence = _to_decimal(long_point["bp_residual"]) - _to_decimal(short_point["bp_residual"])
+    ) * point_price_residual(short_point)
+    expected_bp_convergence = point_bp_residual(long_point) - point_bp_residual(short_point)
     return NeutralizedTradeExpression(
         neutrality_target=target,
         hedge_ratio=hedge_ratio,
@@ -223,18 +191,18 @@ def neutralize_bond_pair(
             direction=SignalDirection.LONG,
             score=Decimal(1),
             instrument_id=long_point["instrument_id"],
-            maturity_years=_to_decimal(long_point["maturity_years"]),
-            bp_residual=_to_decimal(long_point["bp_residual"]),
-            price_residual=_to_decimal(long_point["price_residual"]),
+            maturity_years=point_maturity_years(long_point),
+            bp_residual=point_bp_residual(long_point),
+            price_residual=point_price_residual(long_point),
         ),
         short_choice=BondChoice(
             signal_name="short_leg",
             direction=SignalDirection.SHORT,
             score=Decimal(-1),
             instrument_id=short_point["instrument_id"],
-            maturity_years=_to_decimal(short_point["maturity_years"]),
-            bp_residual=_to_decimal(short_point["bp_residual"]),
-            price_residual=_to_decimal(short_point["price_residual"]),
+            maturity_years=point_maturity_years(short_point),
+            bp_residual=point_bp_residual(short_point),
+            price_residual=point_price_residual(short_point),
         ),
         base_long_notional=base_long_notional,
         neutrality_target=neutrality_target,

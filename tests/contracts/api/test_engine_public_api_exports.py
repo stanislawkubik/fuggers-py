@@ -24,10 +24,12 @@ from fuggers_py.portfolio import Portfolio as PortfolioType
 from fuggers_py.portfolio import Position as PositionType
 from fuggers_py.calc import QuoteSide
 from fuggers_py.core import CurveId, InstrumentId
+from fuggers_py.market.curves import CurveType
 from fuggers_py.market.quotes import RawQuote
 from fuggers_py.market.snapshot import CurveInputs, CurvePoint
 from fuggers_py.market.sources import MarketDataProvider
 from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
+from tests.helpers._public_curve_helpers import linear_zero_curve
 
 
 class _BondSource:
@@ -64,10 +66,15 @@ def test_engine_root_imports_expose_public_aliases(fixed_rate_2025_bond) -> None
 def test_built_curve_wrapper_exposes_curve_builder_output() -> None:
     reference_date = Date.from_ymd(2026, 3, 14)
     builder = CurveBuilder()
-    curve = builder.add_zero_curve(
+    curve_inputs = CurveInputs.from_points(
         CurveId("usd.discount"),
-        [CurvePoint(Decimal("1.0"), Decimal("0.0425")), CurvePoint(Decimal("5.0"), Decimal("0.0390"))],
         reference_date,
+        [CurvePoint(Decimal("1.0"), Decimal("0.0425")), CurvePoint(Decimal("5.0"), Decimal("0.0390"))],
+    )
+    curve = builder.add_curve(
+        CurveId("usd.discount"),
+        linear_zero_curve("usd.discount", reference_date, curve_inputs.points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
+        curve_inputs=curve_inputs,
     )
     built_curve = builder.built_curve("usd.discount")
 
@@ -144,7 +151,11 @@ async def test_reactive_engine_flow_works_through_root_public_surface() -> None:
         [CurvePoint(Decimal("1.0"), Decimal("0.0425")), CurvePoint(Decimal("5.0"), Decimal("0.0390"))],
     )
 
-    reactive.curve_builder.add_from_inputs(curve_inputs)
+    reactive.curve_builder.add_curve(
+        "usd.discount",
+        linear_zero_curve("usd.discount", settlement, curve_inputs.points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
+        curve_inputs=curve_inputs,
+    )
     reactive.listener.curve_source.add_curve_inputs(curve_inputs)
     reactive.register_pricing_node(
         NodeId("price:REACTIVE-SURFACE"),

@@ -12,21 +12,9 @@ from decimal import Decimal
 from fuggers_py.reference.bonds.types import Tenor
 from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.core.types import Date
-from fuggers_py.market.curves.bumping import KeyRateBump
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import STANDARD_KEY_RATE_TENORS, key_rate_bumped_curve
+from fuggers_py.market.curves import DiscountingCurve
 from fuggers_py.measures.pricing import BondPricer
-
-STANDARD_KEY_RATE_TENORS = [
-    Tenor.parse("6M"),
-    Tenor.parse("1Y"),
-    Tenor.parse("2Y"),
-    Tenor.parse("3Y"),
-    Tenor.parse("5Y"),
-    Tenor.parse("7Y"),
-    Tenor.parse("10Y"),
-    Tenor.parse("20Y"),
-    Tenor.parse("30Y"),
-]
 
 
 def _tenor_years(tenor: Tenor) -> float:
@@ -82,7 +70,7 @@ class KeyRateDurationCalculator:
     def calculate(
         self,
         bond: Bond,
-        curve: TermStructure,
+        curve: DiscountingCurve,
         settlement_date: Date,
         tenors: list[Tenor] | None = None,
     ) -> KeyRateDurations:
@@ -104,8 +92,8 @@ class KeyRateDurationCalculator:
 
         items: list[KeyRateDuration] = []
         for tenor in grid:
-            kr_up = KeyRateBump(tenors=grid, key_tenor=tenor, bump=self.bump).apply(curve)
-            kr_dn = KeyRateBump(tenors=grid, key_tenor=tenor, bump=-self.bump).apply(curve)
+            kr_up = key_rate_bumped_curve(curve, tenor_grid=grid, key_tenor=tenor, bump=self.bump)
+            kr_dn = key_rate_bumped_curve(curve, tenor_grid=grid, key_tenor=tenor, bump=-self.bump)
 
             p_up = pricer.price_from_curve(bond, kr_up, settlement_date).dirty.as_percentage()
             p_dn = pricer.price_from_curve(bond, kr_dn, settlement_date).dirty.as_percentage()
@@ -118,7 +106,7 @@ class KeyRateDurationCalculator:
 
 def key_rate_duration_at_tenor(
     bond: Bond,
-    curve: TermStructure,
+    curve: DiscountingCurve,
     settlement_date: Date,
     *,
     tenor: Tenor,

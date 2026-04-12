@@ -17,6 +17,36 @@ Market state, quotes, fixings, and indices.
    :no-index:
 ```
 
+`AnalyticsCurves` is now the upstream carrier for the public curve contracts.
+The main discounting-style slots are typed to `DiscountingCurve` or
+`RatesTermStructure`, not plain `object`, so pricing code can depend on the
+new curve contract directly.
+
+## `fuggers_py.market.curve_support`
+
+`fuggers_py.market.curve_support` is the date-to-tenor bridge used during the
+repo-wide migration onto the new public curve API.
+
+The important point is simple:
+
+- the public curve contract is tenor-based
+- a lot of older pricing code in the repo is still date-based
+- this module converts dates into tenors using the curve's own day-count rule
+- it also provides small helpers such as `discount_factor_at_date`,
+  `zero_rate_at_date`, `forward_rate_between_dates`, and the lightweight bump
+  wrappers used by migrated risk code
+
+This module lives outside `market.curves` on purpose. It lets upstream code
+migrate to the new public curve contract without reopening the curve package
+itself.
+
+```{eval-rst}
+.. automodule:: fuggers_py.market.curve_support
+   :members:
+   :member-order: bysource
+   :no-index:
+```
+
 ## `fuggers_py.market.quotes`
 
 ```{eval-rst}
@@ -115,24 +145,50 @@ The package also keeps a few shared helpers:
 
 Today the public operation roots exist, and `YieldCurve` is now a real runtime
 object backed by one internal kernel plus one optional report. What is still
-missing is the rest of the deeper implementation layer: concrete parametric and
-bond calibrators, richer fit reports, and the later fitted-spline kernel
-family. In particular, breakeven curves and par-yield curves are
-still later steps. Concrete internal kernel families now exist in
-`market.curves.rates.kernels.nodes` and
-`market.curves.rates.kernels.parametric`. The node family includes the rebuilt linear-zero,
-log-linear-discount, piecewise-constant-zero, piecewise-flat-forward,
-cubic-spline-zero, and monotone-convex kernels. The shared kernel contract is
-still intentionally small: internal kernels define the fitted rate curve on a
-tenor domain, and discount factors are derived from that rate curve. The
-parametric family includes
-`NelsonSiegelKernel` and `SvenssonKernel`, which wrap the existing parametric
-math primitives behind the same internal `CurveKernel` contract while keeping
-an explicit finite `max_t`. The first
-real fitting path now exists in
-`market.curves.rates.calibrators.bootstrap`. That bootstrap calibrator takes
-typed node observations, reads a `KernelSpec`, builds one internal kernel, and
-returns one `CalibrationReport` with per-observation residual rows.
+missing is mainly the repo-wide upstream migration onto this new public
+contract, plus any richer optional report types we may still want after that.
+In particular, breakeven curves and par-yield curves are still later steps.
+`YieldCurve` now also exposes
+`YieldCurve.fit(quotes=..., spec=..., kernel_spec=...)`, so
+the live fitting methods already share one public construction entry point.
+Concrete internal kernel families now exist in
+`market.curves.rates.kernels.nodes`,
+`market.curves.rates.kernels.parametric`, and
+`market.curves.rates.kernels.spline`. The node family includes the rebuilt
+linear-zero, log-linear-discount, piecewise-constant-zero,
+piecewise-flat-forward, cubic-spline-zero, and monotone-convex kernels. The
+shared kernel contract is still intentionally small: internal kernels define
+the fitted rate curve on a tenor domain, and discount factors are derived from
+that rate curve. The parametric family includes `NelsonSiegelKernel` and
+`SvenssonKernel`, which wrap the existing parametric math primitives behind the
+same internal `CurveKernel` contract while keeping an explicit finite `max_t`.
+The spline family includes `ExponentialSplineKernel` and
+`CubicSplineKernel`. Two real fitting paths now exist in
+`market.curves.rates.calibrators.bootstrap` and
+`market.curves.rates.calibrators.parametric`.
+The bootstrap path now takes market quotes, normalizes the supported quote
+types internally, reads a `KernelSpec`, builds one internal kernel, and
+returns one `CalibrationReport` with per-quote residual rows. The parametric
+path now does the same for all three global coefficient families:
+Nelson-Siegel, Svensson, and exponential spline. For the exponential-spline
+case, the caller passes fixed `decay_factors` in `KernelSpec.parameters`, and
+the calibrator fits the spline coefficients against those fixed decay factors.
+Today the live quote-driven path accepts tenor-carrying `SwapQuote`,
+`RepoQuote`, and `BondQuote`. Swaps and repo quotes stay direct rate targets.
+Bond quotes are handled inside the calibrators: `yield_to_maturity` stays a
+YTM target, while `clean_price` and `dirty_price` are converted to market YTM
+before the fit. The public `YieldCurve.fit(...)` helper now sits on top of
+both live paths, so callers choose the kernel family in one place and still
+get back the same public curve type. The next work is upstream adoption, not
+another core fitting path.
+
+That upstream adoption is now underway outside the curve package itself. The
+main date-based pricing helpers have started moving onto
+`fuggers_py.market.curve_support`, and calc no longer constructs curves on its
+own. Calc now only stores finished curves and remembered raw inputs. The
+remaining blockers are not new curve math. They are the missing finished-curve
+handoff into calc plus a few deleted legacy `market.curves` exports that are
+still referenced elsewhere in the repo.
 
 Short package map:
 
@@ -145,9 +201,10 @@ Short package map:
 - `market.curves.rates.kernels.base`: shared internal kernel family enum, config, and rate-first kernel contract
 - `market.curves.rates.kernels.nodes`: concrete node-based discounting kernels
 - `market.curves.rates.kernels.parametric`: concrete parametric discounting kernels
+- `market.curves.rates.kernels.spline`: concrete spline discounting kernels
 - `market.curves.rates.calibrators.base`: shared calibrator contract and objective enum
-- `market.curves.rates.calibrators.observations`: typed bootstrap observations
 - `market.curves.rates.calibrators.bootstrap`: bootstrap calibrator and solver choice
+- `market.curves.rates.calibrators.parametric`: global-fit calibrator and optimizer choice for Nelson-Siegel, Svensson, and exponential spline
 - `market.curves.errors`: curve-package errors
 - `market.curves.conversion`: numeric conversion helpers
 - `market.curves.multicurve.index`: identifiers such as `RateIndex` and `CurrencyPair`
@@ -217,7 +274,6 @@ Current internal homes:
 - `fuggers_py.market.curves.rates.kernels.decorators`
 - `fuggers_py.market.curves.rates.calibrators`
 - `fuggers_py.market.curves.rates.calibrators.base`
-- `fuggers_py.market.curves.rates.calibrators.observations`
 - `fuggers_py.market.curves.rates.calibrators.bootstrap`
 - `fuggers_py.market.curves.rates.calibrators.parametric`
 - `fuggers_py.market.curves.rates.calibrators.bonds`

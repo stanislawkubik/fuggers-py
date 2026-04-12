@@ -7,7 +7,13 @@ from decimal import Decimal
 from math import exp, log, sqrt
 
 from fuggers_py.core.types import Date
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import (
+    curve_reference_date,
+    discount_factor_at_date,
+    forward_rate_between_dates,
+    zero_rate_at_date,
+)
+from fuggers_py.market.curves import DiscountingCurve
 
 from ..errors import ModelError
 
@@ -24,7 +30,7 @@ class HullWhiteModel:
 
     mean_reversion: Decimal
     volatility: Decimal
-    term_structure: TermStructure
+    term_structure: DiscountingCurve
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "mean_reversion", _to_decimal(self.mean_reversion))
@@ -36,17 +42,14 @@ class HullWhiteModel:
 
     def base_forward_rate(self, start: Date, end: Date) -> float:
         """Return the continuously compounded forward rate between dates."""
-        df_start = float(self.term_structure.discount_factor(start))
-        df_end = float(self.term_structure.discount_factor(end))
-        dt = max(float(start.days_between(end)) / 365.0, 1e-12)
-        return log(df_start / df_end) / dt
+        return float(forward_rate_between_dates(self.term_structure, start, end))
 
     def short_rate(self, date: Date) -> float:
         """Return the model short rate at ``date`` from the term structure."""
-        ref = self.term_structure.date()
+        ref = curve_reference_date(self.term_structure)
         if date <= ref:
             return 0.0
-        return float(self.term_structure.zero_rate(date).value())
+        return float(zero_rate_at_date(self.term_structure, date))
 
     def node_rate(self, start: Date, end: Date, *, level: int, width: int) -> float:
         """Return the node short rate with a mean-reverting dispersion term."""

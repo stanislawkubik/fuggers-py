@@ -65,7 +65,6 @@ from .traits import (
     PricingEngine,
     RiskCalculator,
     SpreadCalculator,
-    YieldCurve,
 )
 from .types import (
     CashFlow,
@@ -140,7 +139,6 @@ __all__ = [
     "nth_weekday_of_month",
     "observed_date",
     # Traits
-    "YieldCurve",
     "PricingEngine",
     "RiskCalculator",
     "Discountable",

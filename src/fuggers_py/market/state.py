@@ -9,6 +9,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from fuggers_py.market.curves import DiscountingCurve, RatesTermStructure
 
 
 class QuoteSide(str, Enum):
@@ -28,16 +32,16 @@ class AnalyticsCurves:
     relying on positional arguments or implicit fallbacks.
     """
 
-    discount_curve: object | None = None
-    forward_curve: object | None = None
-    government_curve: object | None = None
-    benchmark_curve: object | None = None
+    discount_curve: DiscountingCurve | None = None
+    forward_curve: RatesTermStructure | None = None
+    government_curve: DiscountingCurve | None = None
+    benchmark_curve: DiscountingCurve | None = None
     credit_curve: object | None = None
-    repo_curve: object | None = None
-    collateral_curve: object | None = None
+    repo_curve: DiscountingCurve | None = None
+    collateral_curve: DiscountingCurve | None = None
     fx_forward_curve: object | None = None
     multicurve_environment: object | None = None
-    projection_curves: dict[str, object] = field(default_factory=dict)
+    projection_curves: dict[str, RatesTermStructure] = field(default_factory=dict)
     inflation_curve: object | None = None
     inflation_curves: dict[str, object] = field(default_factory=dict)
     vol_surface: object | None = None

@@ -9,36 +9,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.pricers.bonds.risk import RiskMetrics
-from fuggers_py.reference.bonds.types import CompoundingKind
-from fuggers_py.core.types import Compounding, Yield
 from fuggers_py.market.curves.fitted_bonds import BondCurve
 
+from ._shared import to_decimal
+from .neutrality import neutralize_bond_pair
 from .rich_cheap import rank_rich_cheap
-
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
-
-
-def _yield_from_decimal(bond, yield_value: Decimal) -> Yield:
-    method = bond.rules().compounding
-    if method.kind is CompoundingKind.CONTINUOUS:
-        compounding = Compounding.CONTINUOUS
-    elif method.kind in {CompoundingKind.SIMPLE, CompoundingKind.DISCOUNT}:
-        compounding = Compounding.SIMPLE
-    elif method.frequency == 1:
-        compounding = Compounding.ANNUAL
-    elif method.frequency == 2:
-        compounding = Compounding.SEMI_ANNUAL
-    elif method.frequency == 4:
-        compounding = Compounding.QUARTERLY
-    else:
-        compounding = Compounding.ANNUAL
-    return Yield.new(yield_value, compounding)
-
 
 @dataclass(frozen=True, slots=True)
 class BondSwitchTrade:
@@ -64,36 +39,20 @@ def construct_bond_switch(
     ranking = rank_rich_cheap(fit_result)
     cheap_id = cheap_instrument_id or ranking[0].instrument_id
     rich_id = rich_instrument_id or ranking[-1].instrument_id
-    cheap = fit_result.get_bond(cheap_id)
-    rich = fit_result.get_bond(rich_id)
-
-    cheap_dv01 = RiskMetrics.from_bond(
-        cheap["bond"],
-        _yield_from_decimal(cheap["bond"], _to_decimal(cheap["fitted_yield"])),
-        fit_result.date(),
-    ).dv01
-    rich_dv01 = RiskMetrics.from_bond(
-        rich["bond"],
-        _yield_from_decimal(rich["bond"], _to_decimal(rich["fitted_yield"])),
-        fit_result.date(),
-    ).dv01
-    if rich_dv01 == Decimal(0):
-        raise ValueError("construct_bond_switch requires a non-zero rich-bond DV01.")
-    buy_notional = _to_decimal(base_notional)
-    duration_hedge_ratio = cheap_dv01 / rich_dv01
-    sell_notional = buy_notional * duration_hedge_ratio
-    expected_price_convergence = (buy_notional / Decimal(100)) * (-_to_decimal(cheap["price_residual"])) + (
-        sell_notional / Decimal(100)
-    ) * _to_decimal(rich["price_residual"])
-    expected_bp_convergence = _to_decimal(cheap["bp_residual"]) - _to_decimal(rich["bp_residual"])
+    trade = neutralize_bond_pair(
+        fit_result,
+        long_instrument_id=cheap_id,
+        short_instrument_id=rich_id,
+        base_long_notional=to_decimal(base_notional),
+    )
     return BondSwitchTrade(
-        cheap_instrument_id=cheap["instrument_id"],
-        rich_instrument_id=rich["instrument_id"],
-        buy_notional=buy_notional,
-        sell_notional=sell_notional,
-        duration_hedge_ratio=duration_hedge_ratio,
-        expected_price_convergence=expected_price_convergence,
-        expected_bp_convergence=expected_bp_convergence,
+        cheap_instrument_id=trade.long_leg.instrument_id,
+        rich_instrument_id=trade.short_leg.instrument_id,
+        buy_notional=trade.long_leg.notional,
+        sell_notional=trade.short_leg.notional,
+        duration_hedge_ratio=trade.hedge_ratio,
+        expected_price_convergence=trade.expected_price_convergence,
+        expected_bp_convergence=trade.expected_bp_convergence,
     )
 
 

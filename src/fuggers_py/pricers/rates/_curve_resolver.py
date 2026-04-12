@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py.reference.bonds.types import Tenor
 from fuggers_py.core.daycounts import DayCountConvention
 from fuggers_py.core.types import Currency, Date
-from fuggers_py.market.curves.bumping import KeyRateBump, ParallelBump
-from fuggers_py.market.curves.multicurve import MultiCurveEnvironment, RateIndex
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import (
+    discount_factor_at_date,
+    key_rate_bumped_curve,
+    parallel_bumped_curve,
+    zero_rate_at_date,
+)
+from fuggers_py.market.curves import DiscountingCurve
+from fuggers_py.market.curves.multicurve import RateIndex
 from fuggers_py.market.state import AnalyticsCurves
 
 
@@ -21,7 +25,7 @@ def _to_decimal(value: object) -> Decimal:
 
 
 def _curve_supports_discounting(curve: object | None) -> bool:
-    return curve is not None and hasattr(curve, "discount_factor") and hasattr(curve, "zero_rate")
+    return isinstance(curve, DiscountingCurve)
 
 
 def _curve_supports_forward_projection(curve: object | None) -> bool:
@@ -40,17 +44,6 @@ def _curve_supports_inflation_projection(curve: object | None) -> bool:
         or hasattr(curve, "get_reference_cpi")
         or hasattr(curve, "get_inflation_fixing")
     )
-
-
-@dataclass(frozen=True, slots=True)
-class _ForwardProjectionWrapper:
-    curve: TermStructure
-
-    def date(self) -> Date:
-        return self.curve.date()
-
-    def forward_rate(self, start_date: Date, end_date: Date) -> Decimal:
-        return self.curve.forward_rate(start_date, end_date)
 
 
 def _projection_keys(currency: Currency, index_name: str, index_tenor: Tenor | None) -> tuple[str, ...]:
@@ -116,14 +109,14 @@ def forward_rate_from_curve(
     tau = day_count_convention.to_day_count().year_fraction(start_date, end_date)
     if tau == Decimal(0):
         raise ValueError("forward_rate requires distinct start and end dates.")
-    df_start = curve.discount_factor(start_date)
-    df_end = curve.discount_factor(end_date)
+    df_start = discount_factor_at_date(curve, start_date)
+    df_end = discount_factor_at_date(curve, end_date)
     if df_end == Decimal(0):
         raise ValueError("forward_rate requires a non-zero end-date discount factor.")
     return (df_start / df_end - Decimal(1)) / tau
 
 
-def resolve_discount_curve(curves: AnalyticsCurves, currency: Currency) -> TermStructure:
+def resolve_discount_curve(curves: AnalyticsCurves, currency: Currency) -> DiscountingCurve:
     """Return the discount curve used for the given currency."""
 
     environment = curves.multicurve_environment
@@ -193,19 +186,13 @@ def resolve_inflation_projection(curves: AnalyticsCurves, *, convention) -> obje
 
 def _parallel_bump_curve(curve: object | None, amount: float) -> object | None:
     if _curve_supports_discounting(curve):
-        return ParallelBump(amount).apply(curve)
-    inner_curve = getattr(curve, "curve", None)
-    if _curve_supports_discounting(inner_curve):
-        return _ForwardProjectionWrapper(ParallelBump(amount).apply(inner_curve))
+        return parallel_bumped_curve(curve, amount)
     return curve
 
 
-def _key_rate_bump_curve(curve: object | None, key_rate_bump: KeyRateBump) -> object | None:
+def _key_rate_bump_curve(curve: object | None, tenor_grid: tuple[Tenor, ...], key_tenor: Tenor, bump: float) -> object | None:
     if _curve_supports_discounting(curve):
-        return key_rate_bump.apply(curve)
-    inner_curve = getattr(curve, "curve", None)
-    if _curve_supports_discounting(inner_curve):
-        return _ForwardProjectionWrapper(key_rate_bump.apply(inner_curve))
+        return key_rate_bumped_curve(curve, tenor_grid=tenor_grid, key_tenor=key_tenor, bump=bump)
     return curve
 
 
@@ -233,7 +220,7 @@ def analytics_curves_with_parallel_bump(
         for index in projection_indices:
             if index in projection_curves:
                 projection_curves[index] = _parallel_bump_curve(projection_curves[index], amount)
-        bumped_environment = MultiCurveEnvironment(
+        bumped_environment = type(environment)(
             discount_curves=discount_curves,
             projection_curves=projection_curves,
         )
@@ -273,33 +260,37 @@ def analytics_curves_with_key_rate_bump(
     amount is a raw decimal shift.
     """
 
-    key_rate_bump = KeyRateBump(list(tenor_grid), key_tenor=key_tenor, bump=float(bump))
     environment = curves.multicurve_environment
     bumped_environment = environment
     if environment is not None and hasattr(environment, "discount_curves") and hasattr(environment, "projection_curves"):
         discount_curves = dict(environment.discount_curves)
         if currency in discount_curves:
-            discount_curves[currency] = _key_rate_bump_curve(discount_curves[currency], key_rate_bump)
+            discount_curves[currency] = _key_rate_bump_curve(discount_curves[currency], tenor_grid, key_tenor, float(bump))
         projection_curves = dict(environment.projection_curves)
         for index in projection_indices:
             if index in projection_curves:
-                projection_curves[index] = _key_rate_bump_curve(projection_curves[index], key_rate_bump)
-        bumped_environment = MultiCurveEnvironment(
+                projection_curves[index] = _key_rate_bump_curve(
+                    projection_curves[index],
+                    tenor_grid,
+                    key_tenor,
+                    float(bump),
+                )
+        bumped_environment = type(environment)(
             discount_curves=discount_curves,
             projection_curves=projection_curves,
         )
     bumped_projection_curves = {
-        key: _key_rate_bump_curve(value, key_rate_bump)
+        key: _key_rate_bump_curve(value, tenor_grid, key_tenor, float(bump))
         for key, value in curves.projection_curves.items()
     }
     return AnalyticsCurves(
-        discount_curve=_key_rate_bump_curve(curves.discount_curve, key_rate_bump),
-        forward_curve=_key_rate_bump_curve(curves.forward_curve, key_rate_bump),
+        discount_curve=_key_rate_bump_curve(curves.discount_curve, tenor_grid, key_tenor, float(bump)),
+        forward_curve=_key_rate_bump_curve(curves.forward_curve, tenor_grid, key_tenor, float(bump)),
         government_curve=curves.government_curve,
         benchmark_curve=curves.benchmark_curve,
         credit_curve=curves.credit_curve,
         repo_curve=curves.repo_curve,
-        collateral_curve=_key_rate_bump_curve(curves.collateral_curve, key_rate_bump),
+        collateral_curve=_key_rate_bump_curve(curves.collateral_curve, tenor_grid, key_tenor, float(bump)),
         fx_forward_curve=curves.fx_forward_curve,
         multicurve_environment=bumped_environment,
         projection_curves=bumped_projection_curves,
@@ -309,13 +300,10 @@ def analytics_curves_with_key_rate_bump(
     )
 
 
-def curve_zero_rate(curve: TermStructure, date: Date) -> Decimal:
+def curve_zero_rate(curve: DiscountingCurve, date: Date) -> Decimal:
     """Return the curve zero rate as a raw decimal."""
 
-    resolved = curve.zero_rate(date)
-    if hasattr(resolved, "value"):
-        return _to_decimal(resolved.value())
-    return _to_decimal(resolved)
+    return zero_rate_at_date(curve, date)
 
 
 __all__ = [

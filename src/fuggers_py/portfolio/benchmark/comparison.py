@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py.core.types import Date
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curves import DiscountingCurve
 
 from ..analytics import PortfolioAnalytics
 from ..portfolio import Portfolio
@@ -286,7 +286,13 @@ def _active_weights_from_maps(
     )
 
 
-def _bucket_weights(portfolio: Portfolio, curve: TermStructure, settlement_date: Date, *, field_name: str) -> dict[str, Decimal]:
+def _bucket_weights(
+    portfolio: Portfolio,
+    curve: DiscountingCurve,
+    settlement_date: Date,
+    *,
+    field_name: str,
+) -> dict[str, Decimal]:
     metrics = PortfolioAnalytics(portfolio).metrics(curve, settlement_date)
     mapping: dict[str, Decimal] = {}
     for position in portfolio.positions:
@@ -304,7 +310,12 @@ def _bucket_weights(portfolio: Portfolio, curve: TermStructure, settlement_date:
     return mapping
 
 
-def active_weights(portfolio: Portfolio, benchmark: Portfolio, curve: TermStructure, settlement_date: Date) -> ActiveWeights:
+def active_weights(
+    portfolio: Portfolio,
+    benchmark: Portfolio,
+    curve: DiscountingCurve,
+    settlement_date: Date,
+) -> ActiveWeights:
     """Return active holding weights for portfolio minus benchmark."""
 
     portfolio_weights = PortfolioAnalytics(portfolio).metrics(curve, settlement_date).weights
@@ -312,7 +323,12 @@ def active_weights(portfolio: Portfolio, benchmark: Portfolio, curve: TermStruct
     return _active_weights_from_maps(portfolio_weights, benchmark_weights, dimension="holding")
 
 
-def compare_portfolios(portfolio: Portfolio, benchmark: Portfolio, curve: TermStructure, settlement_date: Date) -> BenchmarkComparison:
+def compare_portfolios(
+    portfolio: Portfolio,
+    benchmark: Portfolio,
+    curve: DiscountingCurve,
+    settlement_date: Date,
+) -> BenchmarkComparison:
     """Compare a portfolio with a benchmark on risk, yield, and spread."""
 
     portfolio_metrics = PortfolioAnalytics(portfolio).metrics(curve, settlement_date)
@@ -369,7 +385,12 @@ def compare_portfolios(portfolio: Portfolio, benchmark: Portfolio, curve: TermSt
     )
 
 
-def benchmark_comparison(portfolio: Portfolio, benchmark: Portfolio, curve: TermStructure, settlement_date: Date) -> BenchmarkComparison:
+def benchmark_comparison(
+    portfolio: Portfolio,
+    benchmark: Portfolio,
+    curve: DiscountingCurve,
+    settlement_date: Date,
+) -> BenchmarkComparison:
     """Compatibility alias for :func:`compare_portfolios`."""
 
     return compare_portfolios(portfolio, benchmark, curve, settlement_date)
@@ -382,39 +403,39 @@ class PortfolioBenchmark:
     portfolio: Portfolio
     benchmark: Portfolio
 
-    def compare(self, curve: TermStructure, settlement_date: Date) -> BenchmarkComparison:
+    def compare(self, curve: DiscountingCurve, settlement_date: Date) -> BenchmarkComparison:
         """Return the portfolio-versus-benchmark comparison."""
 
         return compare_portfolios(self.portfolio, self.benchmark, curve, settlement_date)
 
-    def active_weights(self, curve: TermStructure, settlement_date: Date) -> ActiveWeights:
+    def active_weights(self, curve: DiscountingCurve, settlement_date: Date) -> ActiveWeights:
         """Return active holding weights."""
 
         return active_weights(self.portfolio, self.benchmark, curve, settlement_date)
 
-    def active_weights_by_holding(self, curve: TermStructure, settlement_date: Date) -> ActiveWeights:
+    def active_weights_by_holding(self, curve: DiscountingCurve, settlement_date: Date) -> ActiveWeights:
         """Return active holding weights with holding dimension metadata."""
 
         return self.active_weights(curve, settlement_date)
 
-    def _active_weights_by(self, curve: TermStructure, settlement_date: Date, *, field_name: str) -> ActiveWeights:
+    def _active_weights_by(self, curve: DiscountingCurve, settlement_date: Date, *, field_name: str) -> ActiveWeights:
         """Return active weights aggregated by a classification field."""
 
         portfolio_map = _bucket_weights(self.portfolio, curve, settlement_date, field_name=field_name)
         benchmark_map = _bucket_weights(self.benchmark, curve, settlement_date, field_name=field_name)
         return _active_weights_from_maps(portfolio_map, benchmark_map, dimension=field_name)
 
-    def active_weights_by_sector(self, curve: TermStructure, settlement_date: Date) -> ActiveWeights:
+    def active_weights_by_sector(self, curve: DiscountingCurve, settlement_date: Date) -> ActiveWeights:
         """Return active sector weights."""
 
         return self._active_weights_by(curve, settlement_date, field_name="sector")
 
-    def active_weights_by_rating(self, curve: TermStructure, settlement_date: Date) -> ActiveWeights:
+    def active_weights_by_rating(self, curve: DiscountingCurve, settlement_date: Date) -> ActiveWeights:
         """Return active rating weights."""
 
         return self._active_weights_by(curve, settlement_date, field_name="rating")
 
-    def aggregated_attribution(self, curve: TermStructure, settlement_date: Date, *, assumptions=None):
+    def aggregated_attribution(self, curve: DiscountingCurve, settlement_date: Date, *, assumptions=None):
         """Return aggregated attribution for the paired portfolio and benchmark."""
 
         from ..contribution import aggregated_attribution
@@ -427,21 +448,21 @@ class PortfolioBenchmark:
             assumptions=assumptions,
         )
 
-    def duration_difference_by_sector(self, curve: TermStructure, settlement_date: Date):
+    def duration_difference_by_sector(self, curve: DiscountingCurve, settlement_date: Date):
         """Return sector duration differences."""
 
         from ..contribution import duration_difference_by_sector
 
         return duration_difference_by_sector(self.portfolio, self.benchmark, curve=curve, settlement_date=settlement_date)
 
-    def spread_difference_by_sector(self, curve: TermStructure, settlement_date: Date):
+    def spread_difference_by_sector(self, curve: DiscountingCurve, settlement_date: Date):
         """Return sector spread differences."""
 
         from ..contribution import spread_difference_by_sector
 
         return spread_difference_by_sector(self.portfolio, self.benchmark, curve=curve, settlement_date=settlement_date)
 
-    def overweight_underweight_counts(self, curve: TermStructure, settlement_date: Date) -> dict[str, int]:
+    def overweight_underweight_counts(self, curve: DiscountingCurve, settlement_date: Date) -> dict[str, int]:
         """Return overweight and underweight active-weight counts."""
 
         active = self.active_weights(curve, settlement_date)
@@ -449,13 +470,19 @@ class PortfolioBenchmark:
         underweight = sum(1 for value in active.values() if value < 0)
         return {"overweight": overweight, "underweight": underweight}
 
-    def largest_active_positions(self, curve: TermStructure, settlement_date: Date, *, limit: int = 5) -> list[tuple[str, Decimal]]:
+    def largest_active_positions(
+        self,
+        curve: DiscountingCurve,
+        settlement_date: Date,
+        *,
+        limit: int = 5,
+    ) -> list[tuple[str, Decimal]]:
         """Return the largest active positions by absolute active weight."""
 
         active = self.active_weights(curve, settlement_date)
         return sorted(active.items(), key=lambda item: abs(item[1]), reverse=True)[:limit]
 
-    def tracking_error_estimate(self, curve: TermStructure, settlement_date: Date) -> Decimal:
+    def tracking_error_estimate(self, curve: DiscountingCurve, settlement_date: Date) -> Decimal:
         """Return the heuristic tracking error estimate."""
 
         from .tracking import estimate_tracking_error

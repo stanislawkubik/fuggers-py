@@ -7,12 +7,13 @@ from fuggers_py.market.indices import BondIndex, IndexConventions, IndexFixingSt
 from fuggers_py.products.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
 from fuggers_py.reference.bonds.types import RateIndex, YieldCalculationRules
 from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.calc import CurveBuilder, PricingRouter
+from fuggers_py.calc import CurveBuilder
 from fuggers_py.portfolio import PortfolioPosition
 from fuggers_py.calc import AnalyticsCurves, PricingSpec, QuoteSide
 from fuggers_py.core import CurveId, InstrumentId
+from fuggers_py.market.curves import CurveType
 from fuggers_py.market.quotes import RawQuote
-from fuggers_py.market.snapshot import CurvePoint, EtfHolding, IndexFixing, MarketDataSnapshot
+from fuggers_py.market.snapshot import CurveInputs, CurvePoint, EtfHolding, IndexFixing, MarketDataSnapshot
 from fuggers_py.market.sources import InMemoryFixingSource
 from fuggers_py.reference import (
     BondReferenceData,
@@ -21,6 +22,7 @@ from fuggers_py.reference import (
     IssuerType,
     FloatingRateTerms,
 )
+from tests.helpers._public_curve_helpers import linear_zero_curve
 
 
 SETTLEMENT = Date.from_ymd(2026, 1, 15)
@@ -81,11 +83,37 @@ def scenario_c_curve_points() -> list[CurvePoint]:
 
 def curve_builder_with_scenarios() -> CurveBuilder:
     builder = CurveBuilder()
-    builder.add_zero_curve(DISCOUNT_ID, scenario_a_curve_points(), SETTLEMENT)
-    builder.add_zero_curve(GOVERNMENT_ID, scenario_a_government_points(), SETTLEMENT)
-    builder.add_zero_curve(BENCHMARK_ID, scenario_a_benchmark_points(), SETTLEMENT)
-    builder.add_zero_curve(CurveId("frn.discount"), scenario_c_curve_points(), SETTLEMENT)
-    builder.add_forward_curve(FORWARD_ID, scenario_c_curve_points(), SETTLEMENT)
+
+    discount_points = scenario_a_curve_points()
+    government_points = scenario_a_government_points()
+    benchmark_points = scenario_a_benchmark_points()
+    frn_points = scenario_c_curve_points()
+
+    builder.add_curve(
+        DISCOUNT_ID,
+        linear_zero_curve(DISCOUNT_ID, SETTLEMENT, discount_points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
+        curve_inputs=CurveInputs.from_points(DISCOUNT_ID, SETTLEMENT, discount_points, curve_kind="zero"),
+    )
+    builder.add_curve(
+        GOVERNMENT_ID,
+        linear_zero_curve(GOVERNMENT_ID, SETTLEMENT, government_points, curve_type=CurveType.NOMINAL),
+        curve_inputs=CurveInputs.from_points(GOVERNMENT_ID, SETTLEMENT, government_points, curve_kind="zero"),
+    )
+    builder.add_curve(
+        BENCHMARK_ID,
+        linear_zero_curve(BENCHMARK_ID, SETTLEMENT, benchmark_points, curve_type=CurveType.NOMINAL),
+        curve_inputs=CurveInputs.from_points(BENCHMARK_ID, SETTLEMENT, benchmark_points, curve_kind="zero"),
+    )
+    builder.add_curve(
+        CurveId("frn.discount"),
+        linear_zero_curve("frn.discount", SETTLEMENT, frn_points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
+        curve_inputs=CurveInputs.from_points("frn.discount", SETTLEMENT, frn_points, curve_kind="zero"),
+    )
+    builder.add_curve(
+        FORWARD_ID,
+        linear_zero_curve(FORWARD_ID, SETTLEMENT, frn_points, curve_type=CurveType.PROJECTION),
+        curve_inputs=CurveInputs.from_points(FORWARD_ID, SETTLEMENT, frn_points, curve_kind="forward"),
+    )
     return builder
 
 
@@ -257,6 +285,8 @@ def portfolio_positions() -> list[PortfolioPosition]:
 
 
 def router() -> PricingRouter:
+    from fuggers_py.calc.pricing_router import PricingRouter
+
     return PricingRouter()
 
 

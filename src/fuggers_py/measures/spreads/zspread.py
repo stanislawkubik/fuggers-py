@@ -12,7 +12,8 @@ from math import exp
 
 from fuggers_py.products.bonds.traits import Bond, BondCashFlow
 from fuggers_py.core.types import Date, Price
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import discount_factor_at_date
+from fuggers_py.market.curves import DiscountingCurve
 from fuggers_py.math import SolverConfig, brent, newton_raphson
 from fuggers_py.math.errors import ConvergenceFailed, DivisionByZero, InvalidBracket
 
@@ -31,9 +32,9 @@ def _prepare_cashflows(
     cashflows: list[BondCashFlow],
     *,
     settlement_date: Date,
-    curve: TermStructure,
+    curve: DiscountingCurve,
 ) -> list[tuple[float, float]]:
-    df_settle = float(curve.discount_factor(settlement_date))
+    df_settle = float(discount_factor_at_date(curve, settlement_date))
     if df_settle == 0.0:
         raise AnalyticsError.spread_failed("Discount factor at settlement is zero.")
 
@@ -43,7 +44,7 @@ def _prepare_cashflows(
     prepared: list[tuple[float, float]] = []
     for cf in future:
         t = float(settlement_date.days_between(cf.date)) / 365.0
-        df = float(curve.discount_factor(cf.date)) / df_settle
+        df = float(discount_factor_at_date(curve, cf.date)) / df_settle
         prepared.append((t, float(cf.factored_amount()) * df))
     return prepared
 
@@ -52,7 +53,7 @@ def z_spread_from_curve(
     cashflows: list[BondCashFlow],
     *,
     dirty_price: object,
-    curve: TermStructure,
+    curve: DiscountingCurve,
     settlement_date: Date,
 ) -> Decimal:
     """Solve the Z-spread in raw decimal form from dirty price and cash flows."""
@@ -97,7 +98,7 @@ def z_spread_from_curve(
 def z_spread(
     bond: Bond,
     price: Price,
-    curve: TermStructure,
+    curve: DiscountingCurve,
     settlement_date: Date,
 ) -> Decimal:
     """Solve the Z-spread in raw decimal form using a clean bond price.
@@ -125,7 +126,7 @@ class ZSpreadCalculator:
         Curve used to discount future bond cash flows.
     """
 
-    curve: TermStructure
+    curve: DiscountingCurve
 
     def spread_bps(self, bond: Bond, price: Price, settlement_date: Date) -> Decimal:
         """Return the Z-spread in basis points for a clean price input."""

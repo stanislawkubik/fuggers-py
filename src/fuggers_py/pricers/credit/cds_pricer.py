@@ -9,8 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from fuggers_py.market.curve_support import curve_reference_date, discount_factor_at_date
+from fuggers_py.market.curves.conversion import ValueConverter
+from fuggers_py.market.curves import DiscountingCurve
 from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.market.curves.wrappers import CreditCurve
 from fuggers_py.products.credit import CreditDefaultSwap
 from fuggers_py.core.types import Currency, Date
 
@@ -22,14 +24,78 @@ def _to_decimal(value: object) -> Decimal:
 
 
 def _curve_supports_discounting(curve: object | None) -> bool:
-    return curve is not None and hasattr(curve, "discount_factor") and hasattr(curve, "reference_date")
+    return isinstance(curve, DiscountingCurve)
 
 
 def _curve_supports_credit(curve: object | None) -> bool:
-    return curve is not None and hasattr(curve, "survival_probability") and hasattr(curve, "hazard_rate")
+    if curve is None:
+        return False
+    if hasattr(curve, "survival_probability"):
+        return hasattr(curve, "date") or hasattr(curve, "reference_date")
+    if hasattr(curve, "survival_probability_at_tenor"):
+        return hasattr(curve, "date") or hasattr(curve, "reference_date")
+    has_curve_space = hasattr(curve, "value_type") and (hasattr(curve, "value_at_tenor") or hasattr(curve, "value_at"))
+    return has_curve_space and (hasattr(curve, "date") or hasattr(curve, "reference_date"))
 
 
-def _resolve_discount_curve(curves: AnalyticsCurves, currency: Currency):
+def _credit_curve_date(curve: object) -> Date:
+    if hasattr(curve, "date"):
+        return getattr(curve, "date")()
+    if hasattr(curve, "reference_date"):
+        return getattr(curve, "reference_date")
+    raise ValueError("Credit curve must expose date() or reference_date.")
+
+
+def _credit_curve_years(curve: object, date: Date) -> float:
+    reference_date = _credit_curve_date(curve)
+    if date <= reference_date:
+        return 0.0
+    return max(reference_date.days_between(date), 0) / 365.0
+
+
+def _credit_curve_value_type(curve: object):
+    value_type = getattr(curve, "value_type")
+    return value_type() if callable(value_type) else value_type
+
+
+def _credit_curve_kind_name(curve: object) -> str:
+    value_type = _credit_curve_value_type(curve)
+    kind = getattr(value_type, "kind", value_type)
+    name = getattr(kind, "name", str(kind))
+    return str(name).upper()
+
+
+def _credit_curve_value_at_tenor(curve: object, tenor: float) -> Decimal:
+    if hasattr(curve, "value_at_tenor"):
+        return _to_decimal(getattr(curve, "value_at_tenor")(tenor))
+    if hasattr(curve, "value_at"):
+        return _to_decimal(getattr(curve, "value_at")(tenor))
+    raise ValueError("Credit curve must expose value_at_tenor(...) or value_at(...).")
+
+
+def _credit_curve_survival_probability(curve: object, date: Date, recovery_rate: Decimal) -> Decimal:
+    if hasattr(curve, "survival_probability"):
+        return _to_decimal(getattr(curve, "survival_probability")(date))
+    tenor = _credit_curve_years(curve, date)
+    if tenor <= 0.0:
+        return Decimal(1)
+    if hasattr(curve, "survival_probability_at_tenor"):
+        return _to_decimal(getattr(curve, "survival_probability_at_tenor")(tenor))
+
+    value = _credit_curve_value_at_tenor(curve, tenor)
+    kind_name = _credit_curve_kind_name(curve)
+    if kind_name.endswith("SURVIVAL_PROBABILITY"):
+        return value
+    if kind_name.endswith("HAZARD_RATE"):
+        return _to_decimal(ValueConverter.hazard_to_survival(float(value), tenor))
+    if kind_name.endswith("CREDIT_SPREAD"):
+        loss_given_default = max(Decimal(1) - recovery_rate, Decimal("1e-12"))
+        hazard = float(value / loss_given_default)
+        return _to_decimal(ValueConverter.hazard_to_survival(hazard, tenor))
+    raise ValueError(f"Unsupported credit curve value type for CDS pricing: {kind_name}.")
+
+
+def _resolve_discount_curve(curves: AnalyticsCurves, currency: Currency) -> DiscountingCurve:
     environment = curves.multicurve_environment
     if environment is not None and hasattr(environment, "discount_curve"):
         curve = environment.discount_curve(currency)
@@ -42,11 +108,14 @@ def _resolve_discount_curve(curves: AnalyticsCurves, currency: Currency):
     raise ValueError(f"Missing discount curve for currency {currency.code()}.")
 
 
-def _resolve_credit_curve(curves: AnalyticsCurves, recovery_rate: Decimal) -> CreditCurve:
+def _resolve_credit_curve(curves: AnalyticsCurves) -> object:
     if _curve_supports_credit(curves.credit_curve):
         return curves.credit_curve
-    if curves.credit_curve is not None and hasattr(curves.credit_curve, "value_at") and hasattr(curves.credit_curve, "value_type"):
-        return CreditCurve(curves.credit_curve, recovery_rate=recovery_rate)
+    if curves.credit_curve is not None and hasattr(curves.credit_curve, "value_type"):
+        curve = curves.credit_curve
+        if hasattr(curve, "value_at_tenor") or hasattr(curve, "value_at"):
+            if hasattr(curve, "date") or hasattr(curve, "reference_date"):
+                return curve
     raise ValueError("Missing credit curve in AnalyticsCurves.credit_curve.")
 
 
@@ -90,9 +159,9 @@ class CdsPricer:
         if self.default_timing_fraction < Decimal(0) or self.default_timing_fraction > Decimal(1):
             raise ValueError("default_timing_fraction must lie in [0, 1].")
 
-    def _valuation_date(self, discount_curve: object, credit_curve: CreditCurve) -> Date:
-        valuation_date = discount_curve.date()
-        credit_reference = credit_curve.date()
+    def _valuation_date(self, discount_curve: DiscountingCurve, credit_curve: object) -> Date:
+        valuation_date = curve_reference_date(discount_curve)
+        credit_reference = _credit_curve_date(credit_curve)
         if credit_reference > valuation_date:
             return credit_reference
         return valuation_date
@@ -108,7 +177,7 @@ class CdsPricer:
         curves: AnalyticsCurves,
     ) -> tuple[Decimal, Decimal, Decimal]:
         discount_curve = _resolve_discount_curve(curves, cds.currency)
-        credit_curve = _resolve_credit_curve(curves, cds.recovery_rate)
+        credit_curve = _resolve_credit_curve(curves)
         valuation_date = self._valuation_date(discount_curve, credit_curve)
 
         coupon_annuity = Decimal(0)
@@ -120,16 +189,19 @@ class CdsPricer:
                 continue
 
             period_start = period.start_date if period.start_date >= valuation_date else valuation_date
-            survival_start = (
-                Decimal(1) if period_start <= credit_curve.date() else credit_curve.survival_probability(period_start)
+            credit_reference = _credit_curve_date(credit_curve)
+            survival_start = Decimal(1) if period_start <= credit_reference else _credit_curve_survival_probability(
+                credit_curve,
+                period_start,
+                cds.recovery_rate,
             )
-            survival_end = credit_curve.survival_probability(period.end_date)
+            survival_end = _credit_curve_survival_probability(credit_curve, period.end_date, cds.recovery_rate)
             default_probability = survival_start - survival_end
             if default_probability < Decimal(0):
                 default_probability = Decimal(0)
 
-            payment_discount = _to_decimal(discount_curve.discount_factor(period.payment_date))
-            default_discount = _to_decimal(discount_curve.discount_factor(self._default_time(period_start, period.end_date)))
+            payment_discount = discount_factor_at_date(discount_curve, period.payment_date)
+            default_discount = discount_factor_at_date(discount_curve, self._default_time(period_start, period.end_date))
 
             coupon_annuity += period.year_fraction * payment_discount * survival_end
             accrued_on_default_annuity += (

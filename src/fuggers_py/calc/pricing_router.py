@@ -29,8 +29,8 @@ from fuggers_py.products.bonds.instruments import CallableBond, FixedBond, Float
 from fuggers_py.pricers.bonds.options import HullWhiteModel
 from fuggers_py.pricers.bonds import TipsPricer
 from fuggers_py.core.types import Date, Price
-from fuggers_py.market.curves.bumping import ParallelBump
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import discount_factor_at_date, parallel_bumped_curve, zero_rate_at_date
+from fuggers_py.market.curves import DiscountingCurve
 from fuggers_py.core.ids import CurveId, InstrumentId
 from fuggers_py.market.snapshot import MarketDataSnapshot
 from fuggers_py.market.sources import (
@@ -598,7 +598,7 @@ class PricingRouter:
         *,
         market_price: object | None,
         market_price_is_dirty: bool,
-        discount_curve: TermStructure | None,
+        discount_curve: DiscountingCurve | None,
     ) -> tuple[Decimal, Decimal, Decimal]:
         accrued = instrument.accrued_interest(settlement_date)
         if market_price is not None:
@@ -609,9 +609,9 @@ class PricingRouter:
         if discount_curve is None:
             raise RoutingError("A market price or discount curve is required.")
         pv = Decimal(0)
-        df_settle = discount_curve.discount_factor(settlement_date)
+        df_settle = discount_factor_at_date(discount_curve, settlement_date)
         for cf in instrument.cash_flows(settlement_date):
-            pv += cf.factored_amount() * discount_curve.discount_factor(cf.date) / df_settle
+            pv += cf.factored_amount() * discount_factor_at_date(discount_curve, cf.date) / df_settle
         return pv - accrued, pv, accrued
 
     def _floating_dirty_price(
@@ -640,9 +640,9 @@ class PricingRouter:
             settlement_date=settlement_date,
             forward_curve=curves.forward_curve,
         ) if fixing_store is not None else instrument.projected_cash_flows(curves.forward_curve, settlement_date=settlement_date)
-        df_settle = curves.discount_curve.discount_factor(settlement_date)
+        df_settle = discount_factor_at_date(curves.discount_curve, settlement_date)
         return sum(
-            (cf.factored_amount() * curves.discount_curve.discount_factor(cf.date) / df_settle for cf in projected),
+            (cf.factored_amount() * discount_factor_at_date(curves.discount_curve, cf.date) / df_settle for cf in projected),
             Decimal(0),
         )
 
@@ -711,13 +711,13 @@ class PricingRouter:
             fixing_store=fixing_store,
         )
         bumped_up = AnalyticsCurves(
-            discount_curve=ParallelBump(bump).apply(base_curve),
+            discount_curve=parallel_bumped_curve(base_curve, bump),
             forward_curve=curves.forward_curve,
             government_curve=curves.government_curve,
             benchmark_curve=curves.benchmark_curve,
         )
         bumped_down = AnalyticsCurves(
-            discount_curve=ParallelBump(-bump).apply(base_curve),
+            discount_curve=parallel_bumped_curve(base_curve, -bump),
             forward_curve=curves.forward_curve,
             government_curve=curves.government_curve,
             benchmark_curve=curves.benchmark_curve,
@@ -767,7 +767,7 @@ class PricingRouter:
     def _key_rate_durations(
         self,
         instrument,
-        curve: TermStructure | None,
+        curve: DiscountingCurve | None,
         settlement_date: Date,
         spec: PricingSpec,
     ) -> dict[str, Decimal]:
@@ -817,13 +817,13 @@ class PricingRouter:
                     g_value = g_spread_with_benchmark(ytm, curves.government_curve, instrument.maturity_date())
                     benchmark_info = "government:interpolated"
             else:
-                g_value = g_spread(ytm, curves.government_curve.zero_rate(instrument.maturity_date()).value())
+                g_value = g_spread(ytm, zero_rate_at_date(curves.government_curve, instrument.maturity_date()))
                 benchmark_info = "government:curve"
         i_value = None
         asw_value = None
         if curves.benchmark_curve is not None:
-            if hasattr(curves.benchmark_curve, "zero_rate"):
-                i_value = i_spread(ytm, curves.benchmark_curve.zero_rate(instrument.maturity_date()).value())
+            if isinstance(curves.benchmark_curve, DiscountingCurve):
+                i_value = i_spread(ytm, zero_rate_at_date(curves.benchmark_curve, instrument.maturity_date()))
             if spec.include_asset_swap and isinstance(instrument, FixedBond):
                 calculator = ParParAssetSwap(curves.benchmark_curve)
                 if spec.asset_swap_type.value == "PROCEEDS":

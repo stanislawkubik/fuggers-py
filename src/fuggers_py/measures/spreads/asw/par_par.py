@@ -11,14 +11,15 @@ from decimal import Decimal
 
 from fuggers_py.products.bonds.instruments import FixedBond
 from fuggers_py.core.types import Date
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import discount_factor_at_date
+from fuggers_py.market.curves import DiscountingCurve
 
 
 @dataclass(frozen=True, slots=True)
 class ParParAssetSwap:
     """Par-par asset-swap spread calculator."""
 
-    curve: TermStructure
+    curve: DiscountingCurve
 
     def calculate(self, bond: FixedBond, dirty_price: object, settlement_date: Date) -> Decimal:
         """Return the par-par asset-swap spread as a raw decimal.
@@ -33,8 +34,8 @@ class ParParAssetSwap:
         return ((Decimal(100) - price) / (annuity * Decimal(100))) + bond.coupon_rate() - swap_rate
 
     def _swap_rate(self, bond: FixedBond, settlement_date: Date) -> Decimal:
-        start_df = self.curve.discount_factor(settlement_date)
-        end_df = self.curve.discount_factor(bond.maturity_date())
+        start_df = discount_factor_at_date(self.curve, settlement_date)
+        end_df = discount_factor_at_date(self.curve, bond.maturity_date())
         annuity = self._annuity(bond, settlement_date)
         if annuity == 0 or start_df <= 0:
             return Decimal(0)
@@ -49,7 +50,10 @@ class ParParAssetSwap:
             accrual_start = cf.accrual_start or settlement_date
             accrual_end = cf.accrual_end or cf.date
             tau = day_count.year_fraction(accrual_start, accrual_end)
-            annuity += tau * self.curve.discount_factor(cf.date) / self.curve.discount_factor(settlement_date)
+            annuity += tau * discount_factor_at_date(self.curve, cf.date) / discount_factor_at_date(
+                self.curve,
+                settlement_date,
+            )
         return annuity
 
 

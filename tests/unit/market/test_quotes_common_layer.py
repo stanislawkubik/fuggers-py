@@ -17,7 +17,6 @@ from fuggers_py.market.quotes import (
     SwapQuote,
 )
 from fuggers_py.market.snapshot import CurveInput, CurveInstrumentType, MarketDataSnapshot
-from fuggers_py.market.state import QuoteSide
 from fuggers_py.products.bonds import FixedBondBuilder
 from fuggers_py.reference.bonds.types import YieldCalculationRules
 

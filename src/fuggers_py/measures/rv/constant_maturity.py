@@ -14,11 +14,7 @@ from fuggers_py.market.curves.fitted_bonds import (
     build_notional_benchmark,
 )
 
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
+from ._shared import to_decimal
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +46,7 @@ def generate_constant_maturity_benchmark(
     separate audit utility and is not the pricing engine for the fair value.
     """
 
-    target = _to_decimal(target_maturity_years)
+    target = to_decimal(target_maturity_years)
     par_curve = FittedParYieldCurve.from_fit_result(
         fit_result,
         ParCurveSpec(
@@ -61,7 +57,7 @@ def generate_constant_maturity_benchmark(
     if coupon_rate is None:
         resolved_coupon = par_curve.par_yield(target)
     else:
-        resolved_coupon = _to_decimal(coupon_rate)
+        resolved_coupon = to_decimal(coupon_rate)
 
     fair_value_clean_price = par_curve.clean_price(target, resolved_coupon)
     fair_value_dirty_price = par_curve.dirty_price(target, resolved_coupon)

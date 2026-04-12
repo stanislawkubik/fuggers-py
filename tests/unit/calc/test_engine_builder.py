@@ -7,6 +7,7 @@ import pytest
 from fuggers_py.core import Currency, Date, Frequency
 from fuggers_py.calc import PricingEngineBuilder
 from fuggers_py.calc.errors import EngineConfigurationError
+from fuggers_py.calc.errors import CurveNotFoundError
 from fuggers_py.core import CurveId, InstrumentId
 from fuggers_py.market.snapshot import CurveInputs, CurvePoint
 from fuggers_py.market.sources import InMemoryCurveSource, MarketDataProvider
@@ -67,5 +68,7 @@ def test_builder_constructs_engine_and_preloads_curve_inputs() -> None:
     )
 
     assert engine.reactive_engine is not None
-    assert engine.curve_builder.get("usd.discount") is not None
+    assert engine.curve_builder.inputs_for("usd.discount") is not None
+    with pytest.raises(CurveNotFoundError):
+        engine.curve_builder.get("usd.discount")
     assert engine.config.engine_name == "reactive-pricer"

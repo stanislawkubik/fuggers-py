@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from fuggers_py.reference.bonds.types import Tenor
 from fuggers_py.core.types import Currency, Date
-from fuggers_py.market.curves.bumping import STANDARD_KEY_TENORS
+from fuggers_py.market.curve_support import STANDARD_KEY_RATE_TENORS
 
 from .weighting import WeightingMethod
 
@@ -26,7 +26,7 @@ class AnalyticsConfig:
 
     settlement_date: Date | None = None
     weighting_method: WeightingMethod = WeightingMethod.DIRTY_VALUE
-    key_rate_tenors: tuple[Tenor, ...] = STANDARD_KEY_TENORS
+    key_rate_tenors: tuple[Tenor, ...] = STANDARD_KEY_RATE_TENORS
     default_currency: Currency = Currency.USD
 
 

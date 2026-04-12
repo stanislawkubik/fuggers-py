@@ -9,14 +9,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from ._shared import to_decimal
 from .asw_basis_cds_links import AswBasisCdsLinkBreakdown, decompose_floating_view_links
 from .basis_swapped_bonds import CommonCurrencyFloatingBondView
-
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,7 +50,7 @@ def usd_sofr_adjusted_rv_from_links(
     yardstick_spread: object,
 ) -> UsdSofrAdjustedRvMeasure:
     """Build a USD SOFR RV measure from an explicit link breakdown."""
-    yardstick_value = _to_decimal(yardstick_spread)
+    yardstick_value = to_decimal(yardstick_spread)
     return UsdSofrAdjustedRvMeasure(
         usd_sofr_spread=link_breakdown.common_currency_floating_spread,
         yardstick_spread=yardstick_value,

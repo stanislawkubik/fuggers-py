@@ -17,14 +17,9 @@ from .basis_swapped_bonds import (
     bond_to_common_currency_fixed,
     bond_to_common_currency_floating,
 )
+from ._shared import to_decimal
 from .constant_maturity import generate_constant_maturity_benchmark
 from .usd_sofr_yardstick import UsdSofrAdjustedRvMeasure, usd_sofr_adjusted_rv_measure
-
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
 
 
 def _classification(residual_bps: Decimal, threshold_bps: Decimal) -> str:
@@ -84,7 +79,7 @@ def global_fixed_cashflow_rv(
     )
     residual = fixed_view.common_currency_fixed_rate - benchmark.fair_value_yield
     residual_bps = residual * Decimal("10000")
-    threshold_value = _to_decimal(threshold_bps)
+    threshold_value = to_decimal(threshold_bps)
     return GlobalFixedCashflowRvResult(
         common_currency_fixed_rate=fixed_view.common_currency_fixed_rate,
         fitted_curve_yardstick=benchmark.fair_value_yield,
@@ -118,7 +113,7 @@ def global_usd_sofr_rv(
         adjusted_cds_spread=adjusted_cds_spread,
     )
     residual_bps = measure.residual_to_yardstick * Decimal("10000")
-    threshold_value = _to_decimal(threshold_bps)
+    threshold_value = to_decimal(threshold_bps)
     return GlobalUsdSofrRvResult(
         usd_sofr_measure=measure,
         residual_bps=residual_bps,

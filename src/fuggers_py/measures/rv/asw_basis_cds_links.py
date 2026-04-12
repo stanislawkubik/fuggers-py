@@ -10,13 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from ._shared import to_decimal
 from .basis_swapped_bonds import CommonCurrencyFloatingBondView
-
-
-def _to_decimal(value: object) -> Decimal:
-    if isinstance(value, Decimal):
-        return value
-    return Decimal(str(value))
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,11 +35,11 @@ def decompose_asw_basis_cds_links(
     adjusted_cds_spread: object | None = None,
 ) -> AswBasisCdsLinkBreakdown:
     """Return the raw decimal ASW / basis / CDS link decomposition."""
-    asset_swap_value = _to_decimal(asset_swap_spread)
-    same_currency_value = _to_decimal(same_currency_basis)
-    cross_currency_value = _to_decimal(cross_currency_basis)
+    asset_swap_value = to_decimal(asset_swap_spread)
+    same_currency_value = to_decimal(same_currency_basis)
+    cross_currency_value = to_decimal(cross_currency_basis)
     common_currency_floating_spread = asset_swap_value + same_currency_value + cross_currency_value
-    adjusted_cds_value = None if adjusted_cds_spread is None else _to_decimal(adjusted_cds_spread)
+    adjusted_cds_value = None if adjusted_cds_spread is None else to_decimal(adjusted_cds_spread)
     return AswBasisCdsLinkBreakdown(
         asset_swap_spread=asset_swap_value,
         same_currency_basis=same_currency_value,

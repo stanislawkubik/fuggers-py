@@ -226,10 +226,10 @@ Foundational typed identifiers shared across the library.
 
 ### `core/traits.py`
 
-Abstract interfaces ("traits") for `fuggers_py.core`.
+Small shared interfaces for `fuggers_py.core`.
 
 - Module path: `core/traits.py`
-- Top-level classes/functions: `YieldCurve`, `PricingEngine`, `RiskCalculator`, `Discountable`, `SpreadCalculator`
+- Top-level classes/functions: `PricingEngine`, `RiskCalculator`, `Discountable`, `SpreadCalculator`
 
 ### `core/types.py`
 

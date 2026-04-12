@@ -12,7 +12,7 @@ from decimal import Decimal
 
 from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.core.types import Date, Price
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curves import DiscountingCurve
 
 from ..errors import AnalyticsError
 from ..pricing import BondPricer
@@ -45,7 +45,7 @@ class YASCalculator:
         Optional benchmark selection for the g-spread view.
     """
 
-    curve: TermStructure
+    curve: DiscountingCurve
     government_curve: GovernmentCurve | None = None
     benchmark: BenchmarkSpec | None = None
 

@@ -2,8 +2,9 @@
 
 The pricing engine is the synchronous research-facing facade. The reactive
 engine is the async runtime underneath it. The builder composes both from the
-required providers, loads any curve inputs already exposed by the market-data
-provider, and wires optional schedulers, cached curves, and output publishers.
+required providers, remembers any raw curve inputs already exposed by the
+market-data provider, and wires optional schedulers, cached curves, and output
+publishers.
 """
 
 from __future__ import annotations
@@ -123,8 +124,8 @@ class PricingEngineBuilder:
 
     The builder keeps construction explicit: required providers must be set
     before build, optional schedulers and storage/publisher dependencies can be
-    layered in, and curve inputs already exposed by the market-data provider are
-    loaded before the reactive engine is created.
+    layered in, and raw curve inputs already exposed by the market-data provider
+    are remembered before the reactive engine is created.
     """
 
     engine_config: EngineConfig | None = None
@@ -201,9 +202,9 @@ class PricingEngineBuilder:
     def build(self) -> PricingEngine:
         """Build the synchronous pricing engine and its reactive runtime.
 
-        Curve inputs already available from the market-data provider are loaded
-        into the curve builder before the reactive engine is created. Missing
-        market-data or reference-data providers fail fast through
+        Raw curve inputs already available from the market-data provider are
+        remembered in the curve registry before the reactive engine is created.
+        Missing market-data or reference-data providers fail fast through
         :class:`EngineConfigurationError`.
         """
         self.validate()

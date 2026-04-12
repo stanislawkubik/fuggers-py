@@ -5,28 +5,12 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Compounding, Currency, Date, Yield
+from fuggers_py.core import Currency, Date
 from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.traits import YieldCurve
 from fuggers_py.calc import FundingPricingRouter
 from fuggers_py.measures.funding import repo_carry_return, repo_financing_cost, repo_net_carry
 from fuggers_py.products.funding import RepoTrade
-
-
-class _FlatYieldCurve(YieldCurve):
-    def __init__(self, reference_date: Date, rate: Decimal) -> None:
-        self._reference_date = reference_date
-        self._rate = rate
-
-    def date(self) -> Date:
-        return self._reference_date
-
-    def discount_factor(self, date: Date) -> Decimal:
-        tau = Decimal(self._reference_date.days_between(date)) / Decimal(365)
-        return Decimal(str(math.exp(-float(self._rate) * float(tau))))
-
-    def zero_rate(self, date: Date) -> Yield:
-        return Yield.new(self._rate, Compounding.CONTINUOUS)
+from tests.helpers._rates_helpers import flat_curve
 
 
 def test_repo_trade_year_fraction_cash_interest_and_repurchase_amounts() -> None:
@@ -71,7 +55,7 @@ def test_repo_carry_helpers_and_funding_router() -> None:
         cash_amount=Decimal("980000"),
         currency=Currency.USD,
     )
-    curve = _FlatYieldCurve(reference_date=start, rate=Decimal("0.04"))
+    curve = flat_curve(start, Decimal("0.04"))
 
     financing_cost = repo_financing_cost(trade)
     net_carry = repo_net_carry(

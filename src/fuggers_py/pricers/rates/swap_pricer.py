@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from fuggers_py.market.curve_support import discount_factor_at_date
 from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.products.rates import FixedFloatSwap
 
@@ -48,7 +49,10 @@ class SwapPricer:
         discount_curve = resolve_discount_curve(curves, swap.currency())
         annuity = Decimal(0)
         for period in swap.fixed_periods():
-            annuity += swap.fixed_leg.notional * period.year_fraction * discount_curve.discount_factor(period.payment_date)
+            annuity += swap.fixed_leg.notional * period.year_fraction * discount_factor_at_date(
+                discount_curve,
+                period.payment_date,
+            )
         if annuity == Decimal(0):
             raise ValueError("Swap annuity requires at least one discounted fixed-leg period.")
         return annuity
@@ -64,7 +68,7 @@ class SwapPricer:
         sign = swap.fixed_leg.pay_receive.sign()
         for period in swap.fixed_periods():
             coupon = swap.fixed_leg.notional * swap.fixed_leg.fixed_rate * period.year_fraction
-            present_value += sign * coupon * discount_curve.discount_factor(period.payment_date)
+            present_value += sign * coupon * discount_factor_at_date(discount_curve, period.payment_date)
         return present_value
 
     def floating_leg_pv(self, swap: FixedFloatSwap, curves: AnalyticsCurves) -> Decimal:
@@ -91,7 +95,7 @@ class SwapPricer:
                 day_count_convention=swap.floating_leg.day_count_convention,
             )
             coupon = swap.floating_leg.notional * (forward + swap.floating_leg.spread) * period.year_fraction
-            present_value += sign * coupon * discount_curve.discount_factor(period.payment_date)
+            present_value += sign * coupon * discount_factor_at_date(discount_curve, period.payment_date)
         return present_value
 
     def par_rate(self, swap: FixedFloatSwap, curves: AnalyticsCurves) -> Decimal:

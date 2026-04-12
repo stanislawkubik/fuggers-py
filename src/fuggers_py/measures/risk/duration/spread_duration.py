@@ -12,8 +12,8 @@ from decimal import Decimal
 
 from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.core.types import Date, Yield
-from fuggers_py.market.curves.bumping import ParallelBump
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import parallel_bumped_curve
+from fuggers_py.market.curves import DiscountingCurve
 
 from ...pricing import BondPricer
 from .effective import effective_duration
@@ -28,7 +28,7 @@ def _to_decimal(value: object) -> Decimal:
 
 def _spread_duration_from_curve(
     bond: Bond,
-    curve: TermStructure,
+    curve: DiscountingCurve,
     settlement_date: Date,
     *,
     spread: object | None = None,
@@ -39,13 +39,13 @@ def _spread_duration_from_curve(
     sprd = float(_to_decimal(spread or 0))
     pricer = BondPricer()
 
-    base_curve = ParallelBump(bump=sprd).apply(curve)
+    base_curve = parallel_bumped_curve(curve, sprd)
     p0 = pricer.price_from_curve(bond, base_curve, settlement_date).dirty.as_percentage()
     if p0 == 0:
         return Decimal(0)
 
-    curve_up = ParallelBump(bump=sprd + bump).apply(curve)
-    curve_dn = ParallelBump(bump=sprd - bump).apply(curve)
+    curve_up = parallel_bumped_curve(curve, sprd + bump)
+    curve_dn = parallel_bumped_curve(curve, sprd - bump)
 
     p_up = pricer.price_from_curve(bond, curve_up, settlement_date).dirty.as_percentage()
     p_dn = pricer.price_from_curve(bond, curve_dn, settlement_date).dirty.as_percentage()
@@ -60,7 +60,7 @@ def spread_duration(
     settlement_date: Date,
     *,
     bump: float = 1e-4,
-    curve: TermStructure | None = None,
+    curve: DiscountingCurve | None = None,
     spread: object | None = None,
 ) -> Decimal:
     """Return spread duration using curve-bump or yield-bump logic.

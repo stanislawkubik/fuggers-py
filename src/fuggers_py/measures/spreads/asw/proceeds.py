@@ -12,7 +12,8 @@ from decimal import Decimal
 
 from fuggers_py.products.bonds.instruments import FixedBond
 from fuggers_py.core.types import Date
-from fuggers_py.market.curves.term_structure import TermStructure
+from fuggers_py.market.curve_support import discount_factor_at_date
+from fuggers_py.market.curves import DiscountingCurve
 
 from .par_par import ParParAssetSwap
 
@@ -21,7 +22,7 @@ from .par_par import ParParAssetSwap
 class ProceedsAssetSwap:
     """Proceeds-style asset-swap spread calculator."""
 
-    curve: TermStructure
+    curve: DiscountingCurve
 
     def calculate(self, bond: FixedBond, dirty_price: object, settlement_date: Date) -> Decimal:
         """Return the proceeds-style asset-swap spread as a raw decimal.
@@ -36,8 +37,8 @@ class ProceedsAssetSwap:
         return par_par_spread * (Decimal(100) / price)
 
     def _swap_rate(self, bond: FixedBond, settlement_date: Date) -> Decimal:
-        start_df = self.curve.discount_factor(settlement_date)
-        end_df = self.curve.discount_factor(bond.maturity_date())
+        start_df = discount_factor_at_date(self.curve, settlement_date)
+        end_df = discount_factor_at_date(self.curve, bond.maturity_date())
         annuity = self._annuity(bond, settlement_date)
         if annuity == 0 or start_df <= 0:
             return Decimal(0)
@@ -45,7 +46,7 @@ class ProceedsAssetSwap:
 
     def _annuity(self, bond: FixedBond, settlement_date: Date) -> Decimal:
         day_count = bond.rules().accrual_day_count_obj()
-        start_df = self.curve.discount_factor(settlement_date)
+        start_df = discount_factor_at_date(self.curve, settlement_date)
         if start_df <= 0:
             raise ValueError("Curve discount factor at settlement must be positive.")
         annuity = Decimal(0)
@@ -55,7 +56,7 @@ class ProceedsAssetSwap:
             accrual_start = cf.accrual_start or settlement_date
             accrual_end = cf.accrual_end or cf.date
             tau = day_count.year_fraction(accrual_start, accrual_end)
-            annuity += tau * self.curve.discount_factor(cf.date) / start_df
+            annuity += tau * discount_factor_at_date(self.curve, cf.date) / start_df
         return annuity
 
 

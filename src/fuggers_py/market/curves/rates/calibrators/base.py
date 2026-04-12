@@ -7,6 +7,8 @@ from collections.abc import Sequence
 from enum import Enum, auto
 from typing import TYPE_CHECKING
 
+from fuggers_py.market.quotes import AnyInstrumentQuote
+
 from ..kernels import CurveKernel, KernelSpec
 from ..spec import CurveSpec
 
@@ -27,12 +29,12 @@ class CurveCalibrator(ABC):
     @abstractmethod
     def fit(
         self,
-        observations: Sequence[object],
+        quotes: Sequence[AnyInstrumentQuote],
         *,
         spec: CurveSpec,
         kernel_spec: KernelSpec,
     ) -> tuple[CurveKernel, CalibrationReport]:
-        """Build one kernel plus one calibration report from observations."""
+        """Build one kernel plus one calibration report from market quotes."""
 
 
 __all__ = [

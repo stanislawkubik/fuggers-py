@@ -57,7 +57,7 @@ class CurveKernelKind(Enum):
     NELSON_SIEGEL = auto()
     SVENSSON = auto()
     EXPONENTIAL_SPLINE = auto()
-    FITTED_CUBIC_ZERO_SPLINE = auto()
+    CUBIC_SPLINE = auto()
 
 
 @dataclass(frozen=True, slots=True)

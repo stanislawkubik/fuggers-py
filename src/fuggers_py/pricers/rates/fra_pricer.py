@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from fuggers_py.market.curve_support import discount_factor_at_date
 from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.products.rates import Fra
 
@@ -53,7 +54,7 @@ class FraPricer:
         if tau == Decimal(0):
             return Decimal(0)
         discount_curve = resolve_discount_curve(curves, fra.currency)
-        discount_factor = discount_curve.discount_factor(fra.start_date)
+        discount_factor = discount_factor_at_date(discount_curve, fra.start_date)
         denominator = Decimal(1) + forward * tau
         if denominator == Decimal(0):
             raise ValueError("FRA PV requires a non-zero settlement denominator.")
@@ -65,7 +66,7 @@ class FraPricer:
 
         forward = self.forward_rate(fra, curves)
         tau = fra.year_fraction()
-        discount_factor = resolve_discount_curve(curves, fra.currency).discount_factor(fra.start_date)
+        discount_factor = discount_factor_at_date(resolve_discount_curve(curves, fra.currency), fra.start_date)
         denominator = Decimal(1) + forward * tau
         if denominator == Decimal(0):
             raise ValueError("FRA PV requires a non-zero settlement denominator.")

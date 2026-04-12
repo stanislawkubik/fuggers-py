@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from math import exp, sqrt
 
+from fuggers_py.market.curve_support import curve_reference_date
 from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.pricers.rates._curve_resolver import resolve_discount_curve
 
@@ -104,7 +105,7 @@ class HullWhiteOptionPricer:
         swap_pricer=None,
     ) -> SwaptionPricingResult:
         """Price a swaption using the Hull-White normal-volatility proxy."""
-        resolved_valuation_date = valuation_date or resolve_discount_curve(curves, swaption.currency()).date()
+        resolved_valuation_date = valuation_date or curve_reference_date(resolve_discount_curve(curves, swaption.currency()))
         expiry_years = _time_to_expiry(swaption.expiry_date, resolved_valuation_date)
         underlying_tenor_years = _time_to_expiry(
             swaption.underlying_swap.effective_date,
@@ -130,7 +131,7 @@ class HullWhiteOptionPricer:
         valuation_date=None,
     ) -> CapFloorPricingResult:
         """Price a cap or floor using the Hull-White normal-volatility proxy."""
-        resolved_valuation_date = valuation_date or resolve_discount_curve(curves, cap_floor.currency()).date()
+        resolved_valuation_date = valuation_date or curve_reference_date(resolve_discount_curve(curves, cap_floor.currency()))
         optionlets = []
         for period in cap_floor.optionlet_periods():
             expiry_years = _time_to_expiry(period.start_date, resolved_valuation_date)

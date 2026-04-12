@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
 
+from fuggers_py.market.curve_support import curve_reference_date
 from fuggers_py.products.bonds.traits import Bond
 from fuggers_py.core.types import Date
 
@@ -76,7 +77,7 @@ class BondOption:
         if short_rate_model is None:
             raise ModelError(reason="BondOption.price requires a short-rate model.")
 
-        value_date = valuation_date or self.valuation_date or short_rate_model.term_structure.date()
+        value_date = valuation_date or self.valuation_date or curve_reference_date(short_rate_model.term_structure)
         if value_date >= self.expiry:
             intrinsic = self._payoff(Decimal("0"))
             return intrinsic
