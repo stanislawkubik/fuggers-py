@@ -7,7 +7,7 @@ from fuggers_py.products.bonds import FixedBondBuilder
 from fuggers_py.reference import YieldCalculationRules
 from fuggers_py.reference.bonds.types import ASWType
 from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.pricers.rates import AssetSwapPricer
 from fuggers_py.products.rates import AssetSwap, FloatingLegSpec, PayReceive, ScheduleDefinition
 

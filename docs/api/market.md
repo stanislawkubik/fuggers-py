@@ -149,38 +149,75 @@ missing is mainly the repo-wide upstream migration onto this new public
 contract, plus any richer optional report types we may still want after that.
 In particular, breakeven curves and par-yield curves are still later steps.
 `YieldCurve` now also exposes
-`YieldCurve.fit(quotes=..., spec=..., kernel_spec=...)`, so
+`YieldCurve.fit(quotes=..., spec=..., kernel_spec=..., calibration_spec=...)`, so
 the live fitting methods already share one public construction entry point.
+To make that entry point self-contained, `fuggers_py.market.curves.rates` now
+re-exports the small construction and report vocabulary it uses:
+`CurveKernelKind`, `KernelSpec`, `CalibrationMode`, `CalibrationObjective`,
+`BondFitTarget`, `CalibrationSpec`, `CalibrationReport`, and
+`GlobalFitReport`. `CurveKernel` is also re-exported there for the advanced
+direct `YieldCurve(spec=..., kernel=...)` path.
 Concrete internal kernel families now exist in
 `market.curves.rates.kernels.nodes`,
 `market.curves.rates.kernels.parametric`, and
 `market.curves.rates.kernels.spline`. The node family includes the rebuilt
 linear-zero, log-linear-discount, piecewise-constant-zero,
-piecewise-flat-forward, cubic-spline-zero, and monotone-convex kernels. The
+piecewise-flat-forward, and monotone-convex kernels. The
 shared kernel contract is still intentionally small: internal kernels define
 the fitted rate curve on a tenor domain, and discount factors are derived from
 that rate curve. The parametric family includes `NelsonSiegelKernel` and
 `SvenssonKernel`, which wrap the existing parametric math primitives behind the
 same internal `CurveKernel` contract while keeping an explicit finite `max_t`.
 The spline family includes `ExponentialSplineKernel` and
-`CubicSplineKernel`. Two real fitting paths now exist in
+`CubicSplineKernel`. `CubicSplineKernel` is now the single production cubic
+spline kernel: a natural cubic spline in zero-rate space on a fixed knot grid,
+with knot zero values as the fitted parameters. Two real fitting paths now exist in
 `market.curves.rates.calibrators.bootstrap` and
-`market.curves.rates.calibrators.parametric`.
+`market.curves.rates.calibrators.global_fit`.
 The bootstrap path now takes market quotes, normalizes the supported quote
 types internally, reads a `KernelSpec`, builds one internal kernel, and
-returns one `CalibrationReport` with per-quote residual rows. The parametric
-path now does the same for all three global coefficient families:
-Nelson-Siegel, Svensson, and exponential spline. For the exponential-spline
-case, the caller passes fixed `decay_factors` in `KernelSpec.parameters`, and
-the calibrator fits the spline coefficients against those fixed decay factors.
+returns one `CalibrationReport` with per-quote residual rows. It is the exact
+sequential construction path. The global-fit path now does the same for all
+four global parameter families: fixed-knot cubic spline, Nelson-Siegel,
+Svensson, and exponential spline. It is the imperfect global regression fit
+path, and it returns a `GlobalFitReport` that extends `CalibrationReport`
+with fitted kernel parameters, objective value, regressor coefficients, and
+typed per-row residual diagnostics. For the cubic-spline case, the caller passes fixed `knots` in
+`KernelSpec.parameters`, and the calibrator fits the knot zero values
+on that fixed grid. The knot grid must be strictly increasing, contain at
+least three knots, and define valid front-end spacing. For the
+exponential-spline case, the caller passes fixed
+`decay_factors` in `KernelSpec.parameters`, and the calibrator fits the spline
+coefficients against those fixed decay factors.
 Today the live quote-driven path accepts tenor-carrying `SwapQuote`,
 `RepoQuote`, and `BondQuote`. Swaps and repo quotes stay direct rate targets.
 Bond quotes are handled inside the calibrators: `yield_to_maturity` stays a
-YTM target, while `clean_price` and `dirty_price` are converted to market YTM
-before the fit. The public `YieldCurve.fit(...)` helper now sits on top of
-both live paths, so callers choose the kernel family in one place and still
-get back the same public curve type. The next work is upstream adoption, not
-another core fitting path.
+YTM target. On the global-fit route, price quotes stay in price space and use
+`CalibrationSpec.bond_fit_target` (`DIRTY_PRICE` by default, or `CLEAN_PRICE`
+when requested). On the bootstrap route, bond price quotes normalize to a
+bond-implied YTM before the exact match step. The public
+`BondQuote` record can also carry optional observation-date `regressors` and
+`fit_weight` values. `regressors` is the quote-level home for time-varying
+external variables such as `issue_size_bn`, `issue_age_years`,
+`deliverable_bpv`, and `repo_specialness_bp`. `fit_weight` is the quote-level
+weight used by `GlobalFitCalibrator` in the weighted-L2 fit. Those inputs stay
+on the quote because they can change from one observation date to the next
+even when the bond instrument is the same. The fitted regressor coefficients
+reported back in `CalibrationReport` are additive moves in the chosen target
+space per one unit of the matching regressor. The public
+`YieldCurve.fit(...)` helper now sits on top of both live paths, so callers
+choose the kernel family through `KernelSpec` and the fit route through
+`CalibrationSpec.mode`, while still getting back the same public curve type.
+`CalibrationSpec` is now also the single direct calibrator control object:
+`BootstrapCalibrator` requires `CalibrationObjective.EXACT_FIT`, and
+`GlobalFitCalibrator` currently requires `CalibrationObjective.WEIGHTED_L2`.
+When regressors are used on the global-fit path, the returned
+`GlobalFitReport` carries `regressor_names`, the fitted profiled
+`regressor_coefficients`, the fitted kernel parameter vector, the final
+objective value, and per-row residual details. For bond price rows those
+details keep price residuals as the native target and only add YTM residuals
+as diagnostics.
+The next work is upstream adoption, not another core fitting path.
 
 That upstream adoption is now underway outside the curve package itself. The
 main date-based pricing helpers have started moving onto
@@ -202,9 +239,9 @@ Short package map:
 - `market.curves.rates.kernels.nodes`: concrete node-based discounting kernels
 - `market.curves.rates.kernels.parametric`: concrete parametric discounting kernels
 - `market.curves.rates.kernels.spline`: concrete spline discounting kernels
-- `market.curves.rates.calibrators.base`: shared calibrator contract and objective enum
-- `market.curves.rates.calibrators.bootstrap`: bootstrap calibrator and solver choice
-- `market.curves.rates.calibrators.parametric`: global-fit calibrator and optimizer choice for Nelson-Siegel, Svensson, and exponential spline
+- `market.curves.rates.calibrators.base`: shared calibrator contract, fit-mode enum, objective enum, and calibration spec
+- `market.curves.rates.calibrators.bootstrap`: exact sequential bootstrap calibrator and solver choice
+- `market.curves.rates.calibrators.global_fit`: imperfect global regression calibrator and optimizer choice for fixed-knot cubic spline, Nelson-Siegel, Svensson, and exponential spline
 - `market.curves.errors`: curve-package errors
 - `market.curves.conversion`: numeric conversion helpers
 - `market.curves.multicurve.index`: identifiers such as `RateIndex` and `CurrencyPair`
@@ -275,8 +312,7 @@ Current internal homes:
 - `fuggers_py.market.curves.rates.calibrators`
 - `fuggers_py.market.curves.rates.calibrators.base`
 - `fuggers_py.market.curves.rates.calibrators.bootstrap`
-- `fuggers_py.market.curves.rates.calibrators.parametric`
-- `fuggers_py.market.curves.rates.calibrators.bonds`
+- `fuggers_py.market.curves.rates.calibrators.global_fit`
 
 ## `fuggers_py.market.curves.errors`
 

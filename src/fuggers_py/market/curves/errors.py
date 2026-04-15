@@ -1,7 +1,8 @@
 """Exception hierarchy for :mod:`fuggers_py.market.curves`.
 
-The curve layer uses these exceptions to signal invalid tenor input, unsupported
-value-type conversions, and builder misuse such as mixing node conventions.
+The curve layer uses these exceptions to signal invalid input, curve-building
+failures, tenor-range errors, unsupported value-type conversions, and a small
+set of legacy builder errors kept for older code paths.
 """
 
 from __future__ import annotations
@@ -54,11 +55,11 @@ class MissingCurveError(CurvesError):
 
 
 class BuilderError(CurveConstructionError):
-    """Raised when a builder is misused (e.g., mixing node types)."""
+    """Legacy builder error kept for older builder-style APIs."""
 
 
 class MixedPillarTypes(BuilderError):
-    """Raised when mixing discount-factor and zero-rate nodes in a single builder."""
+    """Legacy builder error for mixing discount-factor and zero-rate inputs."""
 
 
 __all__ = [

@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.pricers.rates.risk import (
     fra_key_rate_risk,
     fra_pv01,

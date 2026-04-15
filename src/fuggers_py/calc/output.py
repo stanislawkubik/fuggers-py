@@ -20,8 +20,7 @@ from typing import Protocol, runtime_checkable
 
 from fuggers_py.core.types import Date
 
-from fuggers_py.core.ids import CurveId, EtfId, InstrumentId, PortfolioId
-from fuggers_py.market.snapshot import CurveData, CurveInputs
+from fuggers_py.core.ids import EtfId, InstrumentId, PortfolioId
 
 
 def _to_decimal(value: object | None) -> Decimal | None:
@@ -752,14 +751,6 @@ class QuotePublisher(Protocol):
 
 
 @runtime_checkable
-class CurvePublisher(Protocol):
-    """Protocol for publishing curve snapshots or inputs."""
-
-    def publish_curve(self, curve_id: CurveId | str, curve: CurveInputs | CurveData) -> None:
-        ...
-
-
-@runtime_checkable
 class EtfPublisher(Protocol):
     """Protocol for publishing ETF analytics outputs."""
 
@@ -792,7 +783,6 @@ class OutputPublisher:
     """
 
     quote_publisher: QuotePublisher | None = None
-    curve_publisher: CurvePublisher | None = None
     etf_publisher: EtfPublisher | None = None
     analytics_publisher: AnalyticsPublisher | None = None
     alert_publisher: AlertPublisher | None = None
@@ -801,11 +791,6 @@ class OutputPublisher:
         """Publish a bond quote when a quote publisher is configured."""
         if self.quote_publisher is not None:
             self.quote_publisher.publish_quote(quote)
-
-    def publish_curve(self, curve_id: CurveId | str, curve: CurveInputs | CurveData) -> None:
-        """Publish a curve payload when a curve publisher is configured."""
-        if self.curve_publisher is not None:
-            self.curve_publisher.publish_curve(curve_id, curve)
 
     def publish_etf(self, analytics: EtfAnalyticsOutput) -> None:
         """Publish ETF analytics when an ETF publisher is configured."""
@@ -835,7 +820,6 @@ __all__ = [
     "BasisSwapQuoteOutput",
     "BondQuoteOutput",
     "CdsQuoteOutput",
-    "CurvePublisher",
     "EtfAnalyticsOutput",
     "EtfPublisher",
     "FutureQuoteOutput",

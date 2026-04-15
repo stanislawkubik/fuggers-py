@@ -9,7 +9,6 @@ parametric kernels, and spline kernels.
 
 from .base import CurveKernel, CurveKernelKind, KernelSpec
 from .nodes import (
-    CubicSplineZeroKernel,
     LinearZeroKernel,
     LogLinearDiscountKernel,
     MonotoneConvexKernel,
@@ -21,7 +20,6 @@ from .spline import CubicSplineKernel, ExponentialSplineKernel
 
 __all__ = [
     "CubicSplineKernel",
-    "CubicSplineZeroKernel",
     "CurveKernel",
     "CurveKernelKind",
     "ExponentialSplineKernel",

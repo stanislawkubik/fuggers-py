@@ -6,11 +6,10 @@ import pytest
 
 from fuggers_py.core import Currency, Date
 from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.calc import AnalyticsCurves, SwapQuoteOutput
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.core import YearMonth
 from fuggers_py.market.snapshot import InflationFixing
 from fuggers_py.market.sources import InMemoryInflationFixingSource
-from fuggers_py.calc import RatesPricingRouter
 from fuggers_py.market.curves.inflation import bootstrap_inflation_curve
 from fuggers_py.reference.inflation import MissingInflationFixing, USD_CPI_U_NSA, reference_cpi
 from fuggers_py.pricers.rates import InflationSwapPricer
@@ -146,7 +145,7 @@ def test_bootstrap_requires_increasing_maturity_order() -> None:
         )
 
 
-def test_analytics_curves_and_router_resolve_bootstrapped_inflation_curve() -> None:
+def test_analytics_curves_resolve_bootstrapped_inflation_curve() -> None:
     result = _bootstrap_result()
     curves = AnalyticsCurves(
         discount_curve=_discount_curve(),
@@ -156,9 +155,7 @@ def test_analytics_curves_and_router_resolve_bootstrapped_inflation_curve() -> N
 
     assert curves.get("inflation:cpurnsa") is result.curve
 
-    routed = RatesPricingRouter().price(swap, curves=curves)
+    priced = InflationSwapPricer().price(swap, curves=curves)
 
-    assert isinstance(routed, SwapQuoteOutput)
-    assert routed.pricing_path == "zero_coupon_inflation_swap"
-    assert routed.par_rate is not None
-    assert routed.present_value is not None
+    assert priced.par_fixed_rate is not None
+    assert priced.present_value is not None

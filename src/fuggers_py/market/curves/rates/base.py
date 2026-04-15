@@ -10,9 +10,10 @@ from math import log
 from fuggers_py.core.types import Date
 from fuggers_py.market.quotes import AnyInstrumentQuote
 
+from .calibrators.base import CalibrationMode, CalibrationSpec
 from ..errors import CurveConstructionError, InvalidCurveInput, TenorOutOfBounds
 from .enums import ExtrapolationPolicy, RateSpace
-from .kernels import CurveKernel, CurveKernelKind, KernelSpec
+from .kernels import CurveKernel, KernelSpec
 from .reports import CalibrationReport
 from .spec import CurveSpec
 
@@ -131,6 +132,10 @@ class YieldCurve(DiscountingCurve):
     style rates curves. It always exposes a public zero-rate view through
     ``rate_at(tenor)`` and delegates the fitted rate shape to one internal
     :class:`CurveKernel`.
+
+    Most callers should build it through ``YieldCurve.fit(...)``. Direct
+    construction from ``spec=...`` plus ``kernel=...`` is the advanced path
+    for code that already has a built kernel.
     """
 
     __slots__ = ("_kernel", "_calibration_report")
@@ -157,44 +162,40 @@ class YieldCurve(DiscountingCurve):
         *,
         spec: CurveSpec,
         kernel_spec: KernelSpec,
+        calibration_spec: CalibrationSpec,
     ) -> "YieldCurve":
-        """Build one public yield curve from quotes and a kernel choice.
+        """Build one public yield curve from quotes and one calibration spec.
 
-        The public entry point stays the same no matter which live fitting path
-        is used. The caller chooses the internal curve family through
-        ``KernelSpec``, and the implementation routes to the matching fitting
-        path internally.
+        The caller chooses the internal curve family through ``KernelSpec`` and
+        chooses the fitting route through ``CalibrationSpec``. The fit path now
+        dispatches only by ``calibration_spec.mode``.
         """
 
         if not isinstance(spec, CurveSpec):
             raise InvalidCurveInput("spec must be a CurveSpec.")
         if not isinstance(kernel_spec, KernelSpec):
             raise InvalidCurveInput("kernel_spec must be a KernelSpec.")
+        if not isinstance(calibration_spec, CalibrationSpec):
+            raise InvalidCurveInput("calibration_spec must be a CalibrationSpec.")
 
-        if kernel_spec.kind in {
-            CurveKernelKind.LINEAR_ZERO,
-            CurveKernelKind.LOG_LINEAR_DISCOUNT,
-            CurveKernelKind.PIECEWISE_CONSTANT,
-            CurveKernelKind.PIECEWISE_FLAT_FORWARD,
-            CurveKernelKind.MONOTONE_CONVEX,
-            CurveKernelKind.CUBIC_SPLINE_ZERO,
-            CurveKernelKind.CUBIC_SPLINE,
-        }:
+        if calibration_spec.mode is CalibrationMode.BOOTSTRAP:
             from .calibrators import BootstrapCalibrator
 
-            calibrator = BootstrapCalibrator()
-        elif kernel_spec.kind in {
-            CurveKernelKind.NELSON_SIEGEL,
-            CurveKernelKind.SVENSSON,
-            CurveKernelKind.EXPONENTIAL_SPLINE,
-        }:
-            from .calibrators import ParametricCalibrator
+            calibrator = BootstrapCalibrator(calibration_spec=calibration_spec)
+        elif calibration_spec.mode is CalibrationMode.GLOBAL_FIT:
+            from .calibrators import GlobalFitCalibrator
 
-            calibrator = ParametricCalibrator()
+            calibrator = GlobalFitCalibrator(calibration_spec=calibration_spec)
         else:
-            raise CurveConstructionError(f"no quote-driven fitting path exists for kernel kind {kernel_spec.kind.name}.")
+            raise CurveConstructionError(
+                f"no quote-driven fitting path exists for calibration mode {calibration_spec.mode.name}."
+            )
 
-        kernel, report = calibrator.fit(quotes, spec=spec, kernel_spec=kernel_spec)
+        kernel, report = calibrator.fit(
+            quotes,
+            spec=spec,
+            kernel_spec=kernel_spec,
+        )
         return cls(spec=spec, kernel=kernel, calibration_report=report)
 
     @property

@@ -14,7 +14,7 @@ from fuggers_py.market.curves import (
     InterpolationMethod,
     ValueType,
 )
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.curves.inflation import InflationIndexCurve
 from fuggers_py.reference.inflation import USD_CPI_U_NSA
 from fuggers_py.pricers.rates import InflationSwapPricer, StandardCouponInflationSwapPricingResult

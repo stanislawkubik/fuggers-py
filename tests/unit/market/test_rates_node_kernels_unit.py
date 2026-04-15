@@ -13,7 +13,6 @@ from fuggers_py.market.curves import (
 )
 from fuggers_py.market.curves.errors import InvalidCurveInput, TenorOutOfBounds
 from fuggers_py.market.curves.rates.kernels import (
-    CubicSplineZeroKernel,
     LinearZeroKernel,
     LogLinearDiscountKernel,
     MonotoneConvexKernel,
@@ -90,20 +89,6 @@ def test_substep_d4_piecewise_flat_forward_kernel_keeps_forward_flat_inside_inte
 
     assert curve.rate_at(2.0) == pytest.approx((0.02 * 1.0 + expected_forward * 1.0) / 2.0)
     assert curve.forward_rate_between(1.5, 2.5) == pytest.approx(expected_forward)
-
-
-def test_substep_d4_cubic_spline_zero_kernel_matches_input_knots() -> None:
-    curve = YieldCurve(
-        spec=_nominal_spec(),
-        kernel=CubicSplineZeroKernel(
-            tenors=[1.0, 3.0, 5.0],
-            zero_rates=[0.02, 0.03, 0.04],
-        ),
-    )
-
-    assert curve.rate_at(1.0) == pytest.approx(0.02)
-    assert curve.rate_at(3.0) == pytest.approx(0.03)
-    assert curve.discount_factor_at(2.0) > 0.0
 
 
 def test_substep_d4_monotone_convex_kernel_stays_pricing_usable() -> None:

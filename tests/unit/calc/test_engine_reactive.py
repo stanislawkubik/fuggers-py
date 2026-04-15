@@ -6,7 +6,6 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.calc import (
-    MarketDataPublisher,
     NodeId,
     PricingEngineBuilder,
     PricingInput,
@@ -14,12 +13,13 @@ from fuggers_py.calc import (
 )
 from fuggers_py.core import Currency, Date
 from fuggers_py.calc import QuoteSide
-from fuggers_py.core import CurveId, InstrumentId
-from fuggers_py.market.curves import CurveType
+from fuggers_py.core import InstrumentId
 from fuggers_py.market.quotes import RawQuote
-from fuggers_py.market.snapshot import CurveInputs, CurvePoint
+from fuggers_py.market.snapshot import CurvePoint
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.sources import MarketDataProvider
 from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
+from fuggers_py.market.curves import CurveType
 from tests.helpers._public_curve_helpers import linear_zero_curve
 
 
@@ -56,25 +56,23 @@ async def test_reactive_engine_processes_updates_without_background_hangs() -> N
     assert engine.reactive_engine is not None
     reactive = engine.reactive_engine
     updates_queue = reactive.subscribe_updates()
-
-    curve_inputs = CurveInputs.from_points(
-        CurveId("usd.discount"),
-        Date.from_ymd(2026, 3, 14),
-        [CurvePoint(Decimal("1.0"), Decimal("0.0425")), CurvePoint(Decimal("5.0"), Decimal("0.0390"))],
-    )
-    reactive.curve_builder.add_curve(
-        "usd.discount",
-        linear_zero_curve("usd.discount", curve_inputs.reference_date, curve_inputs.points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
-        curve_inputs=curve_inputs,
-    )
-    reactive.listener.curve_source.add_curve_inputs(curve_inputs)
     reactive.register_pricing_node(
         NodeId("price:REACTIVE-FIXED"),
         PricingInput(
             instrument=fixed_id,
             settlement_date=Date.from_ymd(2026, 3, 14),
             instrument_id=fixed_id,
-            curve_roles={"discount": "usd.discount"},
+            curves=AnalyticsCurves(
+                discount_curve=linear_zero_curve(
+                    "usd.discount",
+                    Date.from_ymd(2026, 3, 14),
+                    (
+                        CurvePoint(Decimal("1.0"), Decimal("0.0425")),
+                        CurvePoint(Decimal("5.0"), Decimal("0.0390")),
+                    ),
+                    curve_type=CurveType.OVERNIGHT_DISCOUNT,
+                )
+            ),
         ),
     )
 

@@ -2,8 +2,7 @@
 
 The pricing engine is the synchronous research-facing facade. The reactive
 engine is the async runtime underneath it. The builder composes both from the
-required providers, remembers any raw curve inputs already exposed by the
-market-data provider, and wires optional schedulers, cached curves, and output
+required providers and wires optional schedulers, storage, and output
 publishers.
 """
 
@@ -20,7 +19,6 @@ from fuggers_py.reference import ReferenceDataProvider
 
 from .calc_graph import CalculationGraph
 from .config import EngineConfig
-from .curve_builder import CurveBuilder
 from .errors import EngineConfigurationError
 from .market_data_listener import MarketDataPublisher
 from .pricing_router import PricingRouter
@@ -30,20 +28,6 @@ from .scheduler import EodScheduler, IntervalScheduler
 if TYPE_CHECKING:
     from fuggers_py.portfolio.analytics.quote_outputs import PortfolioAnalyzer
     from fuggers_py.portfolio.etf.pricing import EtfPricer
-
-
-def _iter_curve_inputs(source: object | None) -> tuple:
-    if source is None:
-        return ()
-    if hasattr(source, "curves"):
-        curves = getattr(source, "curves")
-        if isinstance(curves, dict):
-            return tuple(curves.values())
-    if hasattr(source, "_source") and hasattr(getattr(source, "_source"), "curves"):
-        curves = getattr(getattr(source, "_source"), "curves")
-        if isinstance(curves, dict):
-            return tuple(curves.values())
-    return ()
 
 
 def _default_etf_pricer() -> EtfPricer:
@@ -63,8 +47,8 @@ class PricingEngine:
     """Synchronous facade that owns the reactive runtime and shared services.
 
     The facade is the stable entry point for research code. It holds the shared
-    config, market-data and reference-data providers, the calc graph, the curve
-    builder, the router, and the optional reactive runtime.
+    config, market-data and reference-data providers, the calc graph, the
+    router, and the optional reactive runtime.
     """
 
     config: EngineConfig
@@ -74,7 +58,6 @@ class PricingEngine:
     output_publisher: OutputPublisher = field(default_factory=OutputPublisher)
     settlement_date: Date | None = None
     calc_graph: CalculationGraph = field(default_factory=CalculationGraph)
-    curve_builder: CurveBuilder = field(default_factory=CurveBuilder)
     pricing_router: PricingRouter = field(default_factory=PricingRouter)
     etf_pricer: EtfPricer = field(default_factory=_default_etf_pricer)
     portfolio_analyzer: PortfolioAnalyzer = field(default_factory=_default_portfolio_analyzer)
@@ -123,9 +106,8 @@ class PricingEngineBuilder:
     """Fluent builder for the pricing-engine and reactive-engine pair.
 
     The builder keeps construction explicit: required providers must be set
-    before build, optional schedulers and storage/publisher dependencies can be
-    layered in, and raw curve inputs already exposed by the market-data provider
-    are remembered before the reactive engine is created.
+    before build, and optional schedulers and storage/publisher dependencies
+    can be layered in before the reactive engine is created.
     """
 
     engine_config: EngineConfig | None = None
@@ -135,7 +117,6 @@ class PricingEngineBuilder:
     output_publisher: OutputPublisher = field(default_factory=OutputPublisher)
     settlement_date: Date | None = None
     calc_graph: CalculationGraph | None = None
-    curve_builder: CurveBuilder | None = None
     pricing_router: PricingRouter | None = None
     etf_pricer: EtfPricer | None = None
     portfolio_analyzer: PortfolioAnalyzer | None = None
@@ -202,8 +183,6 @@ class PricingEngineBuilder:
     def build(self) -> PricingEngine:
         """Build the synchronous pricing engine and its reactive runtime.
 
-        Raw curve inputs already available from the market-data provider are
-        remembered in the curve registry before the reactive engine is created.
         Missing market-data or reference-data providers fail fast through
         :class:`EngineConfigurationError`.
         """
@@ -212,18 +191,13 @@ class PricingEngineBuilder:
         assert self.reference_data_provider is not None
         config = self.engine_config or EngineConfig(engine_name="pricing-engine", as_of=self.settlement_date)
         calc_graph = self.calc_graph or CalculationGraph()
-        curve_builder = self.curve_builder or CurveBuilder()
         pricing_router = self.pricing_router or PricingRouter()
         etf_pricer = self.etf_pricer or _default_etf_pricer()
         portfolio_analyzer = self.portfolio_analyzer or _default_portfolio_analyzer()
         market_data_publisher = self.market_data_publisher or MarketDataPublisher()
 
-        for curve_inputs in _iter_curve_inputs(getattr(self.market_data_provider, "curve_input_source", None)):
-            curve_builder.add_from_inputs(curve_inputs)
-
         reactive_engine = ReactiveEngine(
             calc_graph=calc_graph,
-            curve_builder=curve_builder,
             pricing_router=pricing_router,
             market_data_provider=self.market_data_provider,
             reference_data_provider=self.reference_data_provider,
@@ -242,7 +216,6 @@ class PricingEngineBuilder:
             output_publisher=self.output_publisher,
             settlement_date=self.settlement_date or config.as_of,
             calc_graph=calc_graph,
-            curve_builder=curve_builder,
             pricing_router=pricing_router,
             etf_pricer=etf_pricer,
             portfolio_analyzer=portfolio_analyzer,

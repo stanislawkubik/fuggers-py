@@ -5,7 +5,7 @@ from math import exp
 
 import pytest
 
-from fuggers_py.core.types import Currency, Date, Frequency
+from fuggers_py.core.types import Currency, Date, Frequency, Price
 from fuggers_py.math.solvers.types import SolverConfig
 from fuggers_py.market.curves import (
     CurveSpec,
@@ -17,7 +17,10 @@ from fuggers_py.market.curves.errors import CurveConstructionError, InvalidCurve
 from fuggers_py.market.curves.rates.calibrators import (
     BootstrapCalibrator,
     BootstrapSolverKind,
+    BondFitTarget,
+    CalibrationMode,
     CalibrationObjective,
+    CalibrationSpec,
     CurveCalibrator,
 )
 from fuggers_py.market.curves.rates.kernels import CurveKernelKind, KernelSpec
@@ -92,21 +95,70 @@ def _clean_price_from_zero_curve(
     return dirty_price - bond.accrued_interest(settlement_date)
 
 
+def _bootstrap_calibration_spec(
+    *,
+    bond_fit_target: BondFitTarget = BondFitTarget.DIRTY_PRICE,
+) -> CalibrationSpec:
+    return CalibrationSpec(
+        mode=CalibrationMode.BOOTSTRAP,
+        objective=CalibrationObjective.EXACT_FIT,
+        bond_fit_target=bond_fit_target,
+    )
+
+
 def test_substep_d5_shared_calibrator_contract_is_exported() -> None:
     assert issubclass(BootstrapCalibrator, CurveCalibrator)
+    assert CalibrationMode.BOOTSTRAP.name == "BOOTSTRAP"
     assert CalibrationObjective.EXACT_FIT.name == "EXACT_FIT"
+    assert _bootstrap_calibration_spec().bond_fit_target is BondFitTarget.DIRTY_PRICE
+
+
+def test_substep_d5_bootstrap_constructor_validates_calibration_spec() -> None:
+    with pytest.raises(
+        ValueError,
+        match="BootstrapCalibrator requires calibration_spec.mode == CalibrationMode.BOOTSTRAP",
+    ):
+        BootstrapCalibrator(
+            calibration_spec=CalibrationSpec(
+                mode=CalibrationMode.GLOBAL_FIT,
+                objective=CalibrationObjective.WEIGHTED_L2,
+            )
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="BootstrapCalibrator requires calibration_spec.objective == CalibrationObjective.EXACT_FIT",
+    ):
+        BootstrapCalibrator(
+            calibration_spec=CalibrationSpec(
+                mode=CalibrationMode.BOOTSTRAP,
+                objective=CalibrationObjective.WEIGHTED_L2,
+            )
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="BootstrapCalibrator does not accept calibration_spec.regressor_names",
+    ):
+        BootstrapCalibrator(
+            calibration_spec=CalibrationSpec(
+                mode=CalibrationMode.BOOTSTRAP,
+                objective=CalibrationObjective.EXACT_FIT,
+                regressor_names=("level",),
+            )
+        )
 
 
 def test_substep_d5_quote_validation_rejects_bad_zero_anchor() -> None:
     with pytest.raises(InvalidCurveInput, match="requires at least one quote"):
-        BootstrapCalibrator().fit(
+        BootstrapCalibrator(calibration_spec=_bootstrap_calibration_spec()).fit(
             [],
             spec=_spec(),
             kernel_spec=KernelSpec(kind=CurveKernelKind.LINEAR_ZERO),
         )
 
     with pytest.raises(CurveConstructionError, match="RawQuote is too generic"):
-        BootstrapCalibrator().fit(
+        BootstrapCalibrator(calibration_spec=_bootstrap_calibration_spec()).fit(
             [
                 RawQuote("RAW-1", 0.03, as_of=Date.parse("2026-04-09"), currency=Currency.USD),
             ],
@@ -116,7 +168,7 @@ def test_substep_d5_quote_validation_rejects_bad_zero_anchor() -> None:
 
 
 def test_substep_d5_bootstrap_builds_linear_zero_kernel_and_report() -> None:
-    calibrator = BootstrapCalibrator()
+    calibrator = BootstrapCalibrator(calibration_spec=_bootstrap_calibration_spec())
     kernel, report = calibrator.fit(
         [
             _swap_quote("5Y", 0.04),
@@ -139,6 +191,7 @@ def test_substep_d5_bootstrap_builds_linear_zero_kernel_and_report() -> None:
 
 def test_substep_d5_bootstrap_can_fit_repo_rate_quotes_into_zero_kernel() -> None:
     calibrator = BootstrapCalibrator(
+        calibration_spec=_bootstrap_calibration_spec(),
         solver_kind=BootstrapSolverKind.NEWTON,
         solver_config=SolverConfig(tolerance=1e-12, max_iterations=25),
     )
@@ -158,6 +211,7 @@ def test_substep_d5_bootstrap_can_fit_repo_rate_quotes_into_zero_kernel() -> Non
 
 def test_substep_d5_bootstrap_can_fit_swap_rate_quotes_into_discount_kernel() -> None:
     calibrator = BootstrapCalibrator(
+        calibration_spec=_bootstrap_calibration_spec(),
         solver_kind=BootstrapSolverKind.NEWTON,
         solver_config=SolverConfig(tolerance=1e-12, max_iterations=25),
     )
@@ -189,6 +243,7 @@ def test_substep_d5_bootstrap_can_fit_bond_clean_price_quotes_into_zero_kernel()
     )
 
     kernel, report = BootstrapCalibrator(
+        calibration_spec=_bootstrap_calibration_spec(bond_fit_target=BondFitTarget.CLEAN_PRICE),
         solver_kind=BootstrapSolverKind.BRENT,
         solver_config=SolverConfig(tolerance=1e-12, max_iterations=100),
     ).fit(
@@ -203,14 +258,17 @@ def test_substep_d5_bootstrap_can_fit_bond_clean_price_quotes_into_zero_kernel()
         kernel_spec=KernelSpec(kind=CurveKernelKind.LINEAR_ZERO),
     )
     curve = YieldCurve(spec=_spec(), kernel=kernel, calibration_report=report)
+    expected_ytm = bond.yield_from_price(Price.new(clean_price, Currency.USD), settlement).ytm.value()
 
-    assert curve.rate_at(2.0) == pytest.approx(zero_rate, abs=1e-10)
-    assert report.points[0].observed_kind == "BOND_CLEAN_PRICE_TO_YTM"
+    assert curve.discount_factor_at(2.0) > 0.0
+    assert report.points[0].observed_kind == "BOND_YTM"
+    assert report.points[0].observed_value == pytest.approx(float(expected_ytm), abs=1e-10)
+    assert report.points[0].fitted_value == pytest.approx(float(expected_ytm), abs=1e-10)
     assert report.points[0].residual == pytest.approx(0.0, abs=1e-10)
 
 
 def test_substep_d5_bootstrap_report_contains_point_rows() -> None:
-    calibrator = BootstrapCalibrator()
+    calibrator = BootstrapCalibrator(calibration_spec=_bootstrap_calibration_spec())
     _, report = calibrator.fit(
         [
             _swap_quote("1Y", 0.03),
@@ -226,7 +284,7 @@ def test_substep_d5_bootstrap_report_contains_point_rows() -> None:
 
 
 def test_substep_d5_bootstrap_uses_spec_extrapolation_policy_when_building_kernel() -> None:
-    calibrator = BootstrapCalibrator()
+    calibrator = BootstrapCalibrator(calibration_spec=_bootstrap_calibration_spec())
     kernel, report = calibrator.fit(
         [
             _swap_quote("1Y", 0.03),
@@ -245,7 +303,7 @@ def test_substep_d5_bootstrap_uses_spec_extrapolation_policy_when_building_kerne
 
 
 def test_substep_d5_bootstrap_rejects_unsupported_kernel_kind() -> None:
-    calibrator = BootstrapCalibrator()
+    calibrator = BootstrapCalibrator(calibration_spec=_bootstrap_calibration_spec())
 
     with pytest.raises(CurveConstructionError, match="does not support kernel kind"):
         calibrator.fit(
@@ -256,9 +314,20 @@ def test_substep_d5_bootstrap_rejects_unsupported_kernel_kind() -> None:
             kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
         )
 
+    with pytest.raises(CurveConstructionError, match="does not support kernel kind"):
+        calibrator.fit(
+            [
+                _swap_quote("1Y", 0.03),
+                _swap_quote("2Y", 0.035),
+                _swap_quote("5Y", 0.04),
+            ],
+            spec=_spec(),
+            kernel_spec=KernelSpec(kind=CurveKernelKind.CUBIC_SPLINE),
+        )
+
 
 def test_substep_d5_bootstrap_rejects_non_increasing_observation_tenors() -> None:
-    calibrator = BootstrapCalibrator()
+    calibrator = BootstrapCalibrator(calibration_spec=_bootstrap_calibration_spec())
 
     with pytest.raises(InvalidCurveInput, match="strictly increasing tenors"):
         calibrator.fit(

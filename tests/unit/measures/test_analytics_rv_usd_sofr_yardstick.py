@@ -2,14 +2,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
 from fuggers_py.measures.rv import (
     CommonCurrencyFloatingBondView,
     decompose_asw_basis_cds_links,
-    decompose_floating_view_links,
     usd_sofr_adjusted_rv_from_links,
-    usd_sofr_adjusted_rv_measure,
 )
 from fuggers_py.reference.bonds.types import Tenor
 from fuggers_py.core import Currency, Date
@@ -33,10 +29,12 @@ def _floating_view(*, target_currency: Currency = Currency.USD, target_index_nam
     )
 
 
-def test_usd_sofr_adjusted_rv_measure_reuses_asw_basis_cds_decomposition() -> None:
+def test_usd_sofr_adjusted_rv_from_links_reuses_asw_basis_cds_decomposition() -> None:
     floating_view = _floating_view()
-    link_breakdown = decompose_floating_view_links(
-        floating_view,
+    link_breakdown = decompose_asw_basis_cds_links(
+        asset_swap_spread=floating_view.asset_swap_spread,
+        same_currency_basis=floating_view.same_currency_basis,
+        cross_currency_basis=floating_view.cross_currency_basis,
         adjusted_cds_spread=Decimal("0.0120"),
     )
     direct_breakdown = decompose_asw_basis_cds_links(
@@ -45,10 +43,9 @@ def test_usd_sofr_adjusted_rv_measure_reuses_asw_basis_cds_decomposition() -> No
         cross_currency_basis=Decimal("0.0025"),
         adjusted_cds_spread=Decimal("0.0120"),
     )
-    measure = usd_sofr_adjusted_rv_measure(
-        floating_view,
+    measure = usd_sofr_adjusted_rv_from_links(
+        link_breakdown,
         yardstick_spread=Decimal("0.0130"),
-        adjusted_cds_spread=Decimal("0.0120"),
     )
 
     assert direct_breakdown == link_breakdown
@@ -61,11 +58,3 @@ def test_usd_sofr_adjusted_rv_measure_reuses_asw_basis_cds_decomposition() -> No
     )
     assert measure.residual_to_yardstick == Decimal("0.0010")
     assert measure.residual_to_adjusted_cds == Decimal("0.0020")
-
-
-def test_usd_sofr_adjusted_rv_measure_validates_target_currency_and_index() -> None:
-    with pytest.raises(ValueError, match="USD SOFR"):
-        usd_sofr_adjusted_rv_measure(
-            _floating_view(target_currency=Currency.EUR, target_index_name="ESTR"),
-            yardstick_spread=Decimal("0.0130"),
-        )

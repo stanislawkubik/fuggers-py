@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+from importlib.util import module_from_spec, spec_from_file_location
 from decimal import Decimal
+import sys
 
-from fuggers_py.measures.rv import bond_to_common_currency_fixed, bond_to_common_currency_floating
 from fuggers_py.products.bonds import FixedBondBuilder
 from fuggers_py.reference import YieldCalculationRules
 from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.market.curves import MultiCurveEnvironmentBuilder
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.pricers.rates import AssetSwapPricer, BasisSwapPricer, CrossCurrencyBasisSwapPricer
 from fuggers_py.products.rates import (
     AssetSwap,
@@ -18,7 +18,17 @@ from fuggers_py.products.rates import (
     ScheduleDefinition,
 )
 
-from tests.helpers._rates_helpers import flat_curve, rate_index
+from tests.helpers._rates_helpers import flat_curve, multicurve_analytics_curves, rate_index
+from tests.helpers._paths import REPO_ROOT
+
+_BASIS_SWAPPED_BONDS_PATH = REPO_ROOT / "src" / "fuggers_py" / "measures" / "rv" / "basis_swapped_bonds.py"
+_SPEC = spec_from_file_location("tests_basis_swapped_bonds", _BASIS_SWAPPED_BONDS_PATH)
+assert _SPEC is not None and _SPEC.loader is not None
+_BASIS_SWAPPED_BONDS = module_from_spec(_SPEC)
+sys.modules[_SPEC.name] = _BASIS_SWAPPED_BONDS
+_SPEC.loader.exec_module(_BASIS_SWAPPED_BONDS)
+bond_to_common_currency_fixed = _BASIS_SWAPPED_BONDS.bond_to_common_currency_fixed
+bond_to_common_currency_floating = _BASIS_SWAPPED_BONDS.bond_to_common_currency_floating
 
 
 def _bond(settlement: Date):
@@ -43,24 +53,12 @@ def _curves(reference_date: Date) -> AnalyticsCurves:
     eur_6m = rate_index("EURIBOR", "6M", Currency.EUR)
     eur_3m = rate_index("EURIBOR", "3M", Currency.EUR)
     usd_3m = rate_index("SOFR", "3M", Currency.USD)
-    multicurve_environment = (
-        MultiCurveEnvironmentBuilder()
-        .add_discount_curve(Currency.EUR, eur_discount_curve)
-        .add_discount_curve(Currency.USD, usd_discount_curve)
-        .add_projection_curve(eur_6m, eur_term_6m_curve)
-        .add_projection_curve(eur_3m, eur_term_3m_curve)
-        .add_projection_curve(usd_3m, usd_sofr_curve)
-        .build()
-    )
-    return AnalyticsCurves(
+    return multicurve_analytics_curves(
         discount_curve=eur_discount_curve,
+        discount_currency=Currency.EUR,
         forward_curve=eur_term_6m_curve,
-        multicurve_environment=multicurve_environment,
-        projection_curves={
-            str(eur_6m): eur_term_6m_curve,
-            str(eur_3m): eur_term_3m_curve,
-            str(usd_3m): usd_sofr_curve,
-        },
+        additional_discount_curves={Currency.USD: usd_discount_curve},
+        projection_curves={eur_6m: eur_term_6m_curve, eur_3m: eur_term_3m_curve, usd_3m: usd_sofr_curve},
     )
 
 

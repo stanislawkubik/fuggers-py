@@ -13,10 +13,6 @@ class EngineError(FuggersError):
     """Base exception for calc-layer failures."""
 
 
-class CurveNotFoundError(EngineError):
-    """Raised when a named curve or stored curve input cannot be found."""
-
-
 class RoutingError(EngineError):
     """Raised when the router cannot dispatch or complete a pricing path."""
 
@@ -29,4 +25,4 @@ class SchedulerError(EngineError):
     """Raised when a scheduler cannot be configured or run."""
 
 
-__all__ = ["CurveNotFoundError", "EngineConfigurationError", "EngineError", "RoutingError", "SchedulerError"]
+__all__ = ["EngineConfigurationError", "EngineError", "RoutingError", "SchedulerError"]

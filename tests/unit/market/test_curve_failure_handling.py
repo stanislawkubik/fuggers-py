@@ -11,7 +11,7 @@ from fuggers_py.products.credit import CreditDefaultSwap
 from fuggers_py.market.curves import DelegatedCurve, DelegationFallback, DiscreteCurve, ExtrapolationMethod, InterpolationMethod
 from fuggers_py.market.curves.term_structure import TermStructure
 from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.pricers.rates._curve_resolver import resolve_discount_curve, resolve_projection_curve
 
 from tests.helpers._rates_helpers import flat_curve

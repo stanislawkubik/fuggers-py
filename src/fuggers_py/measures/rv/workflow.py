@@ -116,48 +116,8 @@ def bond_signal_workflow(
     )
 
 
-def maturity_pair_trade(
-    fit_result: BondCurve,
-    *,
-    long_signal: MaturitySignal,
-    short_signal: MaturitySignal,
-    base_long_notional: object = Decimal("1000000"),
-    neutrality_target: NeutralityTarget | str = NeutralityTarget.DV01,
-    benchmark_only: bool = False,
-    minimum_liquidity_score: object | None = None,
-) -> RvWorkflowResult:
-    """Build a two-signal maturity pair trade."""
-    return maturity_signal_workflow(
-        fit_result,
-        signals=(long_signal, short_signal),
-        base_long_notional=base_long_notional,
-        neutrality_target=neutrality_target,
-        benchmark_only=benchmark_only,
-        minimum_liquidity_score=minimum_liquidity_score,
-    )
-
-
-def bond_pair_trade(
-    fit_result: BondCurve,
-    *,
-    long_signal: BondSignal,
-    short_signal: BondSignal,
-    base_long_notional: object = Decimal("1000000"),
-    neutrality_target: NeutralityTarget | str = NeutralityTarget.DV01,
-) -> RvWorkflowResult:
-    """Build a two-signal bond pair trade."""
-    return bond_signal_workflow(
-        fit_result,
-        signals=(long_signal, short_signal),
-        base_long_notional=base_long_notional,
-        neutrality_target=neutrality_target,
-    )
-
-
 __all__ = [
     "RvWorkflowResult",
-    "bond_pair_trade",
     "bond_signal_workflow",
-    "maturity_pair_trade",
     "maturity_signal_workflow",
 ]

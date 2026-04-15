@@ -1,8 +1,8 @@
 """Research-facing pricing specifications.
 
 The pricing-spec layer separates quote-side selection from benchmark
-selection, curve role wiring, spread quoting, and optional risk toggles used by
-the pricing engine.
+selection, spread quoting, and optional risk toggles used by the pricing
+engine.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from decimal import Decimal
 from fuggers_py.reference.bonds.types import ASWType, Tenor
 
 from fuggers_py.core.ids import CurveId
-from fuggers_py.market.state import AnalyticsCurves, QuoteSide
+from fuggers_py.market.state import QuoteSide
 
 
 def _to_decimal(value: object) -> Decimal:
@@ -116,7 +116,6 @@ class PricingSpec:
 
 
 __all__ = [
-    "AnalyticsCurves",
     "BenchmarkReference",
     "BidAskSpreadConfig",
     "PricingSpec",

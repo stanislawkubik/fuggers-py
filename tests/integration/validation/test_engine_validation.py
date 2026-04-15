@@ -15,10 +15,11 @@ from fuggers_py.calc import (
     QuoteUpdate,
 )
 from fuggers_py.calc import QuoteSide
-from fuggers_py.core import CurveId, InstrumentId
+from fuggers_py.core import InstrumentId
 from fuggers_py.market.curves import CurveType
 from fuggers_py.market.quotes import RawQuote
-from fuggers_py.market.snapshot import CurveInputs, CurvePoint
+from fuggers_py.market.snapshot import CurvePoint
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.sources import MarketDataProvider
 from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
 from tests.helpers._public_curve_helpers import linear_zero_curve
@@ -78,32 +79,24 @@ async def test_reactive_engine_reference_flow_matches_fixture() -> None:
     assert engine.reactive_engine is not None
     reactive = engine.reactive_engine
     queue = reactive.subscribe_updates()
-    curve_inputs = CurveInputs.from_points(
-        CurveId(fixture["curve_id"]),
-        Date.parse(fixture["settlement_date"]),
-        [
-            CurvePoint(D(point["tenor"]), D(point["rate"]))
-            for point in fixture["curve_points"]
-        ],
-    )
-    reactive.curve_builder.add_curve(
-        fixture["curve_id"],
-        linear_zero_curve(
+    curves = AnalyticsCurves(
+        discount_curve=linear_zero_curve(
             fixture["curve_id"],
-            curve_inputs.reference_date,
-            curve_inputs.points,
+            Date.parse(fixture["settlement_date"]),
+            [
+                CurvePoint(D(point["tenor"]), D(point["rate"]))
+                for point in fixture["curve_points"]
+            ],
             curve_type=CurveType.OVERNIGHT_DISCOUNT,
-        ),
-        curve_inputs=curve_inputs,
+        )
     )
-    reactive.listener.curve_source.add_curve_inputs(curve_inputs)
     reactive.register_pricing_node(
         NodeId(fixture["pricing_node_id"]),
         PricingInput(
             instrument=instrument_id,
             settlement_date=Date.parse(fixture["settlement_date"]),
             instrument_id=instrument_id,
-            curve_roles={"discount": fixture["curve_id"]},
+            curves=curves,
         ),
     )
 

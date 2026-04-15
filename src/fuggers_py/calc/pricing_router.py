@@ -31,8 +31,9 @@ from fuggers_py.pricers.bonds import TipsPricer
 from fuggers_py.core.types import Date, Price
 from fuggers_py.market.curve_support import discount_factor_at_date, parallel_bumped_curve, zero_rate_at_date
 from fuggers_py.market.curves import DiscountingCurve
-from fuggers_py.core.ids import CurveId, InstrumentId
+from fuggers_py.core.ids import InstrumentId
 from fuggers_py.market.snapshot import MarketDataSnapshot
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.sources import (
     FixingSource,
     InflationFixingSource,
@@ -41,7 +42,7 @@ from fuggers_py.market.sources import (
     QuoteSource,
 )
 from fuggers_py.calc.output import BondQuoteOutput
-from fuggers_py.calc.pricing_specs import AnalyticsCurves, PricingSpec, QuoteSide
+from fuggers_py.calc.pricing_specs import PricingSpec, QuoteSide
 from fuggers_py.reference.reference_data import BondReferenceData
 
 from .errors import RoutingError
@@ -72,8 +73,6 @@ class PricingInput:
         Optional pricing directives.
     curves:
         Optional curve bundle used by the pricing path.
-    curve_roles:
-        Convenience mapping from logical curve roles to curve identifiers.
     market_data:
         Optional market-data snapshot or provider used to resolve quotes and
         fixings.
@@ -93,7 +92,6 @@ class PricingInput:
     market_price: object | None = None
     pricing_spec: PricingSpec | None = None
     curves: AnalyticsCurves | None = None
-    curve_roles: dict[str, CurveId | str] = field(default_factory=dict)
     market_data: MarketDataSnapshot | MarketDataProvider | QuoteSource | FixingSource | InflationFixingSource | None = None
     reference_data: BondReferenceData | dict[InstrumentId, BondReferenceData] | None = None
     instrument_id: InstrumentId | str | None = None

@@ -4,12 +4,13 @@ import json
 from decimal import Decimal
 
 from fuggers_py.core import Currency, Date, Price
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.snapshot import MarketDataSnapshot
 from fuggers_py.market.sources import MarketDataProvider
-from fuggers_py.calc import PricingRouter, RatesPricingRouter
+from fuggers_py.calc import PricingRouter
 from fuggers_py.market.curves.inflation import bootstrap_inflation_curve
 from fuggers_py.measures.inflation import linker_swap_parity_check
+from fuggers_py.pricers.rates import InflationSwapPricer
 from fuggers_py.reference.inflation import (
     USD_CPI_U_NSA,
     load_monthly_cpi_fixings_csv,
@@ -155,20 +156,18 @@ def test_inflation_end_to_end_from_treasury_adapter_to_routers(tmp_path) -> None
         normalize_effective_date_to_reference_month_start=False,
         instrument_id="SCIS-1",
     )
-    rates_router = RatesPricingRouter()
-    zcis_output = rates_router.price(zcis, curves=curves)
-    scis_output = rates_router.price(scis, curves=curves)
+    pricer = InflationSwapPricer()
+    zcis_output = pricer.price(zcis, curves=curves)
+    scis_output = pricer.price(scis, curves=curves)
 
-    assert zcis_output.pricing_path == "zero_coupon_inflation_swap"
-    assert zcis_output.par_rate is not None
-    assert scis_output.pricing_path == "standard_coupon_inflation_swap"
-    assert scis_output.par_rate is not None
+    assert zcis_output.par_fixed_rate is not None
+    assert scis_output.par_fixed_rate is not None
 
     parity = linker_swap_parity_check(
         nominal_yield=Decimal("0.0450"),
         real_yield=Decimal("0.0175"),
-        inflation_swap_rate=scis_output.par_rate,
+        inflation_swap_rate=scis_output.par_fixed_rate,
     )
 
     assert parity.linker_breakeven > Decimal(0)
-    assert parity.swap_breakeven == scis_output.par_rate
+    assert parity.swap_breakeven == scis_output.par_fixed_rate

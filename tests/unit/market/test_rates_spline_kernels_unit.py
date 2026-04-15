@@ -132,3 +132,9 @@ def test_substep_d7_spline_kernels_validate_inputs() -> None:
             knot_tenors=[4.0, 2.0, 6.0],
             zero_rates=[0.02, 0.025, 0.03],
         )
+
+    with pytest.raises(InvalidCurveInput, match="at least three spline knots"):
+        CubicSplineKernel(
+            knot_tenors=[2.0, 6.0],
+            zero_rates=[0.02, 0.03],
+        )

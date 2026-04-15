@@ -20,7 +20,6 @@ from fuggers_py.calc import (
     AlertPublisher,
     AnalyticsPublisher,
     BondQuoteOutput,
-    CurvePublisher,
     EtfAnalyticsOutput,
     EtfPublisher,
     OutputPublisher,
@@ -29,7 +28,6 @@ from fuggers_py.calc import (
 from fuggers_py.core import CurveId, EtfId, InstrumentId
 from fuggers_py.market.quotes import RawQuote
 from fuggers_py.market.snapshot import (
-    CurveData,
     CurveInput,
     CurveInputs,
     CurveInstrumentType,
@@ -532,13 +530,6 @@ class NoOpQuotePublisher:
         return None
 
 
-class NoOpCurvePublisher:
-    """Curve publisher that intentionally drops all messages."""
-
-    def publish_curve(self, curve_id: CurveId | str, curve: CurveInputs | CurveData) -> None:
-        return None
-
-
 class NoOpEtfPublisher:
     """ETF publisher that intentionally drops all messages."""
 
@@ -564,7 +555,6 @@ def create_empty_output() -> OutputPublisher:
     """Build an output publisher composed of no-op channel publishers."""
     return OutputPublisher(
         quote_publisher=NoOpQuotePublisher(),
-        curve_publisher=NoOpCurvePublisher(),
         etf_publisher=NoOpEtfPublisher(),
         analytics_publisher=NoOpAnalyticsPublisher(),
         alert_publisher=NoOpAlertPublisher(),
@@ -586,7 +576,6 @@ __all__ = [
     "JSONCurveInputSource",
     "NoOpAlertPublisher",
     "NoOpAnalyticsPublisher",
-    "NoOpCurvePublisher",
     "NoOpEtfPublisher",
     "NoOpQuotePublisher",
     "create_empty_output",

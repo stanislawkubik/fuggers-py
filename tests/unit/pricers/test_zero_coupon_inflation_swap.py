@@ -6,11 +6,10 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.core import Currency, Date
-from fuggers_py.calc import AnalyticsCurves, SwapQuoteOutput
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.core import YearMonth
 from fuggers_py.market.snapshot import InflationFixing
 from fuggers_py.market.sources import InMemoryInflationFixingSource
-from fuggers_py.calc import RatesPricingRouter
 from fuggers_py.reference.inflation import USD_CPI_U_NSA, reference_cpi
 from fuggers_py.pricers.rates import InflationSwapPricer
 from fuggers_py.products.rates import PayReceive, ZeroCouponInflationSwap
@@ -141,7 +140,7 @@ def test_zero_coupon_inflation_swap_default_effective_date_is_t_plus_two_busines
     assert swap.effective_date == Date.from_ymd(2026, 1, 6)
 
 
-def test_zero_coupon_inflation_swap_router_uses_projection_curves() -> None:
+def test_zero_coupon_inflation_swap_pricer_uses_projection_curves() -> None:
     swap = _swap(fixed_rate="0.015")
     projection = _projection()
     discount_curve = flat_curve(Date.from_ymd(2024, 1, 10), "0.03")
@@ -150,12 +149,10 @@ def test_zero_coupon_inflation_swap_router_uses_projection_curves() -> None:
         projection_curves={"CPURNSA": projection},
     )
 
-    result = RatesPricingRouter().price(swap, curves=curves)
+    result = InflationSwapPricer().price(swap, curves=curves)
 
-    assert isinstance(result, SwapQuoteOutput)
-    assert result.pricing_path == "zero_coupon_inflation_swap"
-    assert result.par_rate is not None
+    assert result.par_fixed_rate is not None
     assert result.present_value is not None
     assert result.fixed_leg_pv is not None
-    assert result.floating_leg_pv is not None
+    assert result.inflation_leg_pv is not None
     assert result.pv01 is not None

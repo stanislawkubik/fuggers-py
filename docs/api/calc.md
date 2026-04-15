@@ -17,15 +17,6 @@ Pricing routers, shared output DTOs, orchestration, and runtime wiring.
    :no-index:
 ```
 
-## `fuggers_py.calc.rates_pricing_router`
-
-```{eval-rst}
-.. automodule:: fuggers_py.calc.rates_pricing_router
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
 ## `fuggers_py.calc.output`
 
 ```{eval-rst}

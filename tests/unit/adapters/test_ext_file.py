@@ -19,7 +19,6 @@ from fuggers_py.adapters import (
     JSONCurveInputSource,
     NoOpAlertPublisher,
     NoOpAnalyticsPublisher,
-    NoOpCurvePublisher,
     NoOpEtfPublisher,
     NoOpQuotePublisher,
     create_empty_output,
@@ -29,7 +28,6 @@ from fuggers_py.adapters import (
 from fuggers_py.calc import (
     AlertPublisher,
     AnalyticsPublisher,
-    CurvePublisher,
     EtfPublisher,
     QuotePublisher,
     QuoteSide,
@@ -78,7 +76,6 @@ def test_file_factories_and_noop_publishers_expose_expected_objects() -> None:
     assert reference_data.get_bond_reference(InstrumentId("US1234567890")).issuer_name == "Example Corp"
 
     assert isinstance(output.quote_publisher, QuotePublisher)
-    assert isinstance(output.curve_publisher, CurvePublisher)
     assert isinstance(output.etf_publisher, EtfPublisher)
     assert isinstance(output.analytics_publisher, AnalyticsPublisher)
     assert isinstance(output.alert_publisher, AlertPublisher)
@@ -87,7 +84,6 @@ def test_file_factories_and_noop_publishers_expose_expected_objects() -> None:
 
 def test_noop_publishers_satisfy_protocols_and_do_nothing() -> None:
     assert isinstance(NoOpQuotePublisher(), QuotePublisher)
-    assert isinstance(NoOpCurvePublisher(), CurvePublisher)
     assert isinstance(NoOpEtfPublisher(), EtfPublisher)
     assert isinstance(NoOpAnalyticsPublisher(), AnalyticsPublisher)
     assert isinstance(NoOpAlertPublisher(), AlertPublisher)

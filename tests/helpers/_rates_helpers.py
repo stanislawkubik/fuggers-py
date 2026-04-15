@@ -6,9 +6,9 @@ from decimal import Decimal
 
 from fuggers_py.reference.bonds.types import Tenor
 from fuggers_py.core import Compounding, Currency, Date, Yield
-from fuggers_py.calc import AnalyticsCurves
 from fuggers_py.market.curves import CurveSpec, CurveType, DiscountingCurve, ExtrapolationPolicy, RateSpace
 from fuggers_py.market.curves.multicurve import RateIndex
+from fuggers_py.market.state import AnalyticsCurves
 
 
 class FlatYieldCurve(DiscountingCurve):
@@ -69,7 +69,7 @@ class FlatYieldCurve(DiscountingCurve):
 
 
 @dataclass(frozen=True, slots=True)
-class _TestMultiCurveEnvironment:
+class _TestCurveEnvironment:
     discount_curves: dict[Currency, object] = field(default_factory=dict)
     projection_curves: dict[RateIndex, object] = field(default_factory=dict)
 
@@ -78,39 +78,6 @@ class _TestMultiCurveEnvironment:
 
     def projection_curve(self, rate_index: RateIndex) -> object | None:
         return self.projection_curves.get(rate_index)
-
-
-class _TestMultiCurveEnvironmentBuilder:
-    def __init__(
-        self,
-        *,
-        discount_curves: dict[Currency, object] | None = None,
-        projection_curves: dict[RateIndex, object] | None = None,
-    ) -> None:
-        self._discount_curves = dict(discount_curves or {})
-        self._projection_curves = dict(projection_curves or {})
-
-    def add_discount_curve(self, currency: Currency, curve: object) -> "_TestMultiCurveEnvironmentBuilder":
-        updated = dict(self._discount_curves)
-        updated[currency] = curve
-        return _TestMultiCurveEnvironmentBuilder(
-            discount_curves=updated,
-            projection_curves=self._projection_curves,
-        )
-
-    def add_projection_curve(self, rate_index: RateIndex, curve: object) -> "_TestMultiCurveEnvironmentBuilder":
-        updated = dict(self._projection_curves)
-        updated[rate_index] = curve
-        return _TestMultiCurveEnvironmentBuilder(
-            discount_curves=self._discount_curves,
-            projection_curves=updated,
-        )
-
-    def build(self) -> _TestMultiCurveEnvironment:
-        return _TestMultiCurveEnvironment(
-            discount_curves=dict(self._discount_curves),
-            projection_curves=dict(self._projection_curves),
-        )
 
 
 def flat_curve(reference_date: Date, rate: str | Decimal) -> FlatYieldCurve:
@@ -126,14 +93,20 @@ def multicurve_analytics_curves(
     discount_curve: object,
     discount_currency: Currency,
     forward_curve: object | None = None,
+    fx_forward_curve: object | None = None,
     projection_curves: dict[RateIndex, object] | None = None,
+    additional_discount_curves: dict[Currency, object] | None = None,
 ) -> AnalyticsCurves:
-    builder = _TestMultiCurveEnvironmentBuilder().add_discount_curve(discount_currency, discount_curve)
-    for index, curve in (projection_curves or {}).items():
-        builder = builder.add_projection_curve(index, curve)
+    resolved_discount_curves = {discount_currency: discount_curve}
+    resolved_discount_curves.update(additional_discount_curves or {})
+    resolved_projection_curves = dict(projection_curves or {})
     return AnalyticsCurves(
         discount_curve=discount_curve,
         forward_curve=forward_curve,
-        multicurve_environment=builder.build(),
-        projection_curves={str(index): curve for index, curve in (projection_curves or {}).items()},
+        fx_forward_curve=fx_forward_curve,
+        multicurve_environment=_TestCurveEnvironment(
+            discount_curves=resolved_discount_curves,
+            projection_curves=resolved_projection_curves,
+        ),
+        projection_curves={str(index): curve for index, curve in resolved_projection_curves.items()},
     )

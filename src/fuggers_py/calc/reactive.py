@@ -14,35 +14,22 @@ from dataclasses import dataclass, field
 
 from fuggers_py.adapters.storage import StorageAdapter
 from fuggers_py.core.types import Date
-from fuggers_py.calc import AnalyticsCurves, OutputPublisher
-from fuggers_py.core import CurveId, InstrumentId
+from fuggers_py.calc import OutputPublisher
+from fuggers_py.core import InstrumentId
 from fuggers_py.market.sources import (
     FixingSource,
-    InMemoryCurveSource,
     InMemoryFixingSource,
     InMemoryQuoteSource,
     MarketDataProvider,
     QuoteSource,
 )
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.reference import BondReferenceData, ReferenceDataProvider
 
-from .curve_builder import CurveBuilder
 from .calc_graph import CalculationGraph, NodeId
 from .market_data_listener import MarketDataListener, MarketDataPublisher, MarketDataUpdate
 from .pricing_router import PricingFailure, PricingInput, PricingRouter
 from .scheduler import NodeUpdate, UpdateSource
-
-
-def _as_analytics_curves(curve_builder: CurveBuilder, curve_roles: dict[str, CurveId | str]) -> AnalyticsCurves | None:
-    if not curve_roles:
-        return None
-    return AnalyticsCurves(
-        discount_curve=None if "discount" not in curve_roles else curve_builder.get(curve_roles["discount"]),
-        forward_curve=None if "forward" not in curve_roles else curve_builder.get(curve_roles["forward"]),
-        government_curve=None if "government" not in curve_roles else curve_builder.get(curve_roles["government"]),
-        benchmark_curve=None if "benchmark" not in curve_roles else curve_builder.get(curve_roles["benchmark"]),
-        credit_curve=None if "credit" not in curve_roles else curve_builder.get(curve_roles["credit"]),
-    )
 
 
 @dataclass(slots=True)
@@ -54,7 +41,6 @@ class _OverlayMarketDataProvider:
     """
     base_provider: MarketDataProvider | QuoteSource | FixingSource | None = None
     quote_source: InMemoryQuoteSource = field(default_factory=InMemoryQuoteSource)
-    curve_input_source: InMemoryCurveSource = field(default_factory=InMemoryCurveSource)
     fixing_source: InMemoryFixingSource = field(default_factory=InMemoryFixingSource)
 
     def get_quote(self, instrument_id: InstrumentId | str, side) -> object | None:
@@ -63,14 +49,6 @@ class _OverlayMarketDataProvider:
             return quote
         if self.base_provider is not None and hasattr(self.base_provider, "get_quote"):
             return getattr(self.base_provider, "get_quote")(instrument_id, side)
-        return None
-
-    def get_curve_inputs(self, curve_id: CurveId | str):
-        curve_inputs = self.curve_input_source.get_curve_inputs(curve_id)
-        if curve_inputs is not None:
-            return curve_inputs
-        if self.base_provider is not None and hasattr(self.base_provider, "get_curve_inputs"):
-            return getattr(self.base_provider, "get_curve_inputs")(curve_id)
         return None
 
     def get_fixing(self, index_name: str, fixing_date: Date):
@@ -118,14 +96,13 @@ class _ReferenceDataCache:
 class ReactiveEngine:
     """Async runtime for graph-driven pricing and market-data processing.
 
-    The engine connects the calc graph, listener, curve builder, pricing router,
-    storage adapter, and output publishers. It listens for market-data and
+    The engine connects the calc graph, listener, pricing router, storage
+    adapter, and output publishers. It listens for market-data and
     scheduler events, resolves pricing inputs, and publishes any resulting
     updates.
     """
 
     calc_graph: CalculationGraph
-    curve_builder: CurveBuilder
     pricing_router: PricingRouter
     market_data_provider: MarketDataProvider | QuoteSource | FixingSource | None
     reference_data_provider: ReferenceDataProvider | None
@@ -150,9 +127,7 @@ class ReactiveEngine:
         self._reference_cache = _ReferenceDataCache(base_provider=self.reference_data_provider)
         self.listener = MarketDataListener(
             calc_graph=self.calc_graph,
-            curve_builder=self.curve_builder,
             quote_source=self._overlay_market_data.quote_source,
-            curve_source=self._overlay_market_data.curve_input_source,
             fixing_source=self._overlay_market_data.fixing_source,
         )
         self._incoming_queue: asyncio.Queue | None = None
@@ -313,7 +288,6 @@ class ReactiveEngine:
             )
 
     def _resolve_pricing_input(self, pricing_input: PricingInput) -> PricingInput:
-        curves = pricing_input.curves or _as_analytics_curves(self.curve_builder, pricing_input.curve_roles)
         reference_data = pricing_input.reference_data
         instrument_id = pricing_input.resolved_instrument_id()
         if reference_data is None and instrument_id is not None:
@@ -326,8 +300,7 @@ class ReactiveEngine:
             settlement_date=pricing_input.settlement_date,
             market_price=pricing_input.market_price,
             pricing_spec=pricing_input.pricing_spec,
-            curves=curves,
-            curve_roles=dict(pricing_input.curve_roles),
+            curves=pricing_input.curves,
             market_data=market_data,
             reference_data=reference_data,
             instrument_id=pricing_input.instrument_id,
@@ -338,8 +311,6 @@ class ReactiveEngine:
         instrument_id = pricing_input.resolved_instrument_id()
         if instrument_id is not None:
             dependencies.append(MarketDataListener.quote_node_id(instrument_id))
-        for role_curve in pricing_input.curve_roles.values():
-            dependencies.append(MarketDataListener.curve_node_id(role_curve))
         return tuple(dict.fromkeys(dependencies))
 
 

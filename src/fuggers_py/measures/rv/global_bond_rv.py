@@ -1,46 +1,16 @@
-"""Global bond RV workflows built on basis-swapped bond views.
-
-The floating view chains asset-swap, same-currency basis, and FX-adjusted basis
-spreads additively. The fixed view then adds the target-currency par swap rate.
-"""
+"""Global bond RV workflows built on basis-swapped bond views."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.market.curves.fitted_bonds import BondCurve
-
+from .asw_basis_cds_links import decompose_asw_basis_cds_links
 from .basis_swapped_bonds import (
-    CommonCurrencyFixedBondView,
     CommonCurrencyFloatingBondView,
-    bond_to_common_currency_fixed,
     bond_to_common_currency_floating,
 )
-from ._shared import to_decimal
-from .constant_maturity import generate_constant_maturity_benchmark
-from .usd_sofr_yardstick import UsdSofrAdjustedRvMeasure, usd_sofr_adjusted_rv_measure
-
-
-def _classification(residual_bps: Decimal, threshold_bps: Decimal) -> str:
-    if residual_bps > threshold_bps:
-        return "CHEAP"
-    if residual_bps < -threshold_bps:
-        return "RICH"
-    return "NEUTRAL"
-
-
-@dataclass(frozen=True, slots=True)
-class GlobalFixedCashflowRvResult:
-    """Relative-value result for a fixed-cashflow common-currency view."""
-
-    common_currency_fixed_rate: Decimal
-    fitted_curve_yardstick: Decimal
-    residual: Decimal
-    residual_bps: Decimal
-    classification: str
-    fixed_view: CommonCurrencyFixedBondView
-
+from .usd_sofr_yardstick import UsdSofrAdjustedRvMeasure, usd_sofr_adjusted_rv_from_links
 
 @dataclass(frozen=True, slots=True)
 class GlobalUsdSofrRvResult:
@@ -50,45 +20,6 @@ class GlobalUsdSofrRvResult:
     residual_bps: Decimal
     classification: str
     floating_view: CommonCurrencyFloatingBondView
-
-
-def global_fixed_cashflow_rv(
-    asset_swap,
-    curves,
-    fit_result: BondCurve,
-    *,
-    local_basis_swap=None,
-    cross_currency_basis_swap=None,
-    threshold_bps: object = Decimal(0),
-    fixed_schedule=None,
-) -> GlobalFixedCashflowRvResult:
-    """Compare a common-currency fixed rate against a fitted-curve yardstick."""
-    fixed_view = bond_to_common_currency_fixed(
-        asset_swap,
-        curves,
-        local_basis_swap=local_basis_swap,
-        cross_currency_basis_swap=cross_currency_basis_swap,
-        fixed_schedule=fixed_schedule,
-    )
-    target_maturity_years = fit_result.date().days_between(fixed_view.maturity_date)
-    benchmark = generate_constant_maturity_benchmark(
-        fit_result,
-        Decimal(target_maturity_years) / Decimal(365),
-        coupon_rate=fixed_view.common_currency_fixed_rate,
-        currency=fixed_view.target_currency,
-    )
-    residual = fixed_view.common_currency_fixed_rate - benchmark.fair_value_yield
-    residual_bps = residual * Decimal("10000")
-    threshold_value = to_decimal(threshold_bps)
-    return GlobalFixedCashflowRvResult(
-        common_currency_fixed_rate=fixed_view.common_currency_fixed_rate,
-        fitted_curve_yardstick=benchmark.fair_value_yield,
-        residual=residual,
-        residual_bps=residual_bps,
-        classification=_classification(residual_bps, threshold_value),
-        fixed_view=fixed_view,
-    )
-
 
 def global_usd_sofr_rv(
     asset_swap,
@@ -107,24 +38,30 @@ def global_usd_sofr_rv(
         local_basis_swap=local_basis_swap,
         cross_currency_basis_swap=cross_currency_basis_swap,
     )
-    measure = usd_sofr_adjusted_rv_measure(
-        floating_view,
+    if floating_view.target_currency.code() != "USD" or floating_view.target_index_name != "SOFR":
+        raise ValueError("global_usd_sofr_rv requires a USD SOFR common-currency floating view.")
+    measure = usd_sofr_adjusted_rv_from_links(
+        decompose_asw_basis_cds_links(
+            asset_swap_spread=floating_view.asset_swap_spread,
+            same_currency_basis=floating_view.same_currency_basis,
+            cross_currency_basis=floating_view.cross_currency_basis,
+            adjusted_cds_spread=adjusted_cds_spread,
+        ),
         yardstick_spread=yardstick_spread,
-        adjusted_cds_spread=adjusted_cds_spread,
     )
     residual_bps = measure.residual_to_yardstick * Decimal("10000")
-    threshold_value = to_decimal(threshold_bps)
+    threshold_value = threshold_bps if isinstance(threshold_bps, Decimal) else Decimal(str(threshold_bps))
     return GlobalUsdSofrRvResult(
         usd_sofr_measure=measure,
         residual_bps=residual_bps,
-        classification=_classification(residual_bps, threshold_value),
+        classification="CHEAP"
+        if residual_bps > threshold_value
+        else "RICH" if residual_bps < -threshold_value else "NEUTRAL",
         floating_view=floating_view,
     )
 
 
 __all__ = [
-    "GlobalFixedCashflowRvResult",
     "GlobalUsdSofrRvResult",
-    "global_fixed_cashflow_rv",
     "global_usd_sofr_rv",
 ]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+from dataclasses import dataclass
 
 import pytest
 
@@ -15,6 +16,15 @@ def _flat_store(rate: str = "0.05") -> IndexFixingStore:
     for offset in range(0, 15):
         store.add_fixing("SOFR", start.add_days(offset), Decimal(rate))
     return store
+
+
+@dataclass(frozen=True, slots=True)
+class _ReferenceDateForwardCurve:
+    reference_date: Date
+    rate: Decimal = Decimal("0.05")
+
+    def forward_rate_at(self, tenor: float) -> Decimal:
+        return self.rate
 
 
 def test_compounded_in_arrears_flat_rate() -> None:
@@ -96,3 +106,19 @@ def test_required_fixing_dates_respect_business_calendar() -> None:
     )
     assert Date.from_ymd(2024, 1, 6) not in dates
     assert Date.from_ymd(2024, 1, 7) not in dates
+
+
+def test_simple_average_rate_accepts_reference_date_forward_curve() -> None:
+    conventions = IndexConventions(overnight_compounding=OvernightCompounding.SIMPLE)
+    rate = OvernightCompounding.SIMPLE.simple_average_rate(
+        Date.from_ymd(2024, 1, 2),
+        Date.from_ymd(2024, 1, 9),
+        index_name="SOFR",
+        fixing_store=IndexFixingStore(),
+        conventions=conventions,
+        calendar=WeekendCalendar(),
+        forward_curve=_ReferenceDateForwardCurve(Date.from_ymd(2024, 1, 2)),
+        as_of=Date.from_ymd(2024, 1, 1),
+    )
+
+    assert float(rate) == pytest.approx(0.05)

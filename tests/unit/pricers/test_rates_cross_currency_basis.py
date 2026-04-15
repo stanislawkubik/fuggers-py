@@ -6,8 +6,7 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.market.curves import MultiCurveEnvironmentBuilder
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.core import CurrencyPair
 from fuggers_py.pricers.rates import CrossCurrencyBasisSwapPricer
 from fuggers_py.products.rates import (
@@ -17,7 +16,7 @@ from fuggers_py.products.rates import (
     ScheduleDefinition,
 )
 
-from tests.helpers._rates_helpers import flat_curve, rate_index
+from tests.helpers._rates_helpers import flat_curve, multicurve_analytics_curves, rate_index
 
 
 class FlatFxForwardCurve:
@@ -49,23 +48,13 @@ def _curves(
     eur_projection_curve = flat_curve(reference_date, eur_projection_rate)
     usd_index = rate_index("SOFR", "3M", Currency.USD)
     eur_index = rate_index("EURIBOR", "3M", Currency.EUR)
-    multicurve_environment = (
-        MultiCurveEnvironmentBuilder()
-        .add_discount_curve(Currency.USD, usd_discount_curve)
-        .add_discount_curve(Currency.EUR, eur_discount_curve)
-        .add_projection_curve(usd_index, usd_projection_curve)
-        .add_projection_curve(eur_index, eur_projection_curve)
-        .build()
-    )
-    return AnalyticsCurves(
+    return multicurve_analytics_curves(
         discount_curve=usd_discount_curve,
+        discount_currency=Currency.USD,
         forward_curve=usd_projection_curve,
+        additional_discount_curves={Currency.EUR: eur_discount_curve},
         fx_forward_curve=fx_forward_curve,
-        multicurve_environment=multicurve_environment,
-        projection_curves={
-            str(usd_index): usd_projection_curve,
-            str(eur_index): eur_projection_curve,
-        },
+        projection_curves={usd_index: usd_projection_curve, eur_index: eur_projection_curve},
     )
 
 
@@ -133,4 +122,3 @@ def test_cross_currency_basis_par_spread_reprices_trade_with_explicit_fx_forward
 
     assert result.par_spread != Decimal(0)
     assert float(pricer.pv(par_swap, curves)) == pytest.approx(0.0, abs=1e-9)
-

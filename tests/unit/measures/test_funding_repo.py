@@ -1,13 +1,11 @@
 from __future__ import annotations
-
-import math
 from decimal import Decimal
 
 import pytest
 
 from fuggers_py.core import Currency, Date
 from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.calc import FundingPricingRouter
+from fuggers_py.market.curve_support import forward_rate_between_dates, zero_rate_at_date
 from fuggers_py.measures.funding import repo_carry_return, repo_financing_cost, repo_net_carry
 from fuggers_py.products.funding import RepoTrade
 from tests.helpers._rates_helpers import flat_curve
@@ -43,7 +41,7 @@ def test_repo_trade_year_fraction_cash_interest_and_repurchase_amounts() -> None
     assert trade.repurchase_amount() == expected_cash_lent + expected_interest
 
 
-def test_repo_carry_helpers_and_funding_router() -> None:
+def test_repo_carry_helpers_and_curve_diagnostics() -> None:
     start = Date.from_ymd(2026, 2, 3)
     end = start.add_days(30)
     trade = RepoTrade(
@@ -68,19 +66,14 @@ def test_repo_carry_helpers_and_funding_router() -> None:
         collateral_income=Decimal("5000"),
         haircut_financing_cost=Decimal("100"),
     )
-    result = FundingPricingRouter().price_repo(trade, repo_curve=curve)
+    zero_rate = zero_rate_at_date(curve, end)
+    forward_rate = forward_rate_between_dates(curve, start, end)
+    funding_spread = trade.rate - zero_rate
 
     assert trade.collateral_market_value() == Decimal("1000000")
     assert financing_cost == trade.interest_amount()
     assert net_carry == Decimal("5000") - financing_cost - Decimal("100")
     assert carry_return == net_carry / trade.cash_lent()
-    assert result.collateral_value == Decimal("1000000")
-    assert result.haircut_amount == Decimal("20000")
-    assert result.cash_lent == Decimal("980000")
-    assert result.year_fraction == Decimal(30) / Decimal(360)
-    assert result.curve_zero_rate == Decimal("0.04")
-    assert float(result.forward_rate) == pytest.approx(
-        (math.exp(0.04 * 30 / 365) - 1.0) / (30 / 360),
-        abs=1e-12,
-    )
-    assert result.funding_spread == Decimal("-0.01")
+    assert float(zero_rate) == pytest.approx(0.04, abs=1e-12)
+    assert float(forward_rate) == pytest.approx(0.04, abs=1e-12)
+    assert float(funding_spread) == pytest.approx(-0.01, abs=1e-12)

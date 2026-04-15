@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from dataclasses import replace
 from decimal import Decimal
 
@@ -25,6 +26,15 @@ def _projection_curve(ref: Date, *, shift: Decimal = Decimal(0)):
         .add_zero_rate(2.0, Decimal("0.055") + shift)
         .build()
     )
+
+
+@dataclass(frozen=True, slots=True)
+class _ReferenceDateForwardCurve:
+    reference_date: Date
+    rate: Decimal = Decimal("0.05")
+
+    def forward_rate_at(self, tenor: float) -> Decimal:
+        return self.rate
 
 
 def _fixing_store(start: Date) -> IndexFixingStore:
@@ -119,6 +129,27 @@ def test_period_coupon() -> None:
     note, store = _frn(ref)
     start, end = note.schedule().unadjusted_dates[:2]
     coupon = note.period_coupon(start, end, fixing_store=store, forward_curve=_projection_curve(ref))
+    assert coupon > Decimal("0")
+
+
+def test_period_coupon_accepts_reference_date_forward_curve_without_date_method() -> None:
+    ref = Date.from_ymd(2024, 1, 10)
+    note = (
+        FloatingRateNoteBuilder.new()
+        .with_issue_date(ref.add_months(-3))
+        .with_maturity_date(ref.add_years(2))
+        .with_index(RateIndex.SOFR)
+        .with_frequency(Frequency.QUARTERLY)
+        .with_currency(Currency.USD)
+        .with_quoted_spread(Decimal("0.0025"))
+        .with_rules(_quarterly_treasury_rules())
+        .with_current_reference_rate(Decimal("0.0520"))
+        .build()
+    )
+    start, end = note.schedule().unadjusted_dates[:2]
+
+    coupon = note.period_coupon(start, end, forward_curve=_ReferenceDateForwardCurve(ref))
+
     assert coupon > Decimal("0")
 
 

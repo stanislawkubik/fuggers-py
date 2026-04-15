@@ -38,7 +38,6 @@ _MODULE_EXPORTS = {
     "JsonCodec": "fuggers_py.adapters.json_codec",
     "NoOpAlertPublisher": "fuggers_py.adapters.file",
     "NoOpAnalyticsPublisher": "fuggers_py.adapters.file",
-    "NoOpCurvePublisher": "fuggers_py.adapters.file",
     "NoOpEtfPublisher": "fuggers_py.adapters.file",
     "NoOpQuotePublisher": "fuggers_py.adapters.file",
     "OverrideRecord": "fuggers_py.adapters.storage",

@@ -11,7 +11,7 @@ from fuggers_py.calc import PricingRouter as calc_pricing_router
 from fuggers_py.core import Date as core_date
 from fuggers_py.core import InstrumentId as core_instrument_id
 from fuggers_py.core import Price as core_price
-from fuggers_py.market.curves import TermStructure as market_term_structure
+from fuggers_py.market.curves import RatesTermStructure as market_rates_term_structure
 from fuggers_py.measures.functions import (
     yield_to_maturity as measures_yield_to_maturity,
 )
@@ -49,7 +49,7 @@ def _local_metadata_version() -> str:
 def test_explicit_submodule_imports_match_expected_public_symbols() -> None:
     from fuggers_py.calc import PricingRouter
     from fuggers_py.core import Date, InstrumentId, Price
-    from fuggers_py.market.curves import TermStructure
+    from fuggers_py.market.curves import RatesTermStructure
     from fuggers_py.measures.functions import yield_to_maturity
     from fuggers_py.portfolio import Portfolio
     from fuggers_py.products.bonds import FixedBondBuilder
@@ -57,7 +57,7 @@ def test_explicit_submodule_imports_match_expected_public_symbols() -> None:
     assert Date is core_date
     assert InstrumentId is core_instrument_id
     assert Price is core_price
-    assert TermStructure is market_term_structure
+    assert RatesTermStructure is market_rates_term_structure
     assert FixedBondBuilder is products_fixed_bond_builder
     assert yield_to_maturity is measures_yield_to_maturity
     assert Portfolio is portfolio_portfolio

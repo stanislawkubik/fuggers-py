@@ -8,6 +8,7 @@ from fuggers_py.market.quotes import (
     BondFutureQuote,
     BondQuote,
     CdsQuote,
+    deliverable_bpv_regressor,
     FxForwardQuote,
     HaircutQuote,
     InstrumentQuote,
@@ -108,6 +109,60 @@ def test_curve_input_quote_annotation_is_widened_and_accepts_bond_quotes() -> No
     assert "AnyInstrumentQuote" in str(CurveInput.__annotations__["quote"])
     assert curve_input.quote == quote
     assert isinstance(curve_input.quote, InstrumentQuote)
+
+
+def test_bond_quote_keeps_optional_regressors_and_fit_weight_on_the_quote() -> None:
+    bond = _sample_bond("BOND-3")
+    quote = BondQuote(
+        instrument=bond,
+        clean_price=Decimal("99.25"),
+        as_of=Date.from_ymd(2026, 4, 6),
+        regressors={"liquidity": Decimal("0.25"), "seasonality": 1},
+        fit_weight=Decimal("2.5"),
+    )
+
+    assert quote.regressors == {"liquidity": 0.25, "seasonality": 1.0}
+    assert quote.fit_weight == 2.5
+
+
+def test_bond_quote_rejects_invalid_regressors_and_fit_weight() -> None:
+    bond = _sample_bond("BOND-4")
+
+    try:
+        BondQuote(
+            instrument=bond,
+            clean_price=Decimal("99.25"),
+            as_of=Date.from_ymd(2026, 4, 6),
+            regressors={"liquidity": float("nan")},
+        )
+    except ValueError as exc:
+        assert "BondQuote.regressors" in str(exc)
+    else:
+        raise AssertionError("BondQuote should reject non-finite regressor values.")
+
+    try:
+        BondQuote(
+            instrument=bond,
+            clean_price=Decimal("99.25"),
+            as_of=Date.from_ymd(2026, 4, 6),
+            fit_weight=float("inf"),
+        )
+    except ValueError as exc:
+        assert "BondQuote.fit_weight" in str(exc)
+    else:
+        raise AssertionError("BondQuote should reject non-finite fit weights.")
+
+
+def test_deliverable_bpv_regressor_encodes_non_deliverable_bonds_as_zero() -> None:
+    assert deliverable_bpv_regressor(12.5, deliverable=True) == 12.5
+    assert deliverable_bpv_regressor(12.5, deliverable=False) == 0.0
+
+    try:
+        deliverable_bpv_regressor(float("nan"), deliverable=True)
+    except ValueError as exc:
+        assert "bpv" in str(exc)
+    else:
+        raise AssertionError("deliverable_bpv_regressor should reject non-finite bpv values.")
 
 
 def test_market_data_snapshot_flattens_instrument_quotes_in_family_order() -> None:

@@ -1,17 +1,16 @@
 """USD SOFR yardstick comparisons for global bond RV.
 
-The residuals are raw decimal spreads. The helper that accepts a floating view
-requires the common-currency view to be explicitly USD SOFR.
+The residuals are raw decimal spreads.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
-from ._shared import to_decimal
-from .asw_basis_cds_links import AswBasisCdsLinkBreakdown, decompose_floating_view_links
-from .basis_swapped_bonds import CommonCurrencyFloatingBondView
+if TYPE_CHECKING:
+    from .asw_basis_cds_links import AswBasisCdsLinkBreakdown
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,33 +23,13 @@ class UsdSofrAdjustedRvMeasure:
     residual_to_yardstick: Decimal
     residual_to_adjusted_cds: Decimal | None
 
-
-def usd_sofr_adjusted_rv_measure(
-    floating_view: CommonCurrencyFloatingBondView,
-    *,
-    yardstick_spread: object,
-    adjusted_cds_spread: object | None = None,
-) -> UsdSofrAdjustedRvMeasure:
-    """Build a USD SOFR RV measure from a common-currency floating view."""
-    if floating_view.target_currency.code() != "USD" or floating_view.target_index_name != "SOFR":
-        raise ValueError("usd_sofr_adjusted_rv_measure requires a USD SOFR common-currency floating view.")
-    link_breakdown = decompose_floating_view_links(
-        floating_view,
-        adjusted_cds_spread=adjusted_cds_spread,
-    )
-    return usd_sofr_adjusted_rv_from_links(
-        link_breakdown,
-        yardstick_spread=yardstick_spread,
-    )
-
-
 def usd_sofr_adjusted_rv_from_links(
-    link_breakdown: AswBasisCdsLinkBreakdown,
+    link_breakdown: "AswBasisCdsLinkBreakdown",
     *,
     yardstick_spread: object,
 ) -> UsdSofrAdjustedRvMeasure:
     """Build a USD SOFR RV measure from an explicit link breakdown."""
-    yardstick_value = to_decimal(yardstick_spread)
+    yardstick_value = yardstick_spread if isinstance(yardstick_spread, Decimal) else Decimal(str(yardstick_spread))
     return UsdSofrAdjustedRvMeasure(
         usd_sofr_spread=link_breakdown.common_currency_floating_spread,
         yardstick_spread=yardstick_value,
@@ -63,5 +42,4 @@ def usd_sofr_adjusted_rv_from_links(
 __all__ = [
     "UsdSofrAdjustedRvMeasure",
     "usd_sofr_adjusted_rv_from_links",
-    "usd_sofr_adjusted_rv_measure",
 ]

@@ -13,11 +13,10 @@ from enum import Enum
 from typing import Mapping
 
 from fuggers_py.core.ids import InstrumentId
-from fuggers_py.core.types import Date
+from fuggers_py.core.types import Compounding, Date, Yield
 from fuggers_py.market.curves.fitted_bonds import BondCurve
-
-from ._fit_result import point_bp_residual, point_dv01, point_fitted_yield, point_maturity_years, point_price_residual
-from ._shared import to_decimal
+from fuggers_py.pricers.bonds.risk import RiskMetrics
+from fuggers_py.reference.bonds.types import CompoundingKind
 from .selection import BondChoice, MaturityChoice, SignalDirection
 
 
@@ -51,12 +50,32 @@ class TradeLeg:
     def __post_init__(self) -> None:
         object.__setattr__(self, "instrument_id", InstrumentId.parse(self.instrument_id))
         object.__setattr__(self, "direction", SignalDirection.parse(self.direction))
-        object.__setattr__(self, "notional", to_decimal(self.notional))
-        object.__setattr__(self, "maturity_years", to_decimal(self.maturity_years))
-        object.__setattr__(self, "fitted_yield", to_decimal(self.fitted_yield))
-        object.__setattr__(self, "dv01_per_100", to_decimal(self.dv01_per_100))
-        object.__setattr__(self, "price_residual", to_decimal(self.price_residual))
-        object.__setattr__(self, "bp_residual", to_decimal(self.bp_residual))
+        object.__setattr__(self, "notional", self.notional if isinstance(self.notional, Decimal) else Decimal(str(self.notional)))
+        object.__setattr__(
+            self,
+            "maturity_years",
+            self.maturity_years if isinstance(self.maturity_years, Decimal) else Decimal(str(self.maturity_years)),
+        )
+        object.__setattr__(
+            self,
+            "fitted_yield",
+            self.fitted_yield if isinstance(self.fitted_yield, Decimal) else Decimal(str(self.fitted_yield)),
+        )
+        object.__setattr__(
+            self,
+            "dv01_per_100",
+            self.dv01_per_100 if isinstance(self.dv01_per_100, Decimal) else Decimal(str(self.dv01_per_100)),
+        )
+        object.__setattr__(
+            self,
+            "price_residual",
+            self.price_residual if isinstance(self.price_residual, Decimal) else Decimal(str(self.price_residual)),
+        )
+        object.__setattr__(
+            self,
+            "bp_residual",
+            self.bp_residual if isinstance(self.bp_residual, Decimal) else Decimal(str(self.bp_residual)),
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,11 +93,35 @@ class NeutralizedTradeExpression:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "neutrality_target", NeutralityTarget.parse(self.neutrality_target))
-        object.__setattr__(self, "hedge_ratio", to_decimal(self.hedge_ratio))
-        object.__setattr__(self, "gross_notional", to_decimal(self.gross_notional))
-        object.__setattr__(self, "net_dv01", to_decimal(self.net_dv01))
-        object.__setattr__(self, "expected_price_convergence", to_decimal(self.expected_price_convergence))
-        object.__setattr__(self, "expected_bp_convergence", to_decimal(self.expected_bp_convergence))
+        object.__setattr__(
+            self,
+            "hedge_ratio",
+            self.hedge_ratio if isinstance(self.hedge_ratio, Decimal) else Decimal(str(self.hedge_ratio)),
+        )
+        object.__setattr__(
+            self,
+            "gross_notional",
+            self.gross_notional if isinstance(self.gross_notional, Decimal) else Decimal(str(self.gross_notional)),
+        )
+        object.__setattr__(
+            self,
+            "net_dv01",
+            self.net_dv01 if isinstance(self.net_dv01, Decimal) else Decimal(str(self.net_dv01)),
+        )
+        object.__setattr__(
+            self,
+            "expected_price_convergence",
+            self.expected_price_convergence
+            if isinstance(self.expected_price_convergence, Decimal)
+            else Decimal(str(self.expected_price_convergence)),
+        )
+        object.__setattr__(
+            self,
+            "expected_bp_convergence",
+            self.expected_bp_convergence
+            if isinstance(self.expected_bp_convergence, Decimal)
+            else Decimal(str(self.expected_bp_convergence)),
+        )
 
 
 def _point_from_choice(
@@ -95,15 +138,33 @@ def _trade_leg(
     notional: Decimal,
     settlement_date: Date,
 ) -> TradeLeg:
+    fitted_yield = point["fitted_yield"] if isinstance(point["fitted_yield"], Decimal) else Decimal(str(point["fitted_yield"]))
+    method = point["bond"].rules().compounding
+    if method.kind is CompoundingKind.CONTINUOUS:
+        compounding = Compounding.CONTINUOUS
+    elif method.kind in {CompoundingKind.SIMPLE, CompoundingKind.DISCOUNT}:
+        compounding = Compounding.SIMPLE
+    elif method.frequency == 1:
+        compounding = Compounding.ANNUAL
+    elif method.frequency == 2:
+        compounding = Compounding.SEMI_ANNUAL
+    elif method.frequency == 4:
+        compounding = Compounding.QUARTERLY
+    else:
+        compounding = Compounding.ANNUAL
     return TradeLeg(
         instrument_id=point["instrument_id"],
         direction=direction,
         notional=notional,
-        maturity_years=point_maturity_years(point),
-        fitted_yield=point_fitted_yield(point),
-        dv01_per_100=point_dv01(point, settlement_date=settlement_date),
-        price_residual=point_price_residual(point),
-        bp_residual=point_bp_residual(point),
+        maturity_years=point["maturity_years"],
+        fitted_yield=fitted_yield,
+        dv01_per_100=RiskMetrics.from_bond(
+            point["bond"],
+            Yield.new(fitted_yield, compounding),
+            settlement_date,
+        ).dv01,
+        price_residual=point["price_residual"],
+        bp_residual=point["bp_residual"],
     )
 
 
@@ -126,14 +187,58 @@ def neutralize_choices(
         raise ValueError("neutralize_choices requires short_choice.direction == SHORT.")
 
     target = NeutralityTarget.parse(neutrality_target)
-    base_notional = to_decimal(base_long_notional)
+    base_notional = base_long_notional if isinstance(base_long_notional, Decimal) else Decimal(str(base_long_notional))
     if base_notional <= Decimal(0):
         raise ValueError("neutralize_choices requires a positive base_long_notional.")
 
     long_point = _point_from_choice(fit_result, long_choice)
     short_point = _point_from_choice(fit_result, short_choice)
-    long_dv01 = point_dv01(long_point, settlement_date=fit_result.date())
-    short_dv01 = point_dv01(short_point, settlement_date=fit_result.date())
+    long_yield = (
+        long_point["fitted_yield"]
+        if isinstance(long_point["fitted_yield"], Decimal)
+        else Decimal(str(long_point["fitted_yield"]))
+    )
+    long_method = long_point["bond"].rules().compounding
+    if long_method.kind is CompoundingKind.CONTINUOUS:
+        long_compounding = Compounding.CONTINUOUS
+    elif long_method.kind in {CompoundingKind.SIMPLE, CompoundingKind.DISCOUNT}:
+        long_compounding = Compounding.SIMPLE
+    elif long_method.frequency == 1:
+        long_compounding = Compounding.ANNUAL
+    elif long_method.frequency == 2:
+        long_compounding = Compounding.SEMI_ANNUAL
+    elif long_method.frequency == 4:
+        long_compounding = Compounding.QUARTERLY
+    else:
+        long_compounding = Compounding.ANNUAL
+    long_dv01 = RiskMetrics.from_bond(
+        long_point["bond"],
+        Yield.new(long_yield, long_compounding),
+        fit_result.date(),
+    ).dv01
+    short_yield = (
+        short_point["fitted_yield"]
+        if isinstance(short_point["fitted_yield"], Decimal)
+        else Decimal(str(short_point["fitted_yield"]))
+    )
+    short_method = short_point["bond"].rules().compounding
+    if short_method.kind is CompoundingKind.CONTINUOUS:
+        short_compounding = Compounding.CONTINUOUS
+    elif short_method.kind in {CompoundingKind.SIMPLE, CompoundingKind.DISCOUNT}:
+        short_compounding = Compounding.SIMPLE
+    elif short_method.frequency == 1:
+        short_compounding = Compounding.ANNUAL
+    elif short_method.frequency == 2:
+        short_compounding = Compounding.SEMI_ANNUAL
+    elif short_method.frequency == 4:
+        short_compounding = Compounding.QUARTERLY
+    else:
+        short_compounding = Compounding.ANNUAL
+    short_dv01 = RiskMetrics.from_bond(
+        short_point["bond"],
+        Yield.new(short_yield, short_compounding),
+        fit_result.date(),
+    ).dv01
 
     if target is NeutralityTarget.DV01:
         if short_dv01 == Decimal(0):
@@ -157,10 +262,30 @@ def neutralize_choices(
         settlement_date=fit_result.date(),
     )
     net_dv01 = (base_notional / Decimal(100)) * long_dv01 - (short_notional / Decimal(100)) * short_dv01
-    expected_price_convergence = (base_notional / Decimal(100)) * (-point_price_residual(long_point)) + (
+    long_price_residual = (
+        long_point["price_residual"]
+        if isinstance(long_point["price_residual"], Decimal)
+        else Decimal(str(long_point["price_residual"]))
+    )
+    short_price_residual = (
+        short_point["price_residual"]
+        if isinstance(short_point["price_residual"], Decimal)
+        else Decimal(str(short_point["price_residual"]))
+    )
+    long_bp_residual = (
+        long_point["bp_residual"]
+        if isinstance(long_point["bp_residual"], Decimal)
+        else Decimal(str(long_point["bp_residual"]))
+    )
+    short_bp_residual = (
+        short_point["bp_residual"]
+        if isinstance(short_point["bp_residual"], Decimal)
+        else Decimal(str(short_point["bp_residual"]))
+    )
+    expected_price_convergence = (base_notional / Decimal(100)) * (-long_price_residual) + (
         short_notional / Decimal(100)
-    ) * point_price_residual(short_point)
-    expected_bp_convergence = point_bp_residual(long_point) - point_bp_residual(short_point)
+    ) * short_price_residual
+    expected_bp_convergence = long_bp_residual - short_bp_residual
     return NeutralizedTradeExpression(
         neutrality_target=target,
         hedge_ratio=hedge_ratio,
@@ -173,46 +298,9 @@ def neutralize_choices(
     )
 
 
-def neutralize_bond_pair(
-    fit_result: BondCurve,
-    *,
-    long_instrument_id: InstrumentId | str,
-    short_instrument_id: InstrumentId | str,
-    base_long_notional: object = Decimal("1000000"),
-    neutrality_target: NeutralityTarget | str = NeutralityTarget.DV01,
-) -> NeutralizedTradeExpression:
-    """Build a neutralized long/short trade from instrument identifiers."""
-    long_point = fit_result.get_bond(long_instrument_id)
-    short_point = fit_result.get_bond(short_instrument_id)
-    return neutralize_choices(
-        fit_result,
-        long_choice=BondChoice(
-            signal_name="long_leg",
-            direction=SignalDirection.LONG,
-            score=Decimal(1),
-            instrument_id=long_point["instrument_id"],
-            maturity_years=point_maturity_years(long_point),
-            bp_residual=point_bp_residual(long_point),
-            price_residual=point_price_residual(long_point),
-        ),
-        short_choice=BondChoice(
-            signal_name="short_leg",
-            direction=SignalDirection.SHORT,
-            score=Decimal(-1),
-            instrument_id=short_point["instrument_id"],
-            maturity_years=point_maturity_years(short_point),
-            bp_residual=point_bp_residual(short_point),
-            price_residual=point_price_residual(short_point),
-        ),
-        base_long_notional=base_long_notional,
-        neutrality_target=neutrality_target,
-    )
-
-
 __all__ = [
     "NeutralityTarget",
     "NeutralizedTradeExpression",
     "TradeLeg",
-    "neutralize_bond_pair",
     "neutralize_choices",
 ]

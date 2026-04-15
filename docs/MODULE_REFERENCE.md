@@ -46,7 +46,7 @@ External-boundary adapters for files, storage, codecs, and transport.
 File-backed adapters for market data, reference data, and outputs.
 
 - Module path: `adapters/file.py`
-- Top-level classes/functions: `_as_path`, `_read_rows`, `_decimal_or_none`, `_date_or_none`, `_datetime_or_none`, `_currency_or_none`, `_frequency_or_none`, `_bond_type`, `_issuer_type`, `_load_schedule`, `_load_curve_inputs_payload`, `CSVQuoteSource`, `JSONCurveInputSource`, `CSVIndexFixingSource`, `CSVEtfQuoteSource`, `CSVBondReferenceSource`, `CSVIssuerReferenceSource`, `CSVRatingSource`, `CSVEtfHoldingsSource`, `EmptyBondReferenceSource`, `EmptyIssuerReferenceSource`, `EmptyRatingSource`, `EmptyEtfHoldingsSource`, `create_file_market_data`, `create_file_reference_data`, `NoOpQuotePublisher`, `NoOpCurvePublisher`, `NoOpEtfPublisher`, `NoOpAnalyticsPublisher`, `NoOpAlertPublisher`, `create_empty_output`
+- Top-level classes/functions: `_as_path`, `_read_rows`, `_decimal_or_none`, `_date_or_none`, `_datetime_or_none`, `_currency_or_none`, `_frequency_or_none`, `_bond_type`, `_issuer_type`, `_load_schedule`, `_load_curve_inputs_payload`, `CSVQuoteSource`, `JSONCurveInputSource`, `CSVIndexFixingSource`, `CSVEtfQuoteSource`, `CSVBondReferenceSource`, `CSVIssuerReferenceSource`, `CSVRatingSource`, `CSVEtfHoldingsSource`, `EmptyBondReferenceSource`, `EmptyIssuerReferenceSource`, `EmptyRatingSource`, `EmptyEtfHoldingsSource`, `create_file_market_data`, `create_file_reference_data`, `NoOpQuotePublisher`, `NoOpEtfPublisher`, `NoOpAnalyticsPublisher`, `NoOpAlertPublisher`, `create_empty_output`
 
 ### `adapters/json_codec.py`
 
@@ -99,7 +99,7 @@ Calculation requests, result DTOs, orchestration, and execution wiring.
 Builder helpers for composing calc-layer orchestration components.
 
 - Module path: `calc/builder.py`
-- Top-level classes/functions: `_iter_curve_inputs`, `_default_etf_pricer`, `_default_portfolio_analyzer`, `PricingEngine`, `PricingEngineBuilder`
+- Top-level classes/functions: `_default_etf_pricer`, `_default_portfolio_analyzer`, `PricingEngine`, `PricingEngineBuilder`
 
 ### `calc/calc_graph.py`
 
@@ -127,28 +127,21 @@ Coordination protocols and deterministic in-memory helpers.
 Exceptions raised by calc-layer routing, scheduling, and orchestration.
 
 - Module path: `calc/errors.py`
-- Top-level classes/functions: `EngineError`, `CurveNotFoundError`, `RoutingError`, `EngineConfigurationError`, `SchedulerError`
-
-### `calc/funding_pricing_router.py`
-
-Funding-specific calc-layer pricing router.
-
-- Module path: `calc/funding_pricing_router.py`
-- Top-level classes/functions: `RepoPricingResult`, `FundingPricingRouter`
+- Top-level classes/functions: `EngineError`, `RoutingError`, `EngineConfigurationError`, `SchedulerError`
 
 ### `calc/market_data_listener.py`
 
 Async market-data fanout and graph integration helpers.
 
 - Module path: `calc/market_data_listener.py`
-- Top-level classes/functions: `_now`, `MarketDataUpdate`, `QuoteUpdate`, `CurveInputUpdate`, `CurveUpdate`, `IndexFixingUpdate`, `InflationFixingUpdate`, `FxRateUpdate`, `VolSurfaceUpdate`, `MarketDataPublisher`, `MarketDataListener`
+- Top-level classes/functions: `_now`, `MarketDataUpdate`, `QuoteUpdate`, `IndexFixingUpdate`, `InflationFixingUpdate`, `FxRateUpdate`, `VolSurfaceUpdate`, `MarketDataPublisher`, `MarketDataListener`
 
 ### `calc/output.py`
 
 Typed engine outputs and publisher contracts.
 
 - Module path: `calc/output.py`
-- Top-level classes/functions: `_to_decimal`, `_coerce_decimal_fields`, `BondQuoteOutput`, `SwapQuoteOutput`, `BasisSwapQuoteOutput`, `FutureQuoteOutput`, `CdsQuoteOutput`, `RvSignalOutput`, `EtfAnalyticsOutput`, `PortfolioAnalyticsOutput`, `QuotePublisher`, `CurvePublisher`, `EtfPublisher`, `AnalyticsPublisher`, `AlertPublisher`, `OutputPublisher`
+- Top-level classes/functions: `_to_decimal`, `_coerce_decimal_fields`, `BondQuoteOutput`, `SwapQuoteOutput`, `BasisSwapQuoteOutput`, `FutureQuoteOutput`, `CdsQuoteOutput`, `RvSignalOutput`, `EtfAnalyticsOutput`, `PortfolioAnalyticsOutput`, `QuotePublisher`, `EtfPublisher`, `AnalyticsPublisher`, `AlertPublisher`, `OutputPublisher`
 
 ### `calc/pricing_router.py`
 
@@ -164,19 +157,12 @@ Research-facing pricing specifications.
 - Module path: `calc/pricing_specs.py`
 - Top-level classes/functions: `_to_decimal`, `BenchmarkReference`, `BidAskSpreadConfig`, `PricingSpec`
 
-### `calc/rates_pricing_router.py`
-
-Rates-specific pricing router for calc-layer dispatch.
-
-- Module path: `calc/rates_pricing_router.py`
-- Top-level classes/functions: `_to_decimal`, `RoutedFraPricingResult`, `RatesPricingRouter`
-
 ### `calc/reactive.py`
 
 Reactive engine helpers that coexist with the existing sync APIs.
 
 - Module path: `calc/reactive.py`
-- Top-level classes/functions: `_as_analytics_curves`, `_OverlayMarketDataProvider`, `_ReferenceDataCache`, `ReactiveEngine`
+- Top-level classes/functions: `_OverlayMarketDataProvider`, `_ReferenceDataCache`, `ReactiveEngine`
 
 ### `calc/scheduler.py`
 
@@ -852,7 +838,7 @@ Relative-value analytics for bond and cross-asset workflows.
 Explicit ASW / basis / adjusted-CDS link decomposition.
 
 - Module path: `measures/rv/asw_basis_cds_links.py`
-- Top-level classes/functions: `_to_decimal`, `AswBasisCdsLinkBreakdown`, `decompose_asw_basis_cds_links`, `decompose_floating_view_links`
+- Top-level classes/functions: `AswBasisCdsLinkBreakdown`, `decompose_asw_basis_cds_links`
 
 ### `measures/rv/basis_swapped_bonds.py`
 
@@ -866,42 +852,28 @@ Bond transformations through asset-swap, basis, and CCBS chains.
 Bond-switch construction from local rich/cheap signals.
 
 - Module path: `measures/rv/bond_switch.py`
-- Top-level classes/functions: `_to_decimal`, `_yield_from_decimal`, `BondSwitchTrade`, `construct_bond_switch`
+- Top-level classes/functions: `BondSwitchTrade`
 
 ### `measures/rv/butterfly.py`
 
 Butterfly construction from bond residual signals.
 
 - Module path: `measures/rv/butterfly.py`
-- Top-level classes/functions: `_yield_from_decimal`, `ButterflyTrade`, `construct_butterfly`
-
-### `measures/rv/constant_maturity.py`
-
-Constant-maturity benchmark generation.
-
-- Module path: `measures/rv/constant_maturity.py`
-- Top-level classes/functions: `_to_decimal`, `ConstantMaturityBenchmark`, `generate_constant_maturity_benchmark`
+- Top-level classes/functions: `ButterflyTrade`, `construct_butterfly`
 
 ### `measures/rv/global_bond_rv.py`
 
 Global bond RV workflows built on basis-swapped bond views.
 
 - Module path: `measures/rv/global_bond_rv.py`
-- Top-level classes/functions: `_to_decimal`, `_classification`, `GlobalFixedCashflowRvResult`, `GlobalUsdSofrRvResult`, `global_fixed_cashflow_rv`, `global_usd_sofr_rv`
+- Top-level classes/functions: `GlobalUsdSofrRvResult`, `global_usd_sofr_rv`
 
 ### `measures/rv/neutrality.py`
 
 Deterministic neutrality helpers for RV trades.
 
 - Module path: `measures/rv/neutrality.py`
-- Top-level classes/functions: `_to_decimal`, `_yield_from_decimal`, `NeutralityTarget`, `TradeLeg`, `NeutralizedTradeExpression`, `_point_risk`, `_point_from_choice`, `_trade_leg`, `neutralize_choices`, `neutralize_bond_pair`
-
-### `measures/rv/new_issue.py`
-
-Hypothetical new-issue fair-value estimation.
-
-- Module path: `measures/rv/new_issue.py`
-- Top-level classes/functions: `_to_decimal`, `NewIssueRequest`, `NewIssueFairValue`, `estimate_new_issue_fair_value`
+- Top-level classes/functions: `NeutralityTarget`, `TradeLeg`, `NeutralizedTradeExpression`, `_point_from_choice`, `_trade_leg`, `neutralize_choices`
 
 ### `measures/rv/rich_cheap.py`
 
@@ -915,21 +887,21 @@ Local rich/cheap ranking from bond residual signals.
 Deterministic hooks from external signals into RV choices.
 
 - Module path: `measures/rv/selection.py`
-- Top-level classes/functions: `_to_decimal`, `SignalDirection`, `_resolved_direction`, `_point_metadata`, `MaturitySignal`, `BondSignal`, `MaturityChoice`, `BondChoice`, `_eligible_points`, `select_maturity_choice`, `select_maturity_choices`, `select_bond_choice`, `select_bond_choices`
+- Top-level classes/functions: `SignalDirection`, `_resolved_direction`, `MaturitySignal`, `BondSignal`, `MaturityChoice`, `BondChoice`, `_eligible_points`, `select_maturity_choice`, `select_bond_choice`
 
 ### `measures/rv/usd_sofr_yardstick.py`
 
 USD SOFR yardstick comparisons for global bond RV.
 
 - Module path: `measures/rv/usd_sofr_yardstick.py`
-- Top-level classes/functions: `_to_decimal`, `UsdSofrAdjustedRvMeasure`, `usd_sofr_adjusted_rv_measure`, `usd_sofr_adjusted_rv_from_links`
+- Top-level classes/functions: `UsdSofrAdjustedRvMeasure`, `usd_sofr_adjusted_rv_from_links`
 
 ### `measures/rv/workflow.py`
 
 Workflow hooks from external signals into deterministic RV trades.
 
 - Module path: `measures/rv/workflow.py`
-- Top-level classes/functions: `_pick_long_signal`, `_pick_short_signal`, `RvWorkflowResult`, `maturity_signal_workflow`, `bond_signal_workflow`, `maturity_pair_trade`, `bond_pair_trade`
+- Top-level classes/functions: `_pick_long_signal`, `_pick_short_signal`, `RvWorkflowResult`, `maturity_signal_workflow`, `bond_signal_workflow`
 
 ### `measures/spreads/__init__.py`
 

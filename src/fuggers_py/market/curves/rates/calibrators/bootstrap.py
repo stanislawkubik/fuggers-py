@@ -18,26 +18,27 @@ from ...errors import CurveConstructionError, InvalidCurveInput
 from ..enums import ExtrapolationPolicy
 from ..kernels import CurveKernel, CurveKernelKind, KernelSpec
 from ..kernels.nodes import (
-    CubicSplineZeroKernel,
     LinearZeroKernel,
     LogLinearDiscountKernel,
     MonotoneConvexKernel,
     PiecewiseConstantZeroKernel,
     PiecewiseFlatForwardKernel,
 )
-from ..kernels.spline import CubicSplineKernel
 from ..reports import CalibrationPoint, CalibrationReport
 from ..spec import CurveSpec
-from ._quotes import QuoteRow, QuoteValueKind, model_quote_value, normalized_quote_rows
-from .base import CalibrationObjective, CurveCalibrator
+from ._quotes import (
+    QuoteRow,
+    QuoteValueKind,
+    model_quote_value,
+    normalized_quote_rows,
+)
+from .base import CalibrationSpec, CurveCalibrator, _require_bootstrap_calibration_spec
 
 _CONTINUOUS = Compounding.CONTINUOUS
 _ZERO_NODE_KINDS = {
     CurveKernelKind.LINEAR_ZERO,
     CurveKernelKind.PIECEWISE_CONSTANT,
     CurveKernelKind.PIECEWISE_FLAT_FORWARD,
-    CurveKernelKind.CUBIC_SPLINE_ZERO,
-    CurveKernelKind.CUBIC_SPLINE,
     CurveKernelKind.MONOTONE_CONVEX,
 }
 _DISCOUNT_NODE_KINDS = {CurveKernelKind.LOG_LINEAR_DISCOUNT}
@@ -86,17 +87,9 @@ def _build_kernel(
         return PiecewiseConstantZeroKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
     if kind is CurveKernelKind.PIECEWISE_FLAT_FORWARD:
         return PiecewiseFlatForwardKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
-    if kind is CurveKernelKind.CUBIC_SPLINE_ZERO:
-        return CubicSplineZeroKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
-    if kind is CurveKernelKind.CUBIC_SPLINE:
-        return CubicSplineKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
     if kind is CurveKernelKind.MONOTONE_CONVEX:
         return MonotoneConvexKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
     raise CurveConstructionError(f"bootstrap calibration does not support kernel kind {kind.name}.")
-
-
-def _fitted_value(kernel: CurveKernel, quote_row: QuoteRow, *, spec: CurveSpec) -> float:
-    return model_quote_value(kernel, quote_row, spec=spec)
 
 
 def _solve_zero_rate_from_discount_factor(
@@ -176,6 +169,17 @@ def _solve_discount_factor_from_zero_rate(
 
 
 def _initial_node_guess(quote_row: QuoteRow, *, node_space: _BootstrapNodeSpace) -> float:
+    if quote_row.value_kind is QuoteValueKind.BOND_YTM:
+        zero_guess = ValueConverter.convert_compounding(
+            quote_row.value,
+            quote_row.compounding,
+            _CONTINUOUS,
+        )
+        if node_space is _BootstrapNodeSpace.ZERO_RATE:
+            return zero_guess
+        return ValueConverter.zero_to_df(zero_guess, quote_row.tenor, _CONTINUOUS)
+    if quote_row.value_kind in {QuoteValueKind.BOND_CLEAN_PRICE, QuoteValueKind.BOND_DIRTY_PRICE}:
+        raise CurveConstructionError("BootstrapCalibrator only accepts bond rows in BOND_YTM space.")
     if node_space is _BootstrapNodeSpace.ZERO_RATE:
         if quote_row.value_kind is QuoteValueKind.DISCOUNT_FACTOR:
             return ValueConverter.df_to_zero(quote_row.value, quote_row.tenor, _CONTINUOUS)
@@ -267,22 +271,26 @@ def _solve_node_from_quote(
 
 
 class BootstrapCalibrator(CurveCalibrator):
-    """Sequential bootstrap calibrator for node-based discount curves."""
+    """Sequential exact-fit calibrator for the local node-based curve families.
+
+    The constructor owns the route-level ``CalibrationSpec``. This calibrator
+    only accepts ``mode=BOOTSTRAP`` and ``objective=EXACT_FIT``. It does not
+    accept regressors, it requires one strictly increasing tenor sequence, and
+    it does not support ``CUBIC_SPLINE``.
+    """
 
     def __init__(
         self,
         *,
-        objective: CalibrationObjective = CalibrationObjective.EXACT_FIT,
+        calibration_spec: CalibrationSpec,
         solver_kind: BootstrapSolverKind = BootstrapSolverKind.NEWTON,
         solver_config: SolverConfig = SolverConfig(),
     ) -> None:
-        if not isinstance(objective, CalibrationObjective):
-            raise InvalidCurveInput("objective must be a CalibrationObjective.")
+        self._calibration_spec = _require_bootstrap_calibration_spec(calibration_spec)
         if not isinstance(solver_kind, BootstrapSolverKind):
             raise InvalidCurveInput("solver_kind must be a BootstrapSolverKind.")
         if not isinstance(solver_config, SolverConfig):
             raise InvalidCurveInput("solver_config must be a SolverConfig.")
-        self._objective = objective
         self._solver_kind = solver_kind
         self._solver_config = solver_config
 
@@ -297,14 +305,17 @@ class BootstrapCalibrator(CurveCalibrator):
             raise InvalidCurveInput("spec must be a CurveSpec.")
         if not isinstance(kernel_spec, KernelSpec):
             raise InvalidCurveInput("kernel_spec must be a KernelSpec.")
-        if self._objective is not CalibrationObjective.EXACT_FIT:
-            raise CurveConstructionError("BootstrapCalibrator currently supports EXACT_FIT only.")
-
+        calibration_spec = self._calibration_spec
         quote_rows = normalized_quote_rows(
             quotes,
             spec=spec,
-            require_strictly_positive_tenor=False,
+            calibration_spec=calibration_spec,
+            require_strictly_positive_tenor=True,
         )
+        tenors = [quote_row.tenor for quote_row in quote_rows]
+        for left, right in zip(tenors, tenors[1:], strict=False):
+            if right <= left:
+                raise InvalidCurveInput("curve-fit quotes must have strictly increasing tenors.")
         node_space = _node_space_for_kind(kernel_spec.kind)
 
         solved_tenors: list[float] = []
@@ -330,9 +341,6 @@ class BootstrapCalibrator(CurveCalibrator):
                     )
                     node_value = result.root
                     iterations = result.iterations
-                elif quote_row.tenor == 0.0:
-                    node_value = 0.0
-                    iterations = 0
                 else:
                     result = _solve_zero_rate_from_discount_factor(
                         tenor=quote_row.tenor,
@@ -359,9 +367,6 @@ class BootstrapCalibrator(CurveCalibrator):
                     )
                     node_value = result.root
                     iterations = result.iterations
-                elif quote_row.tenor == 0.0:
-                    node_value = 1.0
-                    iterations = 0
                 else:
                     result = _solve_discount_factor_from_zero_rate(
                         tenor=quote_row.tenor,
@@ -389,7 +394,7 @@ class BootstrapCalibrator(CurveCalibrator):
                 instrument_id=quote_row.instrument_id,
                 tenor=quote_row.tenor,
                 observed_value=quote_row.value,
-                fitted_value=(fitted_value := _fitted_value(kernel, quote_row, spec=spec)),
+                fitted_value=(fitted_value := model_quote_value(kernel, quote_row, spec=spec)),
                 residual=fitted_value - quote_row.value,
                 observed_kind=quote_row.observed_kind,
                 weight=quote_row.weight,
@@ -401,7 +406,7 @@ class BootstrapCalibrator(CurveCalibrator):
 
         report = CalibrationReport(
             converged=True,
-            objective=self._objective.name,
+            objective=calibration_spec.objective.name,
             iterations=total_iterations,
             max_abs_residual=max_abs_residual,
             points=points,

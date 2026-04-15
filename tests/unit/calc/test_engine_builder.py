@@ -7,10 +7,8 @@ import pytest
 from fuggers_py.core import Currency, Date, Frequency
 from fuggers_py.calc import PricingEngineBuilder
 from fuggers_py.calc.errors import EngineConfigurationError
-from fuggers_py.calc.errors import CurveNotFoundError
-from fuggers_py.core import CurveId, InstrumentId
-from fuggers_py.market.snapshot import CurveInputs, CurvePoint
-from fuggers_py.market.sources import InMemoryCurveSource, MarketDataProvider
+from fuggers_py.core import InstrumentId
+from fuggers_py.market.sources import MarketDataProvider
 from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
 from fuggers_py.calc import EngineConfig, NodeConfig, UpdateFrequency
 
@@ -29,7 +27,7 @@ def test_builder_rejects_missing_required_providers() -> None:
         PricingEngineBuilder().build()
 
 
-def test_builder_constructs_engine_and_preloads_curve_inputs() -> None:
+def test_builder_constructs_engine_without_calc_curve_state() -> None:
     reference = BondReferenceData(
         instrument_id=InstrumentId("US1234567890"),
         bond_type=BondType.FIXED_RATE,
@@ -40,17 +38,7 @@ def test_builder_constructs_engine_and_preloads_curve_inputs() -> None:
         coupon_rate=Decimal("0.0450"),
         frequency=Frequency.SEMI_ANNUAL,
     )
-    market_data = MarketDataProvider(
-        curve_input_source=InMemoryCurveSource(
-            [
-                CurveInputs.from_points(
-                    CurveId("usd.discount"),
-                    Date.from_ymd(2026, 3, 14),
-                    [CurvePoint(Decimal("1.0"), Decimal("0.0425"))],
-                )
-            ]
-        )
-    )
+    market_data = MarketDataProvider()
     reference_data = ReferenceDataProvider(bond_source=_BondSource(reference))
     engine = (
         PricingEngineBuilder()
@@ -68,7 +56,5 @@ def test_builder_constructs_engine_and_preloads_curve_inputs() -> None:
     )
 
     assert engine.reactive_engine is not None
-    assert engine.curve_builder.inputs_for("usd.discount") is not None
-    with pytest.raises(CurveNotFoundError):
-        engine.curve_builder.get("usd.discount")
+    assert not hasattr(engine, "curve_builder")
     assert engine.config.engine_name == "reactive-pricer"

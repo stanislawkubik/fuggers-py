@@ -12,7 +12,7 @@ from fuggers_py.core import Date
 from fuggers_py.market.curves import CreditCurve
 from fuggers_py.market.curves.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
 from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.quotes import CdsQuote
 from fuggers_py.reference import CdsReferenceData
 

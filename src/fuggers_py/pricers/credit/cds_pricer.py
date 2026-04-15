@@ -31,19 +31,17 @@ def _curve_supports_credit(curve: object | None) -> bool:
     if curve is None:
         return False
     if hasattr(curve, "survival_probability"):
-        return hasattr(curve, "date") or hasattr(curve, "reference_date")
+        return hasattr(curve, "reference_date")
     if hasattr(curve, "survival_probability_at_tenor"):
-        return hasattr(curve, "date") or hasattr(curve, "reference_date")
+        return hasattr(curve, "reference_date")
     has_curve_space = hasattr(curve, "value_type") and (hasattr(curve, "value_at_tenor") or hasattr(curve, "value_at"))
-    return has_curve_space and (hasattr(curve, "date") or hasattr(curve, "reference_date"))
+    return has_curve_space and hasattr(curve, "reference_date")
 
 
 def _credit_curve_date(curve: object) -> Date:
-    if hasattr(curve, "date"):
-        return getattr(curve, "date")()
     if hasattr(curve, "reference_date"):
         return getattr(curve, "reference_date")
-    raise ValueError("Credit curve must expose date() or reference_date.")
+    raise ValueError("Credit curve must expose reference_date.")
 
 
 def _credit_curve_years(curve: object, date: Date) -> float:
@@ -114,7 +112,7 @@ def _resolve_credit_curve(curves: AnalyticsCurves) -> object:
     if curves.credit_curve is not None and hasattr(curves.credit_curve, "value_type"):
         curve = curves.credit_curve
         if hasattr(curve, "value_at_tenor") or hasattr(curve, "value_at"):
-            if hasattr(curve, "date") or hasattr(curve, "reference_date"):
+            if hasattr(curve, "reference_date"):
                 return curve
     raise ValueError("Missing credit curve in AnalyticsCurves.credit_curve.")
 

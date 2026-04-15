@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.rv import CommonCurrencyFloatingBondView, usd_sofr_adjusted_rv_measure
+from fuggers_py.measures.rv import (
+    CommonCurrencyFloatingBondView,
+    decompose_asw_basis_cds_links,
+    usd_sofr_adjusted_rv_from_links,
+)
 from fuggers_py.measures.spreads import (
     BalanceSheetSpreadOverlay,
     CapitalSpreadAdjustment,
@@ -13,7 +17,7 @@ from fuggers_py.products.bonds import FixedBondBuilder
 from fuggers_py.reference import YieldCalculationRules
 from fuggers_py.reference.bonds.types import Tenor, ASWType
 from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.pricers.rates import AssetSwapPricer
 from fuggers_py.products.rates import AssetSwap, FloatingLegSpec, PayReceive, ScheduleDefinition
 
@@ -131,14 +135,17 @@ def test_overlays_can_adjust_global_rv_usd_sofr_measure() -> None:
         asset_swap_result=object(),
     )
     overlay = _overlay()
-    measure = usd_sofr_adjusted_rv_measure(
-        floating_view,
+    measure = usd_sofr_adjusted_rv_from_links(
+        decompose_asw_basis_cds_links(
+            asset_swap_spread=floating_view.asset_swap_spread,
+            same_currency_basis=floating_view.same_currency_basis,
+            cross_currency_basis=floating_view.cross_currency_basis,
+            adjusted_cds_spread=Decimal("0.0120"),
+        ),
         yardstick_spread=Decimal("0.0130"),
-        adjusted_cds_spread=Decimal("0.0120"),
     )
     adjusted_measure = overlay.apply(base_spread=measure.usd_sofr_spread)
 
     assert adjusted_measure.base_spread == Decimal("0.0140")
     assert adjusted_measure.adjusted_spread == measure.usd_sofr_spread + adjusted_measure.total_adjustment
     assert measure.residual_to_yardstick == Decimal("0.0010")
-

@@ -36,8 +36,7 @@ def _to_decimal(value: object, *, field_name: str) -> Decimal:
 class ForwardRateSource(Protocol):
     """Forward-rate source used to project FRN coupons."""
 
-    def reference_date(self) -> Date:
-        ...
+    reference_date: Date
 
 
 @dataclass(frozen=True, slots=True)
@@ -442,12 +441,14 @@ class FloatingRateNote(KindedInstrumentMixin, BondAnalytics, Bond):
             return _to_decimal(rate, field_name="forward_rate")
 
         if hasattr(forward_curve, "forward_rate_at") and hasattr(forward_curve, "reference_date"):
-            ref = forward_curve.date()
+            ref = getattr(forward_curve, "reference_date")
             tenor = float(ref.days_between(start)) / 365.0
             rate = getattr(forward_curve, "forward_rate_at")(tenor)
             return _to_decimal(rate, field_name="forward_rate_at")
 
-        raise InvalidBondSpec(reason="forward_curve must expose forward_rate(start, end) or forward_rate_at(t).")
+        raise InvalidBondSpec(
+            reason="forward_curve must expose forward_rate(start, end) or forward_rate_at(t) with reference_date."
+        )
 
     def _reference_rate_for_period(
         self,

@@ -6,9 +6,8 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.core import Currency, Date
+import fuggers_py.calc as calc
 from fuggers_py.calc import (
-    BuiltCurve,
-    CurveBuilder,
     IntervalScheduler,
     MarketDataPublisher,
     NodeId,
@@ -23,10 +22,11 @@ from fuggers_py.portfolio import Portfolio, Position
 from fuggers_py.portfolio import Portfolio as PortfolioType
 from fuggers_py.portfolio import Position as PositionType
 from fuggers_py.calc import QuoteSide
-from fuggers_py.core import CurveId, InstrumentId
+from fuggers_py.core import InstrumentId
 from fuggers_py.market.curves import CurveType
 from fuggers_py.market.quotes import RawQuote
-from fuggers_py.market.snapshot import CurveInputs, CurvePoint
+from fuggers_py.market.snapshot import CurvePoint
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.sources import MarketDataProvider
 from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
 from tests.helpers._public_curve_helpers import linear_zero_curve
@@ -63,26 +63,15 @@ def test_engine_root_imports_expose_public_aliases(fixed_rate_2025_bond) -> None
     assert portfolio.total_quantity() == Decimal("2")
 
 
-def test_built_curve_wrapper_exposes_curve_builder_output() -> None:
-    reference_date = Date.from_ymd(2026, 3, 14)
-    builder = CurveBuilder()
-    curve_inputs = CurveInputs.from_points(
-        CurveId("usd.discount"),
-        reference_date,
-        [CurvePoint(Decimal("1.0"), Decimal("0.0425")), CurvePoint(Decimal("5.0"), Decimal("0.0390"))],
-    )
-    curve = builder.add_curve(
-        CurveId("usd.discount"),
-        linear_zero_curve("usd.discount", reference_date, curve_inputs.points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
-        curve_inputs=curve_inputs,
-    )
-    built_curve = builder.built_curve("usd.discount")
-
-    assert isinstance(built_curve, BuiltCurve)
-    assert built_curve.curve_id == CurveId("usd.discount")
-    assert built_curve.unwrap() is curve
-    assert built_curve.curve_inputs is not None
-    assert built_curve.date() == reference_date
+def test_engine_root_no_longer_exports_calc_curve_registry_helpers() -> None:
+    assert not hasattr(calc, "AnalyticsCurves")
+    assert not hasattr(calc, "BuiltCurve")
+    assert not hasattr(calc, "CurveBuilder")
+    assert not hasattr(calc, "FundingPricingRouter")
+    assert not hasattr(calc, "CurvePublisher")
+    assert not hasattr(calc, "CurveInputUpdate")
+    assert not hasattr(calc, "RatesPricingRouter")
+    assert not hasattr(calc, "CurveUpdate")
 
 
 def test_reactive_engine_builder_constructs_pricing_and_reactive_engines() -> None:
@@ -145,25 +134,23 @@ async def test_reactive_engine_flow_works_through_root_public_surface() -> None:
         .with_settlement_date(settlement)
         .build_reactive()
     )
-    curve_inputs = CurveInputs.from_points(
-        CurveId("usd.discount"),
-        settlement,
-        [CurvePoint(Decimal("1.0"), Decimal("0.0425")), CurvePoint(Decimal("5.0"), Decimal("0.0390"))],
-    )
-
-    reactive.curve_builder.add_curve(
-        "usd.discount",
-        linear_zero_curve("usd.discount", settlement, curve_inputs.points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
-        curve_inputs=curve_inputs,
-    )
-    reactive.listener.curve_source.add_curve_inputs(curve_inputs)
     reactive.register_pricing_node(
         NodeId("price:REACTIVE-SURFACE"),
         PricingInput(
             instrument=instrument_id,
             settlement_date=settlement,
             instrument_id=instrument_id,
-            curve_roles={"discount": "usd.discount"},
+            curves=AnalyticsCurves(
+                discount_curve=linear_zero_curve(
+                    "usd.discount",
+                    settlement,
+                    (
+                        CurvePoint(Decimal("1.0"), Decimal("0.0425")),
+                        CurvePoint(Decimal("5.0"), Decimal("0.0390")),
+                    ),
+                    curve_type=CurveType.OVERNIGHT_DISCOUNT,
+                )
+            ),
         ),
     )
 

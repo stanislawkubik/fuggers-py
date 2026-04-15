@@ -21,10 +21,11 @@ from fuggers_py.calc import (
 from fuggers_py.calc.errors import SchedulerError
 from fuggers_py.calc.pricing_router import PricingFailure
 from fuggers_py.calc import QuoteSide
-from fuggers_py.core import CurveId, InstrumentId
+from fuggers_py.core import InstrumentId
 from fuggers_py.market.curves import CurveType
 from fuggers_py.market.quotes import RawQuote
-from fuggers_py.market.snapshot import CurveInputs, CurvePoint
+from fuggers_py.market.snapshot import CurvePoint
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.market.sources import MarketDataProvider
 from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
 from tests.helpers._public_curve_helpers import linear_zero_curve
@@ -63,18 +64,18 @@ def _reactive_engine(*, instrument_id: str = "REACTIVE-COVERAGE"):
         .with_settlement_date(settlement)
         .build_reactive()
     )
-    curve_inputs = CurveInputs.from_points(
-        CurveId("usd.discount"),
-        settlement,
-        [CurvePoint(Decimal("1.0"), Decimal("0.0425")), CurvePoint(Decimal("5.0"), Decimal("0.0390"))],
+    curves = AnalyticsCurves(
+        discount_curve=linear_zero_curve(
+            "usd.discount",
+            settlement,
+            (
+                CurvePoint(Decimal("1.0"), Decimal("0.0425")),
+                CurvePoint(Decimal("5.0"), Decimal("0.0390")),
+            ),
+            curve_type=CurveType.OVERNIGHT_DISCOUNT,
+        )
     )
-    reactive.curve_builder.add_curve(
-        "usd.discount",
-        linear_zero_curve("usd.discount", settlement, curve_inputs.points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
-        curve_inputs=curve_inputs,
-    )
-    reactive.listener.curve_source.add_curve_inputs(curve_inputs)
-    return reactive, resolved_id, settlement
+    return reactive, resolved_id, settlement, curves
 
 
 def _quote_update(instrument_id: InstrumentId, settlement: Date, *, value: str = "101.25") -> QuoteUpdate:
@@ -114,14 +115,14 @@ def test_scheduler_validation_node_update_parsing_and_throttle_reset() -> None:
 
 @pytest.mark.asyncio
 async def test_reactive_engine_process_once_requires_start_and_unsubscribe_is_respected() -> None:
-    reactive, instrument_id, settlement = _reactive_engine()
+    reactive, instrument_id, settlement, curves = _reactive_engine()
     reactive.register_pricing_node(
         NodeId(f"price:{instrument_id.as_str()}"),
         PricingInput(
             instrument=instrument_id,
             settlement_date=settlement,
             instrument_id=instrument_id,
-            curve_roles={"discount": "usd.discount"},
+            curves=curves,
         ),
     )
 
@@ -143,7 +144,7 @@ async def test_reactive_engine_process_once_requires_start_and_unsubscribe_is_re
 
 @pytest.mark.asyncio
 async def test_reactive_engine_surfaces_pricing_failures_for_dirty_nodes_without_inputs() -> None:
-    reactive, instrument_id, settlement = _reactive_engine(instrument_id="REACTIVE-FAILURE")
+    reactive, instrument_id, settlement, _ = _reactive_engine(instrument_id="REACTIVE-FAILURE")
     pricing_node = reactive.register_pricing_node(
         NodeId("price:REACTIVE-FAILURE"),
         PricingInput(

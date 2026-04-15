@@ -14,7 +14,6 @@ from numpy.typing import ArrayLike, NDArray
 
 from fuggers_py.core.types import Compounding
 from fuggers_py.math.errors import MathError
-from fuggers_py.math.interpolation.cubic_spline import CubicSpline
 from fuggers_py.math.interpolation.flat_forward import FlatForward
 from fuggers_py.math.interpolation.linear import LinearInterpolator
 from fuggers_py.math.interpolation.log_linear import LogLinearInterpolator
@@ -238,37 +237,6 @@ class PiecewiseFlatForwardKernel(CurveKernel):
             raise _curve_input_error(exc) from exc
 
 
-class CubicSplineZeroKernel(CurveKernel):
-    """Curve kernel with a natural cubic spline through zero-rate nodes."""
-
-    kind: Final[CurveKernelKind] = CurveKernelKind.CUBIC_SPLINE_ZERO
-    __slots__ = ("_tenors", "_interpolator", "_allow_extrapolation")
-
-    def __init__(self, tenors: ArrayLike, zero_rates: ArrayLike, *, allow_extrapolation: bool = False) -> None:
-        normalized_tenors, normalized_rates = _normalize_zero_rate_nodes(tenors, zero_rates)
-        try:
-            interpolator = CubicSpline(
-                normalized_tenors,
-                normalized_rates,
-                allow_extrapolation=allow_extrapolation,
-            )
-        except MathError as exc:
-            raise _curve_input_error(exc) from exc
-        self._tenors = normalized_tenors
-        self._interpolator = interpolator
-        self._allow_extrapolation = bool(allow_extrapolation)
-
-    def max_t(self) -> float:
-        return float(self._tenors[-1])
-
-    def rate_at(self, tenor: float) -> float:
-        checked_tenor = _validate_query_t(tenor, max_t=self.max_t(), allow_extrapolation=self._allow_extrapolation)
-        try:
-            return float(self._interpolator.interpolate(checked_tenor))
-        except MathError as exc:
-            raise _curve_input_error(exc) from exc
-
-
 class MonotoneConvexKernel(CurveKernel):
     """Curve kernel with a monotone-convex zero-rate shape."""
 
@@ -304,7 +272,6 @@ class MonotoneConvexKernel(CurveKernel):
 
 
 __all__ = [
-    "CubicSplineZeroKernel",
     "LinearZeroKernel",
     "LogLinearDiscountKernel",
     "MonotoneConvexKernel",

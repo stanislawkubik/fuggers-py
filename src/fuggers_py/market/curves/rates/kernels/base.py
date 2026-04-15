@@ -53,11 +53,10 @@ class CurveKernelKind(Enum):
     PIECEWISE_CONSTANT = auto()
     PIECEWISE_FLAT_FORWARD = auto()
     MONOTONE_CONVEX = auto()
-    CUBIC_SPLINE_ZERO = auto()
+    CUBIC_SPLINE = auto()
     NELSON_SIEGEL = auto()
     SVENSSON = auto()
     EXPONENTIAL_SPLINE = auto()
-    CUBIC_SPLINE = auto()
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,7 +64,7 @@ class KernelSpec:
     """Immutable internal config for one curve-kernel family.
 
     ``kind`` names the representation family. ``parameters`` carries family-
-    specific settings such as knot tenors, decay values, or interpolation
+    specific settings such as fixed knots, decay values, or interpolation
     options. This is internal config only. It is not the realized kernel.
     """
 

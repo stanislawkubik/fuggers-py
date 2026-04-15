@@ -2,8 +2,8 @@
 
 The listener stores incoming market-data payloads, updates the calculation
 graph, and marks dependent nodes dirty so the reactive engine can refresh
-pricing outputs deterministically. Quote, curve, fixing, FX, and volatility
-updates are all translated into graph nodes with stable identifiers.
+pricing outputs deterministically. Quote, fixing, FX, and volatility updates
+are all translated into graph nodes with stable identifiers.
 """
 
 from __future__ import annotations
@@ -12,11 +12,10 @@ import asyncio
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from fuggers_py.core import CurveId, CurrencyPair, InstrumentId, VolSurfaceId, YearMonth
+from fuggers_py.core import CurrencyPair, InstrumentId, VolSurfaceId, YearMonth
 from fuggers_py.market.quotes import RawQuote
-from fuggers_py.market.snapshot import CurveInputs, EtfQuote, FxRate, IndexFixing, InflationFixing
+from fuggers_py.market.snapshot import EtfQuote, FxRate, IndexFixing, InflationFixing
 from fuggers_py.market.sources import (
-    InMemoryCurveSource,
     InMemoryFixingSource,
     InMemoryFxRateSource,
     InMemoryInflationFixingSource,
@@ -25,7 +24,6 @@ from fuggers_py.market.sources import (
 from fuggers_py.market.vol_surfaces import InMemoryVolatilitySource, VolatilitySurface
 
 from .calc_graph import CalculationGraph, NodeId
-from .curve_builder import CurveBuilder
 from .scheduler import NodeUpdate, ThrottleManager, UpdateSource
 
 
@@ -46,22 +44,6 @@ class QuoteUpdate(MarketDataUpdate):
     """Update carrying a new quote."""
 
     quote: RawQuote
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class CurveInputUpdate(MarketDataUpdate):
-    """Update carrying new raw curve inputs."""
-
-    curve_inputs: CurveInputs
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class CurveUpdate(MarketDataUpdate):
-    """Update carrying a finished curve and optional raw inputs."""
-
-    curve_id: CurveId
-    curve: object | None = None
-    curve_inputs: CurveInputs | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -119,9 +101,7 @@ class MarketDataListener:
     """Translate market-data updates into graph updates and cache writes."""
 
     calc_graph: CalculationGraph
-    curve_builder: CurveBuilder | None = None
     quote_source: InMemoryQuoteSource = field(default_factory=InMemoryQuoteSource)
-    curve_source: InMemoryCurveSource = field(default_factory=InMemoryCurveSource)
     fixing_source: InMemoryFixingSource = field(default_factory=InMemoryFixingSource)
     fx_rate_source: InMemoryFxRateSource = field(default_factory=InMemoryFxRateSource)
     inflation_fixing_source: InMemoryInflationFixingSource = field(default_factory=InMemoryInflationFixingSource)
@@ -132,16 +112,6 @@ class MarketDataListener:
     def quote_node_id(instrument_id: InstrumentId | str) -> NodeId:
         """Return the graph node identifier for a quote."""
         return NodeId.parse(f"quote:{InstrumentId.parse(instrument_id).as_str()}")
-
-    @staticmethod
-    def curve_input_node_id(curve_id: CurveId | str) -> NodeId:
-        """Return the graph node identifier for curve inputs."""
-        return NodeId.parse(f"curve_input:{CurveId.parse(curve_id).as_str()}")
-
-    @staticmethod
-    def curve_node_id(curve_id: CurveId | str) -> NodeId:
-        """Return the graph node identifier for a built curve."""
-        return NodeId.parse(f"curve:{CurveId.parse(curve_id).as_str()}")
 
     @staticmethod
     def fixing_node_id(index_name: str, fixing_date) -> NodeId:
@@ -167,10 +137,6 @@ class MarketDataListener:
         """Apply a market-data update to the caches and dependency graph."""
         if isinstance(update, QuoteUpdate):
             return self._handle_quote_update(update)
-        if isinstance(update, CurveInputUpdate):
-            return self._handle_curve_input_update(update)
-        if isinstance(update, CurveUpdate):
-            return self._handle_curve_update(update)
         if isinstance(update, IndexFixingUpdate):
             return self._handle_fixing_update(update)
         if isinstance(update, InflationFixingUpdate):
@@ -211,46 +177,6 @@ class MarketDataListener:
         self.calc_graph.update_node_value(node_id, update.quote, source=update.source or "market_data", mark_clean=True)
         dirty = self.calc_graph.mark_dependents_dirty(node_id)
         return self._updates((node_id, *dirty), UpdateSource.MARKET_DATA, update)
-
-    def _handle_curve_input_update(self, update: CurveInputUpdate) -> tuple[NodeUpdate, ...]:
-        input_node = self.curve_input_node_id(update.curve_inputs.curve_id)
-        if not self._allow(input_node.as_str(), update.timestamp):
-            return ()
-        self.curve_source.add_curve_inputs(update.curve_inputs)
-        self.calc_graph.add_node(input_node)
-        self.calc_graph.update_node_value(input_node, update.curve_inputs, source=update.source or "market_data", mark_clean=True)
-        dirty = list(self.calc_graph.mark_dependents_dirty(input_node))
-        if self.curve_builder is not None:
-            self.curve_builder.add_from_inputs(update.curve_inputs)
-        return self._updates(tuple(dict.fromkeys((input_node, *dirty))), UpdateSource.MARKET_DATA, update)
-
-    def _handle_curve_update(self, update: CurveUpdate) -> tuple[NodeUpdate, ...]:
-        node_id = self.curve_node_id(update.curve_id)
-        if not self._allow(node_id.as_str(), update.timestamp):
-            return ()
-        touched: list[NodeId] = []
-        dirty: list[NodeId] = []
-        if update.curve_inputs is not None:
-            input_node = self.curve_input_node_id(update.curve_inputs.curve_id)
-            self.curve_source.add_curve_inputs(update.curve_inputs)
-            self.calc_graph.add_node(input_node)
-            self.calc_graph.update_node_value(
-                input_node,
-                update.curve_inputs,
-                source=update.source or "market_data",
-                mark_clean=True,
-            )
-            dirty.extend(self.calc_graph.mark_dependents_dirty(input_node))
-            touched.append(input_node)
-            if self.curve_builder is not None:
-                self.curve_builder.add_from_inputs(update.curve_inputs)
-        self.calc_graph.add_node(node_id)
-        self.calc_graph.update_node_value(node_id, update.curve, source=update.source or "market_data", mark_clean=True)
-        dirty.extend(self.calc_graph.mark_dependents_dirty(node_id))
-        touched.append(node_id)
-        if self.curve_builder is not None and update.curve is not None:
-            self.curve_builder.add_curve(update.curve_id, update.curve, curve_inputs=update.curve_inputs)
-        return self._updates(tuple(dict.fromkeys((*touched, *dirty))), UpdateSource.MARKET_DATA, update)
 
     def _handle_fixing_update(self, update: IndexFixingUpdate) -> tuple[NodeUpdate, ...]:
         node_id = self.fixing_node_id(update.fixing.index_name, update.fixing.fixing_date)
@@ -300,8 +226,6 @@ class MarketDataListener:
 
 
 __all__ = [
-    "CurveInputUpdate",
-    "CurveUpdate",
     "FxRateUpdate",
     "IndexFixingUpdate",
     "InflationFixingUpdate",

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 
 
 def test_analytics_curves_support_extended_curve_roles() -> None:

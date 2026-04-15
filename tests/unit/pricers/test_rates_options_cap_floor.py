@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from fuggers_py.core import Currency, Date
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.core import VolSurfaceId, YearMonth
 from fuggers_py.market.vol_surfaces import VolPoint, VolQuoteType, VolSurfaceType, VolatilitySurface
 from fuggers_py.pricers.rates.options import (

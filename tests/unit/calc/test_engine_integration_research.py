@@ -11,7 +11,6 @@ from tests.helpers._engine_scenarios import (
     FRN_ID,
     PORTFOLIO_ID,
     SETTLEMENT,
-    curve_builder_with_scenarios,
     etf_holdings,
     fixed_curves,
     frn_curves,
@@ -27,13 +26,12 @@ from tests.helpers._engine_scenarios import (
 
 
 def test_engine_integration_research_workflow() -> None:
-    builder = curve_builder_with_scenarios()
     fixed_curve_bundle = fixed_curves()
     floating_curve_bundle = frn_curves()
     fixed_spec, floating_spec = pricing_specs()
     pricer = router()
 
-    assert builder.get("usd.discount") is not None
+    assert fixed_curve_bundle.discount_curve is not None
 
     quotes = {
         FIXED_ID: pricer.price(scenario_a_instrument(), SETTLEMENT, instrument_id=FIXED_ID, market_price="101.25", pricing_spec=fixed_spec, curves=fixed_curve_bundle),

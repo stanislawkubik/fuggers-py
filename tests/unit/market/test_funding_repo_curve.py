@@ -33,4 +33,4 @@ def test_repo_curve_wraps_term_structure_and_provides_df_zero_and_forward() -> N
     assert float(curve.discount_factor(end)) == pytest.approx(df_360d, abs=1e-12)
     assert float(curve.zero_rate(end)) == pytest.approx(rate, abs=1e-12)
     assert float(curve.forward_rate(start, end)) == pytest.approx((df_180d / df_360d - 1.0) / 0.5, abs=1e-12)
-    assert curve.date() == ref
+    assert curve.reference_date == ref

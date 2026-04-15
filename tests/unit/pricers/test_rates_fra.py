@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.core import Currency, Date
-from fuggers_py.calc import AnalyticsCurves
+from fuggers_py.market.state import AnalyticsCurves
 from fuggers_py.pricers.rates import FraPricer
 from fuggers_py.products.rates import Fra, PayReceive
 

@@ -7,10 +7,8 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.core import Currency, Date
-from fuggers_py.calc import BuiltCurve, CurveBuilder
 from fuggers_py.calc.calc_graph import CalculationGraph, NodeId
 from fuggers_py.calc.market_data_listener import (
-    CurveUpdate,
     FxRateUpdate,
     InflationFixingUpdate,
     MarketDataListener,
@@ -20,13 +18,10 @@ from fuggers_py.calc.market_data_listener import (
 )
 from fuggers_py.calc.scheduler import NodeUpdate, ThrottleManager, UpdateSource
 from fuggers_py.core import CurrencyPair, InstrumentId, VolSurfaceId, YearMonth
-from fuggers_py.market.curve_support import forward_rate_between_dates
-from fuggers_py.market.curves import CurveType
 from fuggers_py.market.quotes import RawQuote
 from fuggers_py.calc.pricing_specs import QuoteSide
-from fuggers_py.market.snapshot import CurveInputs, CurvePoint, FxRate, InflationFixing
+from fuggers_py.market.snapshot import FxRate, InflationFixing
 from fuggers_py.market.vol_surfaces import VolSurfaceType, VolatilitySurface
-from tests.helpers._public_curve_helpers import linear_zero_curve, log_linear_discount_curve
 
 
 @pytest.mark.asyncio
@@ -103,29 +98,14 @@ async def test_market_data_listener_throttles_repeated_quote_updates() -> None:
 
 
 @pytest.mark.asyncio
-async def test_market_data_listener_handles_curve_fx_inflation_and_volatility_paths() -> None:
+async def test_market_data_listener_handles_fx_inflation_and_volatility_paths() -> None:
     graph = CalculationGraph()
-    listener = MarketDataListener(calc_graph=graph, curve_builder=CurveBuilder())
-    graph.add_dependency("price:curve-user", listener.curve_node_id("usd.discount"))
+    listener = MarketDataListener(calc_graph=graph)
     graph.add_dependency("price:fx-user", listener.fx_node_id("USD/EUR"))
     graph.add_dependency("price:cpi-user", listener.inflation_node_id("USCPI", "2026-02"))
     graph.add_dependency("price:vol-user", listener.vol_surface_node_id("usd.swaption"))
 
     reference_date = Date.from_ymd(2026, 3, 14)
-    curve_inputs = CurveInputs.from_points(
-        "usd.discount",
-        reference_date,
-        [CurvePoint(Decimal("1.0"), Decimal("0.03"))],
-        curve_kind="discount",
-    )
-    curve_updates = await listener.handle_update(
-        CurveUpdate(
-            curve_id="usd.discount",
-            curve_inputs=curve_inputs,
-            curve="curve-object",
-            timestamp=datetime(2026, 3, 14, 9, 0, tzinfo=UTC),
-        )
-    )
     fx_updates = await listener.handle_update(
         FxRateUpdate(
             fx_rate=FxRate(
@@ -159,67 +139,12 @@ async def test_market_data_listener_handles_curve_fx_inflation_and_volatility_pa
         )
     )
 
-    assert listener.calc_graph.get_node_value(listener.curve_node_id("usd.discount")).value == "curve-object"
     assert listener.fx_rate_source.get_fx_rate("USD/EUR", side=QuoteSide.MID) is not None
     assert listener.inflation_fixing_source.get_inflation_fixing("USCPI", "2026-02") is not None
     assert listener.volatility_source.get_volatility_surface("usd.swaption") is not None
-    assert NodeId("price:curve-user") in graph.query_dirty()
     assert NodeId("price:fx-user") in graph.query_dirty()
     assert NodeId("price:cpi-user") in graph.query_dirty()
     assert NodeId("price:vol-user") in graph.query_dirty()
-    assert curve_updates[0].source is UpdateSource.MARKET_DATA
     assert fx_updates[0].source is UpdateSource.MARKET_DATA
     assert inflation_updates[0].source is UpdateSource.MARKET_DATA
     assert vol_updates[0].source is UpdateSource.MARKET_DATA
-
-
-def test_curve_builder_bundle_and_forward_interval_are_stable() -> None:
-    reference_date = Date.from_ymd(2026, 3, 14)
-    builder = CurveBuilder()
-    discount_points = [CurvePoint(Decimal("1.0"), Decimal("0.97"))]
-    zero_points = [CurvePoint(Decimal("1.0"), Decimal("0.03"))]
-    forward_points = [CurvePoint(Decimal("1.0"), Decimal("0.03")), CurvePoint(Decimal("2.0"), Decimal("0.05"))]
-
-    discount_curve = builder.add_curve(
-        "usd.discount",
-        log_linear_discount_curve(
-            "usd.discount",
-            reference_date,
-            discount_points,
-            curve_type=CurveType.OVERNIGHT_DISCOUNT,
-        ),
-        curve_inputs=CurveInputs.from_points("usd.discount", reference_date, discount_points, curve_kind="discount"),
-    )
-    zero_curve = builder.add_curve(
-        "usd.zero",
-        linear_zero_curve("usd.zero", reference_date, zero_points, curve_type=CurveType.NOMINAL),
-        curve_inputs=CurveInputs.from_points("usd.zero", reference_date, zero_points, curve_kind="zero"),
-    )
-    forward_curve = builder.add_curve(
-        "usd.forward",
-        linear_zero_curve("usd.forward", reference_date, forward_points, curve_type=CurveType.PROJECTION),
-        curve_inputs=CurveInputs.from_points("usd.forward", reference_date, forward_points, curve_kind="forward"),
-    )
-
-    start = reference_date.add_days(365)
-    end = reference_date.add_days(365 * 2)
-    bundle = builder.bundle(discount_curve="usd.discount", forward_curve="usd.forward")
-
-    assert discount_curve.discount_factor_at(1.0) == pytest.approx(0.97, abs=1e-12)
-    assert zero_curve.zero_rate_at(1.0) == pytest.approx(0.03, abs=1e-12)
-    assert float(forward_rate_between_dates(forward_curve, start, end)) == pytest.approx(0.07, abs=1e-12)
-    assert bundle.discount_curve is discount_curve
-    assert bundle.forward_curve is forward_curve
-    assert builder.inputs_for("usd.forward").curve_kind == "forward"
-
-
-def test_built_curve_reference_date_falls_back_to_curve_inputs_for_opaque_curves() -> None:
-    reference_date = Date.from_ymd(2026, 3, 14)
-    curve_inputs = CurveInputs.from_points(
-        "opaque.curve",
-        reference_date,
-        [CurvePoint(Decimal("1.0"), Decimal("0.03"))],
-    )
-    built = BuiltCurve.of("opaque.curve", object(), curve_inputs=curve_inputs)
-
-    assert built.date() == reference_date
