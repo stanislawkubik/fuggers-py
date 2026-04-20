@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fuggers_py.measures.spreads import OASCalculator
-from fuggers_py.core.types import Date
-from fuggers_py.market.curves import DiscountingCurve
+from fuggers_py.bonds import OASCalculator
+from fuggers_py._core.types import Date
+from fuggers_py.curves import DiscountingCurve
 
 from .._analytics_utils import aggregate_metrics, position_analytics
 from ..portfolio import Portfolio

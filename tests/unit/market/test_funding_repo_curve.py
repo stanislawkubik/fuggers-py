@@ -4,10 +4,10 @@ import math
 
 import pytest
 
-from fuggers_py.core import Date
-from fuggers_py.market.curves.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.curves.funding import RepoCurve
+from fuggers_py._core import Date
+from fuggers_py._curves_impl.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
+from fuggers_py._curves_impl.value_type import ValueType
+from fuggers_py._curves_impl.funding import RepoCurve
 
 
 def test_repo_curve_wraps_term_structure_and_provides_df_zero_and_forward() -> None:

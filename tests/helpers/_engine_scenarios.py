@@ -2,27 +2,31 @@ from __future__ import annotations
 
 from dataclasses import replace
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
-from fuggers_py.market.indices import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
-from fuggers_py.products.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
-from fuggers_py.reference.bonds.types import RateIndex, YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
+from fuggers_py.curves.multicurve import RateIndex
+from fuggers_py._products.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency
 from fuggers_py.portfolio import PortfolioPosition
-from fuggers_py.calc import PricingSpec, QuoteSide
-from fuggers_py.core import CurveId, InstrumentId
-from fuggers_py.market.curves import CurveType
-from fuggers_py.market.quotes import RawQuote
-from fuggers_py.market.snapshot import CurveInputs, CurvePoint, EtfHolding, IndexFixing, MarketDataSnapshot
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.market.sources import InMemoryFixingSource
-from fuggers_py.reference import (
+from fuggers_py._calc import PricingSpec, QuoteSide
+from fuggers_py._core import CurveId, InstrumentId
+from fuggers_py._runtime.quotes import RawQuote
+from fuggers_py._market.snapshot import CurveInputs, CurvePoint, EtfHolding, IndexFixing, MarketDataSnapshot
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._market.sources import InMemoryFixingSource
+from fuggers_py.curves import CurveType
+from fuggers_py._reference import (
     BondReferenceData,
-    BondType,
     CallScheduleEntry,
-    IssuerType,
     FloatingRateTerms,
 )
 from tests.helpers._public_curve_helpers import linear_zero_curve
+
+if TYPE_CHECKING:
+    from fuggers_py._calc.pricing_router import PricingRouter
 
 
 SETTLEMENT = Date.from_ymd(2026, 1, 15)
@@ -264,7 +268,7 @@ def portfolio_positions() -> list[PortfolioPosition]:
 
 
 def router() -> PricingRouter:
-    from fuggers_py.calc.pricing_router import PricingRouter
+    from fuggers_py._calc.pricing_router import PricingRouter
 
     return PricingRouter()
 

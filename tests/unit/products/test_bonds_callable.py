@@ -5,16 +5,17 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.errors import InvalidBondSpec
-from fuggers_py.products.bonds.instruments import (
+from fuggers_py._reference.bonds.errors import InvalidBondSpec
+from fuggers_py._products.bonds.instruments import (
     CallEntry,
     CallSchedule,
     CallType,
     CallableBondBuilder,
     FixedBond,
 )
-from fuggers_py.reference.bonds.types import StubPeriodRules, StubType, YieldCalculationRules
-from fuggers_py.core import Date, Frequency
+from fuggers_py._reference.bonds.types import StubPeriodRules, StubType
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Date, Frequency
 
 
 def _annual_rules() -> YieldCalculationRules:

@@ -5,8 +5,8 @@ import math
 import numpy as np
 import pytest
 
-from fuggers_py.math.errors import InvalidInput
-from fuggers_py.math.numerical import (
+from fuggers_py._math.errors import InvalidInput
+from fuggers_py._math.numerical import (
     finite_difference_derivative,
     finite_difference_gradient,
     finite_difference_jacobian,

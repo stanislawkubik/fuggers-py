@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.functions import (
+from fuggers_py._measures.functions import (
     clean_price_from_yield,
     convexity,
     dv01,
@@ -15,8 +15,8 @@ from fuggers_py.measures.functions import (
     yield_to_maturity,
     yield_to_maturity_with_convention,
 )
-from fuggers_py.reference.bonds.types import YieldConvention
-from fuggers_py.core import Date, Price
+from fuggers_py._reference.bonds.types import YieldConvention
+from fuggers_py._core import Date, Price
 
 
 def test_yield_price_roundtrip(fixed_rate_2025_bond) -> None:

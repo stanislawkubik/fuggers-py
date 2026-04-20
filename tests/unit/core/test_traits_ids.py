@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fuggers_py.core import CurveId, EtfId, InstrumentId, PortfolioId
+from fuggers_py._core import CurveId, EtfId, InstrumentId, PortfolioId
 
 
 def test_typed_ids_roundtrip_hash_and_dict_usage() -> None:

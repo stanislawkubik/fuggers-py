@@ -4,13 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.types import CreditRating as BondsCreditRating
-from fuggers_py.reference.bonds.types import RatingInfo as BondsRatingInfo
-from fuggers_py.reference.bonds.types import Sector as BondsSector
-from fuggers_py.reference.bonds.types import SectorInfo as BondsSectorInfo
-from fuggers_py.reference.bonds.types import Seniority as BondsSeniority
-from fuggers_py.reference.bonds.types import SeniorityInfo as BondsSeniorityInfo
-from fuggers_py.core import Date
+from fuggers_py import Date
 from fuggers_py.portfolio import (
     ActiveWeight,
     ActiveWeights,
@@ -52,6 +46,7 @@ from fuggers_py.portfolio import (
     active_weights,
     aggregated_attribution,
     arbitrage_opportunity,
+    attribution_summary,
     best_case,
     benchmark_comparison,
     bucket_by_classifier,
@@ -72,29 +67,21 @@ from fuggers_py.portfolio import (
     spread_contributions,
     spread_difference_by_sector,
     summarize_results,
+    top_contributors,
     worst_case,
 )
-from fuggers_py.portfolio.benchmark import BenchmarkComparison as BenchmarkModuleComparison
-from fuggers_py.portfolio.benchmark import TrackingErrorEstimate as BenchmarkTrackingErrorEstimate
-from fuggers_py.portfolio.benchmark import active_weights as benchmark_active_weights
-from fuggers_py.portfolio.benchmark import compare_portfolios as benchmark_compare_portfolios
-from fuggers_py.portfolio.contribution import attribution_summary, top_contributors
 
 from tests.helpers._portfolio_helpers import make_benchmark, make_curve, make_portfolio
 
 
 def test_portfolio_root_imports_expose_typed_comparison_and_contribution_surface() -> None:
     assert BenchmarkMetrics is BenchmarkComparison
-    assert BenchmarkModuleComparison is BenchmarkComparison
-    assert BenchmarkTrackingErrorEstimate is TrackingErrorEstimate
-    assert benchmark_active_weights is active_weights
-    assert benchmark_compare_portfolios is compare_portfolios
-    assert CreditRating is BondsCreditRating
-    assert RatingInfo is BondsRatingInfo
-    assert Sector is BondsSector
-    assert SectorInfo is BondsSectorInfo
-    assert Seniority is BondsSeniority
-    assert SeniorityInfo is BondsSeniorityInfo
+    assert CreditRating.BBB.score() == 4
+    assert RatingInfo(CreditRating.A, agency="S&P").agency == "S&P"
+    assert Sector.CORPORATE.value == "CORPORATE"
+    assert SectorInfo(Sector.CORPORATE, issuer="ACME").issuer == "ACME"
+    assert Seniority.SENIOR_UNSECURED.value == "SENIOR_UNSECURED"
+    assert SeniorityInfo(Seniority.SENIOR_UNSECURED).secured is False
 
 
 def test_active_weights_return_typed_mapping_with_zero_net_active_weight() -> None:

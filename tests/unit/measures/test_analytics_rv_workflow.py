@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.rv import (
+from fuggers_py._measures.rv import (
     BondSignal,
     MaturitySignal,
     NeutralityTarget,

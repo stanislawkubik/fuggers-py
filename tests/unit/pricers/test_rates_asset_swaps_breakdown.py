@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.spreads import reference_rate_decomposition
-from fuggers_py.products.bonds import FixedBondBuilder
-from fuggers_py.reference import YieldCalculationRules
-from fuggers_py.reference.bonds.types import ASWType
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.pricers.rates import AssetSwapPricer
-from fuggers_py.products.rates import AssetSwap, FloatingLegSpec, PayReceive, ScheduleDefinition
+from fuggers_py._core import PayReceive
+from fuggers_py._measures.spreads import reference_rate_decomposition
+from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._reference.bonds.types import ASWType
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._pricers.rates import AssetSwapPricer
+from fuggers_py._products.rates import AssetSwap, FloatingLegSpec, ScheduleDefinition
 
 from tests.helpers._rates_helpers import flat_curve, multicurve_analytics_curves, rate_index
 

@@ -5,8 +5,8 @@ from math import exp
 
 import pytest
 
-from fuggers_py.core import Date
-from fuggers_py.market.curves import DiscountCurveBuilder, JumpDiffusionCurve
+from fuggers_py._core import Date
+from fuggers_py._curves_impl import DiscountCurveBuilder, JumpDiffusionCurve
 
 
 def _flat_curve(rate: Decimal = Decimal("0.0300")):

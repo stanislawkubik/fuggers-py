@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date, InstrumentId, YearMonth
-from fuggers_py.market.quotes import (
+from fuggers_py._core import Currency, Date, InstrumentId, YearMonth
+from fuggers_py._runtime.quotes import (
     BasisSwapQuote,
     BondFutureQuote,
     CdsQuote,
@@ -15,7 +15,7 @@ from fuggers_py.market.quotes import (
     RepoQuote,
     SwapQuote,
 )
-from fuggers_py.market.state import QuoteSide
+from fuggers_py._market.state import QuoteSide
 
 SupportedInstrumentQuote = (
     RawQuote

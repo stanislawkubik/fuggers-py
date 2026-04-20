@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from fuggers_py.core import (
+from fuggers_py._core import (
     BusinessDayConvention,
     CalendarData,
     CustomCalendarBuilder,
@@ -18,8 +18,8 @@ from fuggers_py.core import (
     WeekendCalendar,
     WeekendType,
 )
-from fuggers_py.core.calendars import CalendarError, easter_sunday, last_weekday_of_month, nth_weekday_of_month, observed_date
-from fuggers_py.core.types import Date
+from fuggers_py._core.calendars import CalendarError, easter_sunday, last_weekday_of_month, nth_weekday_of_month, observed_date
+from fuggers_py._core.types import Date
 
 
 def test_weekend_type_is_weekend() -> None:

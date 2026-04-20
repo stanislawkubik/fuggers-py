@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from fuggers_py.core.types import Compounding
-from fuggers_py.market.curves.conversion import ValueConverter
+from fuggers_py._core.types import Compounding
+from fuggers_py._curves_impl.conversion import ValueConverter
 
 
 def test_df_zero_round_trip_continuous() -> None:

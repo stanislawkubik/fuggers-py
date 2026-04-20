@@ -3,28 +3,24 @@ from __future__ import annotations
 import json
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date, Price
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.market.snapshot import MarketDataSnapshot
-from fuggers_py.market.sources import MarketDataProvider
-from fuggers_py.calc import PricingRouter
-from fuggers_py.market.curves.inflation import bootstrap_inflation_curve
-from fuggers_py.measures.inflation import linker_swap_parity_check
-from fuggers_py.pricers.rates import InflationSwapPricer
-from fuggers_py.reference.inflation import (
+from fuggers_py._core import Currency, Date, PayReceive, Price
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._market.snapshot import MarketDataSnapshot
+from fuggers_py._market.sources import MarketDataProvider
+from fuggers_py._calc import PricingRouter
+from fuggers_py._curves_impl.inflation import bootstrap_inflation_curve
+from fuggers_py._measures.inflation import linker_swap_parity_check
+from fuggers_py.inflation import InflationSwapPricer
+from fuggers_py.inflation import (
+    StandardCouponInflationSwap,
     USD_CPI_U_NSA,
+    ZeroCouponInflationSwap,
     load_monthly_cpi_fixings_csv,
     load_monthly_cpi_fixings_json,
     parse_treasury_auctioned_tips_json,
     treasury_cpi_source_from_fixings,
     tips_bond_from_treasury_auction_row,
 )
-from fuggers_py.products.rates import (
-    PayReceive,
-    StandardCouponInflationSwap,
-    ZeroCouponInflationSwap,
-)
-
 from tests.helpers._rates_helpers import flat_curve
 
 

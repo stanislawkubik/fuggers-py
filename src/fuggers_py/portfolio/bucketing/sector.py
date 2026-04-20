@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fuggers_py.reference.bonds.types import Sector
+from fuggers_py.bonds import Sector
 
 from ..portfolio import Portfolio
 from ..results import SectorDistribution

@@ -4,9 +4,9 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.products.bonds.instruments import FixedBondBuilder
-from fuggers_py.pricers.bonds.risk import RiskMetrics
-from fuggers_py.core import Compounding, Date, Frequency, Yield
+from fuggers_py._products.bonds.instruments import FixedBondBuilder
+from fuggers_py._pricers.bonds.risk import RiskMetrics
+from fuggers_py._core import Compounding, Date, Frequency, Yield
 
 
 def test_risk_metrics_signs_are_sensible() -> None:

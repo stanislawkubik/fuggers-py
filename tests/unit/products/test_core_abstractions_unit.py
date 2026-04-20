@@ -5,22 +5,21 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date, Frequency, InstrumentId
-from fuggers_py.market.quotes import BondQuote, InstrumentQuote, RawQuote, RepoQuote
-from fuggers_py.market.state import QuoteSide
-from fuggers_py.products.bonds import FixedBondBuilder
-from fuggers_py.products.instruments import (
+from fuggers_py._core import Currency, Date, Frequency, InstrumentId
+from fuggers_py._runtime.quotes import BondQuote, InstrumentQuote, RawQuote, RepoQuote
+from fuggers_py._market.state import QuoteSide
+from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py._products.instruments import (
     HasExpiry,
     HasOptionType,
     HasUnderlyingInstrument,
     Instrument,
     KindedInstrumentMixin,
 )
-from fuggers_py.reference.bonds.types import YieldCalculationRules
-from fuggers_py.reference import (
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._reference import (
     BondReferenceData,
-    BondType,
-    IssuerType,
     ReferenceData,
     ResolvableReference,
 )

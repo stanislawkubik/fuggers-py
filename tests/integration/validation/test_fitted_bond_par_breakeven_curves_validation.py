@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Compounding
-from fuggers_py.market.curves import BreakevenParCurve, BreakevenZeroCurve, FittedParYieldCurve, ParCurveSpec
+from fuggers_py._core import Compounding
+from fuggers_py._curves_impl import BreakevenParCurve, BreakevenZeroCurve, FittedParYieldCurve, ParCurveSpec
 
 from tests.helpers._fitted_bond_helpers import cubic_model, fit_result, tips_fit_result
 

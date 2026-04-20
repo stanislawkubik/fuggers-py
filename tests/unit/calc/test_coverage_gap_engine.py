@@ -5,8 +5,9 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.calc import (
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py._core import Currency, Date
+from fuggers_py._calc import (
     CronScheduler,
     EodScheduler,
     IntervalScheduler,
@@ -18,16 +19,16 @@ from fuggers_py.calc import (
     ThrottleManager,
     UpdateSource,
 )
-from fuggers_py.calc.errors import SchedulerError
-from fuggers_py.calc.pricing_router import PricingFailure
-from fuggers_py.calc import QuoteSide
-from fuggers_py.core import InstrumentId
-from fuggers_py.market.curves import CurveType
-from fuggers_py.market.quotes import RawQuote
-from fuggers_py.market.snapshot import CurvePoint
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.market.sources import MarketDataProvider
-from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
+from fuggers_py._calc.errors import SchedulerError
+from fuggers_py._calc.pricing_router import PricingFailure
+from fuggers_py._calc import QuoteSide
+from fuggers_py._core import InstrumentId
+from fuggers_py._curves_impl import CurveType
+from fuggers_py._runtime.quotes import RawQuote
+from fuggers_py._market.snapshot import CurvePoint
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._market.sources import MarketDataProvider
+from fuggers_py._reference import BondReferenceData, ReferenceDataProvider
 from tests.helpers._public_curve_helpers import linear_zero_curve
 
 

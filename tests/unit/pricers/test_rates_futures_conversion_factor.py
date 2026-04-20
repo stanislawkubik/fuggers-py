@@ -4,9 +4,9 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Date, Frequency
-from fuggers_py.pricers.rates.futures import conversion_factor, theoretical_conversion_factor
-from fuggers_py.products.rates.futures import DeliverableBond, GovernmentBondFuture
+from fuggers_py._core import Date, Frequency
+from fuggers_py._pricers.rates.futures import conversion_factor, theoretical_conversion_factor
+from fuggers_py._products.rates.futures import DeliverableBond, GovernmentBondFuture
 
 
 def test_theoretical_conversion_factor_matches_the_repo_bond_settlement_convention() -> None:

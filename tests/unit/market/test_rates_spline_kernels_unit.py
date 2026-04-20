@@ -4,10 +4,10 @@ from math import exp
 
 import pytest
 
-from fuggers_py.core.types import Currency, Date
-from fuggers_py.market.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
-from fuggers_py.market.curves.errors import InvalidCurveInput, TenorOutOfBounds
-from fuggers_py.market.curves.rates.kernels import CubicSplineKernel, ExponentialSplineKernel
+from fuggers_py._core.types import Currency, Date
+from fuggers_py.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
+from fuggers_py.curves.errors import InvalidCurveInput, TenorOutOfBounds
+from fuggers_py.curves.kernels import CubicSplineKernel, ExponentialSplineKernel
 
 
 def _nominal_spec(*, extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR) -> CurveSpec:

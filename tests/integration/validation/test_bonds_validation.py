@@ -5,15 +5,16 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.functions import convexity, macaulay_duration, modified_duration, yield_to_maturity
-from fuggers_py.measures.spreads import DiscountMarginCalculator, OASCalculator, ParParAssetSwap, ProceedsAssetSwap
-from fuggers_py.products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
-from fuggers_py.market.indices import BondIndex, IndexConventions, IndexFixingStore, ObservationShiftType, OvernightCompounding
-from fuggers_py.products.bonds.instruments import CallableBondBuilder, FixedBond, FixedBondBuilder, FloatingRateNoteBuilder
-from fuggers_py.pricers.bonds.options import HullWhiteModel
-from fuggers_py.reference.bonds.types import CompoundingMethod, RateIndex, StubPeriodRules, YieldCalculationRules
-from fuggers_py.core import Compounding, Currency, Date, Frequency, Price, Yield
-from fuggers_py.market.curves import DiscountCurveBuilder
+from fuggers_py._measures.functions import convexity, macaulay_duration, modified_duration, yield_to_maturity
+from fuggers_py._measures.spreads import DiscountMarginCalculator, OASCalculator, ParParAssetSwap, ProceedsAssetSwap
+from fuggers_py._products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
+from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, ObservationShiftType, OvernightCompounding
+from fuggers_py._products.bonds.instruments import CallableBondBuilder, FixedBond, FixedBondBuilder, FloatingRateNoteBuilder
+from fuggers_py._pricers.bonds.options import HullWhiteModel
+from fuggers_py._reference.bonds.types import CompoundingMethod, RateIndex, StubPeriodRules
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Compounding, Currency, Date, Frequency, Price, Yield
+from fuggers_py._curves_impl import DiscountCurveBuilder
 
 from tests.helpers._engine_scenarios import FIXED_ID, SETTLEMENT, fixed_curves, frn_curves, pricing_specs, router, scenario_a_instrument, scenario_b_instrument, scenario_c_fixing_source, scenario_c_instrument
 

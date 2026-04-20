@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.calc import QuoteSide
-from fuggers_py.core import CurrencyPair, CurveId, EtfId, InstrumentId, VolSurfaceId, YearMonth
-from fuggers_py.market.quotes import (
+from fuggers_py._core import Currency, Date
+from fuggers_py._calc import QuoteSide
+from fuggers_py._core import CurrencyPair, CurveId, EtfId, InstrumentId, VolSurfaceId, YearMonth
+from fuggers_py._runtime.quotes import (
     BasisSwapQuote,
     BondFutureQuote,
     CdsQuote,
@@ -15,7 +15,7 @@ from fuggers_py.market.quotes import (
     RepoQuote,
     SwapQuote,
 )
-from fuggers_py.market.snapshot import (
+from fuggers_py._market.snapshot import (
     CurveInput,
     CurveInputs,
     CurveInstrumentType,
@@ -26,7 +26,7 @@ from fuggers_py.market.snapshot import (
     InflationFixing,
     MarketDataSnapshot,
 )
-from fuggers_py.market.sources import (
+from fuggers_py._market.sources import (
     CurveInputSource,
     FxRateSource,
     InMemoryCurveSource,
@@ -39,7 +39,7 @@ from fuggers_py.market.sources import (
     PricingDataProvider,
     QuoteSource,
 )
-from fuggers_py.market.vol_surfaces import InMemoryVolatilitySource, VolPoint, VolSurfaceType, VolatilitySource, VolatilitySurface
+from fuggers_py.vol_surfaces import InMemoryVolatilitySource, VolPoint, VolSurfaceType, VolatilitySource, VolatilitySurface
 
 
 def test_in_memory_market_data_provider_serves_extended_sources() -> None:

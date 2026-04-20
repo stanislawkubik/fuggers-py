@@ -8,6 +8,7 @@ analytics layer.
 from __future__ import annotations
 
 from .basket import BasketAnalysis, BasketComponent, BasketFlowSummary, CreationBasket, analyze_etf_basket, build_creation_basket
+from .holding import EtfHolding
 from .nav import (
     EtfNavMetrics,
     PremiumDiscountPoint,
@@ -48,6 +49,7 @@ __all__ = [
     "EtfPricer",
     "ExpenseMetrics",
     "EtfComplianceReport",
+    "EtfHolding",
     "EtfNavMetrics",
     "PremiumDiscountPoint",
     "PremiumDiscountStats",

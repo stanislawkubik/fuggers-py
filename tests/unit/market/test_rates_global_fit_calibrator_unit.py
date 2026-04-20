@@ -5,20 +5,20 @@ from math import exp
 
 import pytest
 
-from fuggers_py.core.types import Currency, Date, Frequency, Price
-from fuggers_py.math.optimization import OptimizationConfig
-from fuggers_py.market.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
-from fuggers_py.market.curves.errors import CurveConstructionError, InvalidCurveInput
-from fuggers_py.market.curves.rates.calibrators import (
+from fuggers_py._core.types import Currency, Date, Frequency, Price
+from fuggers_py._math.optimization import OptimizationConfig
+from fuggers_py.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
+from fuggers_py.curves.errors import CurveConstructionError, InvalidCurveInput
+from fuggers_py.curves.calibrators import (
     BondFitTarget,
     CalibrationMode,
     CalibrationObjective,
     CalibrationSpec,
     CurveCalibrator,
-    GlobalFitCalibrator,
     GlobalFitOptimizerKind,
 )
-from fuggers_py.market.curves.rates.kernels import (
+from fuggers_py.curves.calibrators.global_fit import GlobalFitCalibrator
+from fuggers_py.curves.kernels import (
     CubicSplineKernel,
     CurveKernelKind,
     ExponentialSplineKernel,
@@ -26,11 +26,11 @@ from fuggers_py.market.curves.rates.kernels import (
     NelsonSiegelKernel,
     SvenssonKernel,
 )
-from fuggers_py.market.curves.rates.reports import CalibrationReport, GlobalFitReport
-from fuggers_py.market.quotes import BondQuote, RepoQuote, SwapQuote
-from fuggers_py.products.bonds import FixedBondBuilder
-from fuggers_py.reference.bonds.errors import BondPricingError
-from fuggers_py.reference.bonds.types import YieldCalculationRules
+from fuggers_py.curves.reports import CalibrationReport, GlobalFitReport
+from fuggers_py._runtime.quotes import BondQuote, RepoQuote, SwapQuote
+from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._reference.bonds.errors import BondPricingError
+from fuggers_py._core import YieldCalculationRules
 
 
 def _spec(*, extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR) -> CurveSpec:

@@ -1,90 +1,15 @@
 # `fuggers_py.pricers`
 
-Valuation engines and low-level pricing/risk algorithms.
+Retired public namespace.
 
-```{eval-rst}
-.. automodule:: fuggers_py.pricers
-   :members:
-   :member-order: bysource
+This path is no longer part of the public API.
+
+Use the domain-first public modules instead:
+
+```python
+from fuggers_py.bonds import BondPricer
+from fuggers_py.credit import CdsPricer
+from fuggers_py.rates import SwapPricer
 ```
 
-## `fuggers_py.pricers.bonds`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.bonds
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.pricers.bonds.pricer`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.bonds.pricer
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.pricers.bonds.options`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.bonds.options
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.pricers.credit`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.credit
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.pricers.credit.cds_pricer`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.credit.cds_pricer
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.pricers.rates`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.rates
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.pricers.rates.risk`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.rates.risk
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.pricers.rates.futures`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.rates.futures
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.pricers.rates.options`
-
-```{eval-rst}
-.. automodule:: fuggers_py.pricers.rates.options
-   :members:
-   :member-order: bysource
-   :no-index:
-```
+Pricing implementation now lives under the internal `_pricers` package.

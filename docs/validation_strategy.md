@@ -2,6 +2,25 @@
 
 Validation is split into two layers.
 
+## Workflow gates
+
+We use two hook-based workflows for changes that can break the library in a broad way.
+
+- `$add-feature` uses its own spec-first validator and reviewer flow.
+- The public API refactor uses `tools/validate_public_api_refactor.py`.
+
+The public API refactor gate is intentionally small and fast.
+
+- Start it with `python tools/validate_public_api_refactor.py init`.
+- While it is active, the hooks inject the workflow on every prompt.
+- It treats the library move as a hard rewrite, not a backward-compatibility migration.
+- It checks that user-facing imports stay one layer deep.
+- It rejects compatibility wrappers and old public re-export shims in legacy namespaces.
+- It checks that moved code is not left behind in both the old and new location.
+- It requires a read-only `public_api_reviewer` review artifact before a change set can be sealed.
+- It uses the current dirty tree as the starting baseline, so it should start before the refactor work for that change set begins.
+- End the active mode with `python tools/validate_public_api_refactor.py deactivate` or `clear`.
+
 ## Deterministic validation suite
 
 `tests/integration/validation/` contains scenario fixtures for:

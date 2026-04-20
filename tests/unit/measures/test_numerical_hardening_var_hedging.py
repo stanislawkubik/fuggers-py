@@ -4,10 +4,10 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.risk import aggregate_portfolio_risk, duration_hedge_ratio, dv01_hedge_ratio, historical_var, parametric_var
-from fuggers_py.measures.risk.hedging.portfolio import Position
-from fuggers_py.measures.risk.var.parametric import parametric_var_from_dv01
-from fuggers_py.measures.errors import InvalidInput
+from fuggers_py._measures.risk import aggregate_portfolio_risk, duration_hedge_ratio, dv01_hedge_ratio, historical_var, parametric_var
+from fuggers_py._measures.risk.hedging.portfolio import Position
+from fuggers_py._measures.risk.var.parametric import parametric_var_from_dv01
+from fuggers_py._measures.errors import InvalidInput
 
 
 def test_parametric_var_uses_left_tail_and_non_negative_floor() -> None:

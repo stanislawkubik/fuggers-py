@@ -3,15 +3,15 @@ from __future__ import annotations
 from dataclasses import replace
 from decimal import Decimal
 
-from fuggers_py.core import Date
-from fuggers_py.core import InstrumentId
-from fuggers_py.pricers.rates.futures import (
+from fuggers_py._core import Date
+from fuggers_py._core import InstrumentId
+from fuggers_py._pricers.rates.futures import (
     NoDeliveryOptionModel,
     YieldGridCTDSwitchModel,
     fair_futures_price,
     oabpv,
 )
-from fuggers_py.products.rates.futures import (
+from fuggers_py._products.rates.futures import (
     DeliverableBasket,
     DeliverableBond,
     GovernmentBondFuture,

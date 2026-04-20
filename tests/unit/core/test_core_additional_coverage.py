@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import CashFlow, CashFlowSchedule, CashFlowType, Compounding, Currency, Date, Frequency, Price, Spread, SpreadType, Yield
-from fuggers_py.core.errors import InvalidCashFlowError, InvalidDateError, InvalidPriceError, InvalidYieldError
+from fuggers_py._core import CashFlow, CashFlowSchedule, CashFlowType, Compounding, Currency, Date, Frequency, Price, Spread, SpreadType, Yield
+from fuggers_py._core.errors import InvalidCashFlowError, InvalidDateError, InvalidPriceError, InvalidYieldError
 
 
 def test_currency_frequency_and_compounding_helpers_cover_public_branches() -> None:

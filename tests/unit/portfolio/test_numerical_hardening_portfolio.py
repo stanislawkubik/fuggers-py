@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Date
+from fuggers_py._core import Date
 from fuggers_py.portfolio import calculate_portfolio_analytics
 from fuggers_py.portfolio.contribution import attribution_summary
 from fuggers_py.portfolio.etf.nav import calculate_etf_nav, premium_discount_stats

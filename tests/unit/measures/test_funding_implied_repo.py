@@ -2,13 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Date
-from fuggers_py.measures.funding import (
-    futures_invoice_amount,
-    implied_repo_rate,
-    implied_repo_rate_from_trade,
-)
-from fuggers_py.products.funding import RepoTrade
+from fuggers_py._core import Date
+from fuggers_py.funding import RepoTrade, futures_invoice_amount, implied_repo_rate, implied_repo_rate_from_trade
 
 
 def test_futures_invoice_amount_and_implied_repo_rate_from_primitives() -> None:

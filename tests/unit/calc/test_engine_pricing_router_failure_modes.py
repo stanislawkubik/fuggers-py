@@ -4,9 +4,9 @@ from decimal import Decimal
 
 import pytest
 
-import fuggers_py.calc.pricing_router as pricing_router_module
-from fuggers_py.calc import PricingSpec
-from fuggers_py.products.bonds.instruments import CallableBond
+import fuggers_py._calc.pricing_router as pricing_router_module
+from fuggers_py._calc import PricingSpec
+from fuggers_py._products.bonds.instruments import CallableBond
 
 from tests.helpers._engine_scenarios import FIXED_ID, SETTLEMENT, fixed_curves, router, scenario_a_instrument, scenario_b_instrument
 

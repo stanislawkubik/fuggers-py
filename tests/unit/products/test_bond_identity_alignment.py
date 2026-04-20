@@ -5,8 +5,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date, Frequency, InstrumentId
-from fuggers_py.products.bonds import (
+from fuggers_py._core import Currency, Date, Frequency, InstrumentId
+from fuggers_py._products.bonds import (
     CallableBond,
     CallableBondBuilder,
     FixedBond,
@@ -18,10 +18,11 @@ from fuggers_py.products.bonds import (
     TipsBond,
     ZeroCouponBond,
 )
-from fuggers_py.products.bonds.instruments import SinkingFundEntry, SinkingFundSchedule
-from fuggers_py.products.instruments import Instrument
-from fuggers_py.reference.bonds.types import RateIndex, YieldCalculationRules
-from fuggers_py.reference.inflation import USD_CPI_U_NSA
+from fuggers_py._products.bonds.instruments import SinkingFundEntry, SinkingFundSchedule
+from fuggers_py._products.instruments import Instrument
+from fuggers_py._reference.bonds.types import RateIndex
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py.inflation import USD_CPI_U_NSA
 
 
 def _annual_rules() -> YieldCalculationRules:

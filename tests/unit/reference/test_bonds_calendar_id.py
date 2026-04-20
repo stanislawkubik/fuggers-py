@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from fuggers_py.reference.bonds.errors import InvalidIdentifier
-from fuggers_py.reference.bonds.types import CalendarId
+from fuggers_py._reference.bonds.errors import InvalidIdentifier
+from fuggers_py._core import CalendarId
 
 
 def test_calendar_id_canonical_strings_and_mapping() -> None:

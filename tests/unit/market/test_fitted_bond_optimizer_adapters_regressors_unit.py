@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves import (
+from fuggers_py._curves_impl import (
     BondCurveFitter,
     BondFairValueRequest,
 )
-from fuggers_py.market.curves.fitted_bonds.fair_value import fair_value_from_fit
+from fuggers_py._curves_impl.fitted_bonds.fair_value import fair_value_from_fit
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,

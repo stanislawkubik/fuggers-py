@@ -5,14 +5,15 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.risk.hedging import aggregate_portfolio_risk, duration_hedge_ratio, dv01_hedge_ratio
-from fuggers_py.measures.risk.hedging.portfolio import Position as HedgePosition
-from fuggers_py.measures.risk.var import historical_var, parametric_var
-from fuggers_py.measures.spreads import ParParAssetSwap, ProceedsAssetSwap
-from fuggers_py.products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
-from fuggers_py.reference.bonds.errors import InvalidBondSpec
-from fuggers_py.reference.bonds.types import AccruedConvention, YieldCalculationRules
-from fuggers_py.core import Date
+from fuggers_py._measures.risk.hedging import aggregate_portfolio_risk, duration_hedge_ratio, dv01_hedge_ratio
+from fuggers_py._measures.risk.hedging.portfolio import Position as HedgePosition
+from fuggers_py._measures.risk.var import historical_var, parametric_var
+from fuggers_py._measures.spreads import ParParAssetSwap, ProceedsAssetSwap
+from fuggers_py._products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
+from fuggers_py._reference.bonds.errors import InvalidBondSpec
+from fuggers_py._reference.bonds.types import AccruedConvention
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Date
 
 from tests.helpers._portfolio_helpers import make_curve, make_fixed_bond
 

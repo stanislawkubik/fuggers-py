@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fuggers_py.math.errors import DivisionByZero, SingularMatrix
-from fuggers_py.math.linear_algebra import lu_decomposition, solve_linear_system, solve_tridiagonal
+from fuggers_py._math.errors import DivisionByZero, SingularMatrix
+from fuggers_py._math.linear_algebra import lu_decomposition, solve_linear_system, solve_tridiagonal
 
 
 def test_lu_decomposition_reconstructs() -> None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fuggers_py.calc import CronScheduler, IntervalScheduler, NodeId, SchedulerError
+from fuggers_py._calc import CronScheduler, IntervalScheduler, NodeId, SchedulerError
 
 
 def main() -> None:

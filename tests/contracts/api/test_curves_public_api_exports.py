@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from fuggers_py.core import Date
-import fuggers_py.market.curves as curves
-from fuggers_py.market.curves import (
+import ast
+from pathlib import Path
+
+from fuggers_py import Date
+import fuggers_py.curves as curves
+from fuggers_py.curves import (
     CurveSpec,
     CurveType,
     DiscountingCurve,
@@ -14,45 +17,73 @@ from fuggers_py.market.curves import (
 )
 
 
-def test_curves_root_exports_only_the_current_public_surface() -> None:
-    expected_exports = [
-        "CurveSpec",
-        "CurveType",
-        "DiscountingCurve",
-        "ExtrapolationPolicy",
-        "RateSpace",
-        "RatesTermStructure",
-        "RelativeRateCurve",
-        "YieldCurve",
-    ]
-
-    assert curves.__all__ == expected_exports, "market.curves should expose only the current rates surface."
-
-
-def test_curves_root_reexports_current_rates_types() -> None:
-    assert CurveSpec is curves.CurveSpec, "CurveSpec should be re-exported from market.curves."
-    assert CurveType is curves.CurveType, "CurveType should be re-exported from market.curves."
-    assert ExtrapolationPolicy is curves.ExtrapolationPolicy, (
-        "ExtrapolationPolicy should be re-exported from market.curves."
-    )
-    assert RateSpace is curves.RateSpace, "RateSpace should be re-exported from market.curves."
-    assert RatesTermStructure is curves.RatesTermStructure, (
-        "RatesTermStructure should be re-exported from market.curves."
-    )
-    assert DiscountingCurve is curves.DiscountingCurve, "DiscountingCurve should be re-exported from market.curves."
-    assert RelativeRateCurve is curves.RelativeRateCurve, "RelativeRateCurve should be re-exported from market.curves."
-    assert YieldCurve is curves.YieldCurve, "YieldCurve should be re-exported from market.curves."
-
-    assert issubclass(DiscountingCurve, RatesTermStructure), (
-        "DiscountingCurve should remain a RatesTermStructure subtype."
-    )
-    assert issubclass(YieldCurve, DiscountingCurve), "YieldCurve should remain a DiscountingCurve subtype."
-    assert issubclass(RelativeRateCurve, RatesTermStructure), (
-        "RelativeRateCurve should remain a RatesTermStructure subtype."
-    )
+def test_curves_root_reexports_basic_curve_types() -> None:
+    assert CurveSpec is curves.CurveSpec
+    assert CurveType is curves.CurveType
+    assert ExtrapolationPolicy is curves.ExtrapolationPolicy
+    assert RateSpace is curves.RateSpace
+    assert RatesTermStructure is curves.RatesTermStructure
+    assert DiscountingCurve is curves.DiscountingCurve
+    assert RelativeRateCurve is curves.RelativeRateCurve
+    assert YieldCurve is curves.YieldCurve
+    assert issubclass(DiscountingCurve, RatesTermStructure)
+    assert issubclass(YieldCurve, DiscountingCurve)
+    assert issubclass(RelativeRateCurve, RatesTermStructure)
+    assert CurveSpec.__module__ == "fuggers_py.curves.spec"
+    assert CurveType.__module__ == "fuggers_py.curves.enums"
+    assert ExtrapolationPolicy.__module__ == "fuggers_py.curves.enums"
+    assert RateSpace.__module__ == "fuggers_py.curves.enums"
+    assert RatesTermStructure.__module__ == "fuggers_py.curves.base"
+    assert DiscountingCurve.__module__ == "fuggers_py.curves.base"
+    assert RelativeRateCurve.__module__ == "fuggers_py.curves.base"
+    assert YieldCurve.__module__ == "fuggers_py.curves.base"
 
 
-def test_curves_root_does_not_reexport_removed_legacy_symbols() -> None:
+def test_curves_root_is_a_small_direct_import_surface() -> None:
+    curves_init = Path(curves.__file__)
+    tree = ast.parse(curves_init.read_text(encoding="utf-8"))
+
+    assert "__getattr__" not in {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+    assert "__getattr__" not in {node.name for node in ast.walk(tree) if isinstance(node, ast.AsyncFunctionDef)}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                assert node.func.id not in {"import_module", "__import__"}
+            elif isinstance(node.func, ast.Attribute):
+                assert not (
+                    isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "importlib"
+                    and node.func.attr == "import_module"
+                )
+
+
+def test_curves_root_imports_only_local_curve_files() -> None:
+    curves_init = Path(curves.__file__)
+    tree = ast.parse(curves_init.read_text(encoding="utf-8"))
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom):
+            if node.module == "__future__":
+                continue
+            assert node.level == 1
+            assert node.module is not None
+
+
+def test_curve_support_stays_off__curves_impl() -> None:
+    curve_support = Path(curves.__file__).resolve().parent.parent / "_market" / "curve_support.py"
+    tree = ast.parse(curve_support.read_text(encoding="utf-8"))
+
+    imported_modules = {
+        node.module
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module is not None
+    }
+
+    assert "fuggers_py.curves" in imported_modules
+    assert all(not module.startswith("fuggers_py._curves_impl") for module in imported_modules)
+
+
+def test_curves_root_does_not_reintroduce_removed_symbols() -> None:
     legacy_names = [
         "Compounding",
         "CubicSpline",
@@ -72,10 +103,10 @@ def test_curves_root_does_not_reexport_removed_legacy_symbols() -> None:
     ]
 
     for name in legacy_names:
-        assert not hasattr(curves, name), f"market.curves should not re-export legacy symbol {name}."
+        assert not hasattr(curves, name)
 
 
-def test_curve_spec_can_be_built_from_root_exports() -> None:
+def test_curve_spec_can_be_built_from_the_first_layer_exports() -> None:
     reference_date = Date.from_ymd(2024, 1, 1)
     spec = CurveSpec(
         name="USD OIS",

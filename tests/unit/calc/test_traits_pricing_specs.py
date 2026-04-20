@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.reference.bonds.types import ASWType
-from fuggers_py.calc import (
+from fuggers_py._reference.bonds.types import ASWType
+from fuggers_py._calc import (
     BenchmarkReference,
     BidAskSpreadConfig,
     PricingSpec,
     QuoteSide,
 )
-from fuggers_py.core import CurveId
-from fuggers_py.market.state import AnalyticsCurves
+from fuggers_py._core import CurveId
+from fuggers_py._market.state import AnalyticsCurves
 
 
 def test_pricing_spec_components() -> None:

@@ -10,26 +10,28 @@ from typing import Any
 import numpy as np
 import pytest
 
-from fuggers_py.measures.pricing import BondPricer
-from fuggers_py.measures.spreads import DiscountMarginCalculator, OASCalculator
-from fuggers_py.products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
-from fuggers_py.market.indices import BondIndex, IndexConventions, IndexFixingStore, ObservationShiftType, OvernightCompounding
-from fuggers_py.products.bonds.instruments import CallableBondBuilder, CallType, FixedBond, FloatingRateNoteBuilder, ZeroCouponBond
-from fuggers_py.pricers.bonds.options import HullWhiteModel
-from fuggers_py.reference.bonds.types import CreditRating, PutType, RateIndex, RatingInfo, Sector, SectorInfo, YieldCalculationRules
-from fuggers_py.core import Compounding, Currency, Date, Frequency, Yield
-from fuggers_py.market.curves import (
+from fuggers_py._measures.pricing import BondPricer
+from fuggers_py._measures.spreads import DiscountMarginCalculator, OASCalculator
+from fuggers_py._products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
+from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, ObservationShiftType, OvernightCompounding
+from fuggers_py._products.bonds.instruments import CallableBondBuilder, CallType, FixedBond, FloatingRateNoteBuilder, ZeroCouponBond
+from fuggers_py._pricers.bonds.options import HullWhiteModel
+from fuggers_py._reference.bonds.types import CreditRating, PutType, RateIndex, RatingInfo, Sector, SectorInfo
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Compounding, Currency, Date, Frequency, Yield
+from fuggers_py._curves_impl import (
     DiscountCurveBuilder,
     ForwardCurve,
     InterpolationMethod,
     ValueConverter,
 )
-from fuggers_py.market.curves.calibration import FitterConfig, GlobalFitter, ParametricModel
+from fuggers_py._curves_impl.calibration import FitterConfig, GlobalFitter, ParametricModel
 from fuggers_py.portfolio import PortfolioAnalyzer, PortfolioPosition
 from fuggers_py.portfolio import AttributionInput, Classification, Holding, PortfolioBuilder, aggregated_attribution, benchmark_comparison
-from fuggers_py.core.ids import InstrumentId, PortfolioId
-from fuggers_py.calc.output import BondQuoteOutput
-from fuggers_py.reference.reference_data import BondReferenceData, BondType, IssuerType
+from fuggers_py._core.ids import InstrumentId, PortfolioId
+from fuggers_py._calc.output import BondQuoteOutput
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py._reference.reference_data import BondReferenceData
 
 from tests.helpers._paths import FIXTURES_ROOT
 

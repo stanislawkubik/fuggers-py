@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.products.bonds.instruments import FixedBondBuilder
-from fuggers_py.core import Compounding, Date, Frequency, Yield
+from fuggers_py._products.bonds.instruments import FixedBondBuilder
+from fuggers_py._core import Compounding, Date, Frequency, Yield
 
 
 def test_fixed_bond_accrued_interest_basic() -> None:

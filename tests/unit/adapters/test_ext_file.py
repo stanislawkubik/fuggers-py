@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from textwrap import dedent
 
-from fuggers_py.core import Date
-from fuggers_py.adapters import (
+from fuggers_py._core import Date
+from fuggers_py._adapters import (
     CSVBondReferenceSource,
     CSVEtfHoldingsSource,
     CSVEtfQuoteSource,
@@ -25,16 +25,16 @@ from fuggers_py.adapters import (
     create_file_market_data,
     create_file_reference_data,
 )
-from fuggers_py.calc import (
+from fuggers_py._calc import (
     AlertPublisher,
     AnalyticsPublisher,
     EtfPublisher,
     QuotePublisher,
     QuoteSide,
 )
-from fuggers_py.core import InstrumentId
-from fuggers_py.market.sources import CurveInputSource, FixingSource, QuoteSource
-from fuggers_py.reference import (
+from fuggers_py._core import InstrumentId
+from fuggers_py._market.sources import CurveInputSource, FixingSource, QuoteSource
+from fuggers_py._reference import (
     BondReferenceSource,
     EtfHoldingsSource,
     IssuerReferenceSource,

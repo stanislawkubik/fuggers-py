@@ -5,11 +5,11 @@ from typing import cast
 
 import pytest
 
-from fuggers_py.core import Price
-from fuggers_py.market.curves import BondCurveFitter, BondFairValueRequest
-from fuggers_py.market.curves.fitted_bonds.fair_value import fair_value_from_fit
-from fuggers_py.pricers.bonds import TipsPricer
-from fuggers_py.products.bonds import TipsBond
+from fuggers_py._core import Price
+from fuggers_py._curves_impl import BondCurveFitter, BondFairValueRequest
+from fuggers_py._curves_impl.fitted_bonds.fair_value import fair_value_from_fit
+from fuggers_py._pricers.bonds import TipsPricer
+from fuggers_py._products.bonds import TipsBond
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,

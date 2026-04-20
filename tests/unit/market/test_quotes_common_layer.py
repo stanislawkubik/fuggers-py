@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Currency, CurrencyPair, Date, Frequency, InstrumentId, YearMonth
-from fuggers_py.market.quotes import (
+from fuggers_py._calc import QuoteSide as CalcQuoteSide
+from fuggers_py._core import Currency, CurrencyPair, Date, Frequency, InstrumentId, YearMonth
+from fuggers_py._runtime.quotes import (
     BasisSwapQuote,
     BondFutureQuote,
     BondQuote,
@@ -17,9 +18,9 @@ from fuggers_py.market.quotes import (
     ScalarQuote,
     SwapQuote,
 )
-from fuggers_py.market.snapshot import CurveInput, CurveInstrumentType, MarketDataSnapshot
-from fuggers_py.products.bonds import FixedBondBuilder
-from fuggers_py.reference.bonds.types import YieldCalculationRules
+from fuggers_py._market.snapshot import CurveInput, CurveInstrumentType, MarketDataSnapshot
+from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._core import YieldCalculationRules
 
 
 def _sample_bond(instrument_id: str) -> object:
@@ -225,3 +226,38 @@ def test_snapshot_provider_keeps_scalar_quote_path_unchanged() -> None:
     assert snapshot.instrument_quotes() == (raw_quote, repo_quote)
     assert provider.get_quote("RAW-4") == raw_quote
     assert provider.get_quote("REPO-4") is None
+
+
+def test_public_quote_records_accept_legacy_calc_quote_side_values() -> None:
+    as_of = Date.from_ymd(2026, 4, 6)
+    swap_quote = SwapQuote(
+        "SWAP-4",
+        rate=Decimal("0.0385"),
+        bid=Decimal("0.0380"),
+        ask=Decimal("0.0390"),
+        as_of=as_of,
+        currency=Currency.USD,
+    )
+    cds_quote = CdsQuote(
+        "CDS-4",
+        par_spread=Decimal("0.0120"),
+        bid=Decimal("0.0115"),
+        ask=Decimal("0.0125"),
+        as_of=as_of,
+        currency=Currency.USD,
+    )
+    repo_quote = RepoQuote(
+        "REPO-5",
+        rate=Decimal("0.0420"),
+        bid=Decimal("0.0415"),
+        ask=Decimal("0.0425"),
+        as_of=as_of,
+        currency=Currency.USD,
+    )
+
+    assert swap_quote.quoted_value(CalcQuoteSide.BID) == Decimal("0.0380")
+    assert cds_quote.quoted_value(CalcQuoteSide.ASK) == Decimal("0.0125")
+    ask_repo_quote = repo_quote.for_side(CalcQuoteSide.ASK)
+
+    assert ask_repo_quote is not None
+    assert ask_repo_quote.rate == Decimal("0.0425")

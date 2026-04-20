@@ -22,7 +22,13 @@ ENV/
 .tmp/
 .ipynb_checkpoints/
 docs/_build/
-refactor/
+refactor/*
+!refactor/PUBLIC_API_CURRENT_INVENTORY.json
+!refactor/PUBLIC_API_EXPORT_MANIFEST.json
+!refactor/PUBLIC_API_LEGACY_DENYLIST.json
+!refactor/PUBLIC_API_MIGRATION_LEDGER.json
+!refactor/PUBLIC_API_STRUCTURE_MANIFEST.json
+!refactor/PUBLIC_API_DEPENDENCY_MANIFEST.json
 fuggers_py-*/
 docs/private/
 notes/

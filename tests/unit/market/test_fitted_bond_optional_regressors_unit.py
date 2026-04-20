@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves import BondCurveFitter
+from fuggers_py._curves_impl import BondCurveFitter
 
 from tests.helpers._fitted_bond_helpers import (
     exponential_model,

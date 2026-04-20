@@ -4,10 +4,10 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.pricers.rates import FraPricer
-from fuggers_py.products.rates import Fra, PayReceive
+from fuggers_py._core import Currency, Date, PayReceive
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._pricers.rates import FraPricer
+from fuggers_py._products.rates import Fra
 
 from tests.helpers._rates_helpers import flat_curve, multicurve_analytics_curves, rate_index
 

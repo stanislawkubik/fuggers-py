@@ -5,8 +5,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Date
-from fuggers_py.reference.inflation import (
+from fuggers_py._core import Date
+from fuggers_py.inflation import (
     TreasuryAuctionedTipsRow,
     parse_treasury_auctioned_tips_csv,
     parse_treasury_auctioned_tips_json,

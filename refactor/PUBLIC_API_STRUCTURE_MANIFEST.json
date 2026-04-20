@@ -1,0 +1,323 @@
+{
+  "schema_version": 1,
+  "phase": "phase1_slice3",
+  "root_package": "fuggers_py",
+  "top_level_packages": {
+    "_adapters": {
+      "role": "transition_bucket",
+      "planned_action": "delete"
+    },
+    "_calc": {
+      "role": "transition_bucket",
+      "planned_action": "delete"
+    },
+    "_core": {
+      "role": "internal_survivor",
+      "planned_action": "keep"
+    },
+    "_market": {
+      "role": "transition_bucket",
+      "planned_action": "delete"
+    },
+    "_math": {
+      "role": "internal_survivor",
+      "planned_action": "keep"
+    },
+    "_measures": {
+      "role": "transition_bucket",
+      "planned_action": "delete"
+    },
+    "_pricers": {
+      "role": "transition_bucket",
+      "planned_action": "delete"
+    },
+    "_products": {
+      "role": "transition_bucket",
+      "planned_action": "delete"
+    },
+    "_reference": {
+      "role": "transition_bucket",
+      "planned_action": "delete"
+    },
+    "_runtime": {
+      "role": "internal_survivor",
+      "planned_action": "keep"
+    },
+    "_storage": {
+      "role": "internal_survivor",
+      "planned_action": "keep"
+    },
+    "_vol_surfaces_impl": {
+      "role": "transition_bucket",
+      "planned_action": "delete"
+    },
+    "bonds": {
+      "role": "canonical_public",
+      "planned_action": "keep"
+    },
+    "credit": {
+      "role": "canonical_public",
+      "planned_action": "keep"
+    },
+    "curves": {
+      "role": "canonical_public",
+      "planned_action": "keep"
+    },
+    "funding": {
+      "role": "canonical_public",
+      "planned_action": "keep"
+    },
+    "inflation": {
+      "role": "canonical_public",
+      "planned_action": "keep"
+    },
+    "portfolio": {
+      "role": "canonical_public",
+      "planned_action": "keep"
+    },
+    "rates": {
+      "role": "canonical_public",
+      "planned_action": "keep"
+    },
+    "vol_surfaces": {
+      "role": "canonical_public",
+      "planned_action": "keep"
+    }
+  },
+  "canonical_public_package_trees": {
+    "curves": [
+      "__init__.py",
+      "base.py",
+      "calibrators/",
+      "calibrators/__init__.py",
+      "calibrators/_quotes.py",
+      "calibrators/base.py",
+      "calibrators/bootstrap.py",
+      "calibrators/global_fit.py",
+      "conversion.py",
+      "date_support.py",
+      "enums.py",
+      "errors.py",
+      "kernels/",
+      "kernels/__init__.py",
+      "kernels/base.py",
+      "kernels/composite.py",
+      "kernels/decorators.py",
+      "kernels/nodes.py",
+      "kernels/parametric.py",
+      "kernels/spline.py",
+      "multicurve/",
+      "multicurve/__init__.py",
+      "multicurve/index.py",
+      "reports.py",
+      "spec.py"
+    ],
+    "vol_surfaces": [
+      "__init__.py",
+      "sources.py",
+      "surface.py"
+    ],
+    "bonds": [
+      "__init__.py",
+      "_errors.py",
+      "_instrument_base.py",
+      "_pricing_pricer.py",
+      "_pricing_risk.py",
+      "_pricing_yield_engine.py",
+      "_spreads/",
+      "_spreads/__init__.py",
+      "_spreads/adjustments/",
+      "_spreads/adjustments/__init__.py",
+      "_spreads/adjustments/balance_sheet.py",
+      "_spreads/adjustments/capital.py",
+      "_spreads/adjustments/haircuts.py",
+      "_spreads/adjustments/shadow_cost.py",
+      "_spreads/asw/",
+      "_spreads/asw/__init__.py",
+      "_spreads/asw/par_par.py",
+      "_spreads/asw/proceeds.py",
+      "_spreads/benchmark.py",
+      "_spreads/compounding_convexity.py",
+      "_spreads/discount_margin.py",
+      "_spreads/government_curve.py",
+      "_spreads/gspread.py",
+      "_spreads/ispread.py",
+      "_spreads/oas.py",
+      "_spreads/reference_rates.py",
+      "_spreads/secured_unsecured_basis.py",
+      "_spreads/sovereign.py",
+      "_spreads/zspread.py",
+      "_types/",
+      "_types/__init__.py",
+      "_types/amortization.py",
+      "_types/asw.py",
+      "_types/compounding.py",
+      "_types/ex_dividend.py",
+      "_types/identifiers.py",
+      "_types/inflation.py",
+      "_types/options.py",
+      "_types/price_quote.py",
+      "_types/rate_index.py",
+      "_types/rating.py",
+      "_types/sector.py",
+      "_types/seniority.py",
+      "_types/settlement_rules.py",
+      "_types/sofr_convention.py",
+      "_types/stub_rules.py",
+      "_types/tenor.py",
+      "_types/yield_convention.py",
+      "_types/yield_rules.py",
+      "_yas/",
+      "_yas/__init__.py",
+      "_yas/analysis.py",
+      "_yas/calculator.py",
+      "_yas/invoice.py",
+      "_yields/",
+      "_yields/__init__.py",
+      "_yields/bond.py",
+      "_yields/current.py",
+      "_yields/engine.py",
+      "_yields/money_market.py",
+      "_yields/short_date.py",
+      "_yields/simple.py",
+      "_yields/solver.py",
+      "_yields/street.py",
+      "_yields/true_yield.py",
+      "analytics_errors.py",
+      "cashflows/",
+      "cashflows/__init__.py",
+      "cashflows/accrued.py",
+      "cashflows/generator.py",
+      "cashflows/schedule.py",
+      "cashflows/settlement.py",
+      "errors.py",
+      "instruments/",
+      "instruments/__init__.py",
+      "instruments/base.py",
+      "instruments/callable.py",
+      "instruments/fixed.py",
+      "instruments/floating_rate.py",
+      "instruments/sinking_fund.py",
+      "instruments/tips.py",
+      "instruments/zero_coupon.py",
+      "options/",
+      "options/__init__.py",
+      "options/binomial_tree.py",
+      "options/bond_option.py",
+      "options/errors.py",
+      "options/models/",
+      "options/models/__init__.py",
+      "options/models/base.py",
+      "options/models/hull_white.py",
+      "pricing.py",
+      "products.py",
+      "quotes.py",
+      "risk.py",
+      "spreads.py",
+      "traits/",
+      "traits/__init__.py",
+      "traits/analytics.py",
+      "traits/bond.py",
+      "traits/cashflow.py",
+      "traits/instruments.py",
+      "types/",
+      "types/__init__.py",
+      "types/amortization.py",
+      "types/asw.py",
+      "types/bond_type.py",
+      "types/compounding.py",
+      "types/ex_dividend.py",
+      "types/identifiers.py",
+      "types/inflation.py",
+      "types/issuer_type.py",
+      "types/options.py",
+      "types/price_quote.py",
+      "types/rate_index.py",
+      "types/rating.py",
+      "types/sector.py",
+      "types/seniority.py",
+      "types/sofr_convention.py",
+      "types/stub_rules.py",
+      "types/yield_convention.py",
+      "types.py",
+      "yas.py",
+      "yields.py"
+    ],
+    "rates": [
+      "__init__.py",
+      "indices.py",
+      "pricing.py",
+      "products.py",
+      "quotes.py"
+    ],
+    "inflation": [
+      "__init__.py",
+      "analytics.py",
+      "reference.py"
+    ],
+    "credit": [
+      "__init__.py",
+      "analytics.py",
+      "pricing.py",
+      "products.py",
+      "quotes.py"
+    ],
+    "funding": [
+      "__init__.py",
+      "analytics.py",
+      "products.py",
+      "quotes.py"
+    ],
+    "portfolio": [
+      "__init__.py",
+      "_analytics_utils.py",
+      "analytics/",
+      "analytics/__init__.py",
+      "analytics/base.py",
+      "analytics/credit.py",
+      "analytics/quote_outputs.py",
+      "analytics/summary.py",
+      "benchmark/",
+      "benchmark/__init__.py",
+      "benchmark/comparison.py",
+      "benchmark/tracking.py",
+      "bucketing/",
+      "bucketing/__init__.py",
+      "bucketing/custom.py",
+      "bucketing/maturity.py",
+      "bucketing/rating.py",
+      "bucketing/sector.py",
+      "contribution/",
+      "contribution/__init__.py",
+      "contribution/attribution.py",
+      "contribution/risk.py",
+      "contribution/types.py",
+      "etf/",
+      "etf/__init__.py",
+      "etf/basket.py",
+      "etf/holding.py",
+      "etf/nav.py",
+      "etf/pricing.py",
+      "etf/sec.py",
+      "liquidity/",
+      "liquidity/__init__.py",
+      "outputs.py",
+      "portfolio.py",
+      "results.py",
+      "risk/",
+      "risk/__init__.py",
+      "stress/",
+      "stress/__init__.py",
+      "stress/impact.py",
+      "stress/scenarios.py",
+      "types/",
+      "types/__init__.py",
+      "types/cash.py",
+      "types/classification.py",
+      "types/config.py",
+      "types/holding.py",
+      "types/maturity.py",
+      "types/weighting.py"
+    ]
+  }
+}

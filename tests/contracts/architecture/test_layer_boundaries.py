@@ -10,11 +10,11 @@ ROOT = REPO_ROOT
 SRC = ROOT / "src" / "fuggers_py"
 INWARD_LAYERS = (
     "core",
-    "reference",
-    "market",
-    "products",
-    "pricers",
-    "measures",
+    "_reference",
+    "_market",
+    "_products",
+    "_pricers",
+    "_measures",
     "math",
 )
 
@@ -39,20 +39,20 @@ def test_inward_layers_do_not_depend_on_calc() -> None:
     for package_name in INWARD_LAYERS:
         for path in _python_files(package_name):
             modules = _imported_modules(path)
-            if any(module == "fuggers_py.calc" or module.startswith("fuggers_py.calc.") for module in modules):
+            if any(module == "fuggers_py._calc" or module.startswith("fuggers_py._calc.") for module in modules):
                 offending.append(str(path.relative_to(ROOT)))
     assert offending == []
 
 
 def test_products_do_not_import_pricers_or_measures() -> None:
     offending: list[str] = []
-    for path in _python_files("products"):
+    for path in _python_files("_products"):
         modules = _imported_modules(path)
         if any(
-            module == "fuggers_py.pricers"
-            or module.startswith("fuggers_py.pricers.")
-            or module == "fuggers_py.measures"
-            or module.startswith("fuggers_py.measures.")
+            module == "fuggers_py._pricers"
+            or module.startswith("fuggers_py._pricers.")
+            or module == "fuggers_py._measures"
+            or module.startswith("fuggers_py._measures.")
             for module in modules
         ):
             offending.append(str(path.relative_to(ROOT)))
@@ -61,11 +61,11 @@ def test_products_do_not_import_pricers_or_measures() -> None:
 
 def test_reference_does_not_import_calc_or_portfolio() -> None:
     offending: list[str] = []
-    for path in _python_files("reference"):
+    for path in _python_files("_reference"):
         modules = _imported_modules(path)
         if any(
-            module == "fuggers_py.calc"
-            or module.startswith("fuggers_py.calc.")
+            module == "fuggers_py._calc"
+            or module.startswith("fuggers_py._calc.")
             or module == "fuggers_py.portfolio"
             or module.startswith("fuggers_py.portfolio.")
             for module in modules

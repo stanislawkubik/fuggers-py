@@ -1,9 +1,13 @@
 # `fuggers_py.core`
 
-Foundational dates, prices, yields, ids, calendars, and day-count primitives.
+Retired public namespace.
 
-```{eval-rst}
-.. automodule:: fuggers_py.core
-   :members:
-   :member-order: bysource
+`fuggers_py.core` is no longer part of the public API.
+
+Use the root package for shared language:
+
+```python
+from fuggers_py import Date, Currency, Price, Yield, InstrumentId
 ```
+
+The internal implementation now lives under `fuggers_py._core`.

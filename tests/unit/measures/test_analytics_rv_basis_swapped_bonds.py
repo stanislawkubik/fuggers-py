@@ -4,24 +4,22 @@ from importlib.util import module_from_spec, spec_from_file_location
 from decimal import Decimal
 import sys
 
-from fuggers_py.products.bonds import FixedBondBuilder
-from fuggers_py.reference import YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.pricers.rates import AssetSwapPricer, BasisSwapPricer, CrossCurrencyBasisSwapPricer
-from fuggers_py.products.rates import (
+from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._core import Currency, Date, Frequency, PayReceive, YieldCalculationRules
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._pricers.rates import AssetSwapPricer, BasisSwapPricer, CrossCurrencyBasisSwapPricer
+from fuggers_py._products.rates import (
     AssetSwap,
     BasisSwap,
     CrossCurrencyBasisSwap,
     FloatingLegSpec,
-    PayReceive,
     ScheduleDefinition,
 )
 
 from tests.helpers._rates_helpers import flat_curve, multicurve_analytics_curves, rate_index
 from tests.helpers._paths import REPO_ROOT
 
-_BASIS_SWAPPED_BONDS_PATH = REPO_ROOT / "src" / "fuggers_py" / "measures" / "rv" / "basis_swapped_bonds.py"
+_BASIS_SWAPPED_BONDS_PATH = REPO_ROOT / "src" / "fuggers_py" / "_measures" / "rv" / "basis_swapped_bonds.py"
 _SPEC = spec_from_file_location("tests_basis_swapped_bonds", _BASIS_SWAPPED_BONDS_PATH)
 assert _SPEC is not None and _SPEC.loader is not None
 _BASIS_SWAPPED_BONDS = module_from_spec(_SPEC)

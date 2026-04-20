@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.pricing import BondPricer
-from fuggers_py.measures.risk.duration import modified_duration, spread_duration
-from fuggers_py.products.bonds.instruments import FixedBond
-from fuggers_py.core.types import Compounding, Date, Frequency
-from fuggers_py.market.curves import ZeroCurveBuilder
+from fuggers_py._measures.pricing import BondPricer
+from fuggers_py._measures.risk.duration import modified_duration, spread_duration
+from fuggers_py._products.bonds.instruments import FixedBond
+from fuggers_py._core.types import Compounding, Date, Frequency
+from fuggers_py._curves_impl import ZeroCurveBuilder
 
 
 def _flat_curve(ref: Date, rate: str) -> object:

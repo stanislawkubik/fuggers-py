@@ -4,9 +4,9 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core import Compounding, Currency, Date
-from fuggers_py.market.curves import (
+from fuggers_py._core import Tenor
+from fuggers_py._core import Compounding, Currency, Date
+from fuggers_py._curves_impl import (
     CreditCurve,
     CurrencyPair,
     CurveBuilder,
@@ -21,8 +21,8 @@ from fuggers_py.market.curves import (
     TermStructure,
     key_rate_profile,
 )
-from fuggers_py.market.curves import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from fuggers_py.market.curves.value_type import ValueType
+from fuggers_py._curves_impl import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
+from fuggers_py._curves_impl.value_type import ValueType
 
 
 def test_curve_builder_builds_segmented_discount_curve() -> None:

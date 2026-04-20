@@ -46,9 +46,9 @@ def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> bool | None:
 def fixed_rate_2025_bond():
     from decimal import Decimal
 
-    from fuggers_py.products.bonds.instruments import FixedBondBuilder
-    from fuggers_py.reference.bonds.types import YieldCalculationRules
-    from fuggers_py.core import Currency, Date, Frequency
+    from fuggers_py import Currency, Date, Frequency
+    from fuggers_py._products.bonds.instruments import FixedBondBuilder
+    from fuggers_py._core import YieldCalculationRules
 
     issue = Date.from_ymd(2015, 6, 15)
     maturity = Date.from_ymd(2025, 6, 15)

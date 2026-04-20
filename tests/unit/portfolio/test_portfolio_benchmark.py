@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Date
+from fuggers_py._core import Date
 from fuggers_py.portfolio import PortfolioBenchmark, estimate_tracking_error
 
 from tests.helpers._portfolio_helpers import make_benchmark, make_curve, make_portfolio

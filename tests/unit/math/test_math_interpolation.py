@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fuggers_py.math.errors import ExtrapolationNotAllowed
-from fuggers_py.math.interpolation import (
+from fuggers_py._math.errors import ExtrapolationNotAllowed
+from fuggers_py._math.interpolation import (
     CubicSpline,
     FlatForward,
     LinearInterpolator,

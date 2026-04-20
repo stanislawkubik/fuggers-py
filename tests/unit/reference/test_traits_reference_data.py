@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.core import InstrumentId
-from fuggers_py.reference import (
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._core import InstrumentId
+from fuggers_py._reference import (
     BondReferenceData,
-    BondType,
     CallScheduleEntry,
     FloatingRateTerms,
-    IssuerType,
 )
 
 

@@ -4,15 +4,16 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.products.credit import CreditDefaultSwap
-from fuggers_py.products.instruments import (
+from fuggers_py._core import Currency, Date, Frequency, OptionType, PayReceive
+from fuggers_py.credit import CreditDefaultSwap
+from fuggers_py._products.instruments import (
     HasExpiry,
     HasOptionType,
     HasUnderlyingInstrument,
     Instrument,
 )
-from fuggers_py.products.rates import (
+from fuggers_py.inflation import StandardCouponInflationSwap, ZeroCouponInflationSwap
+from fuggers_py._products.rates import (
     BasisSwap,
     CapFloor,
     CrossCurrencyBasisSwap,
@@ -22,13 +23,10 @@ from fuggers_py.products.rates import (
     Fra,
     GovernmentBondFuture,
     Ois,
-    PayReceive,
     ScheduleDefinition,
-    StandardCouponInflationSwap,
     Swaption,
-    ZeroCouponInflationSwap,
 )
-from fuggers_py.products.rates.options import CapFloorType, FuturesOption, OptionType
+from fuggers_py._products.rates.options import CapFloorType, FuturesOption
 
 
 def _fixed_leg(

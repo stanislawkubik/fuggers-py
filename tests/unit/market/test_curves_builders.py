@@ -5,14 +5,14 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core.types import Date
-from fuggers_py.market.curves import (
+from fuggers_py._core.types import Date
+from fuggers_py._curves_impl import (
     DiscountCurveBuilder,
     ExtrapolationMethod,
     InterpolationMethod,
     ZeroCurveBuilder,
 )
-from fuggers_py.market.curves.errors import MixedPillarTypes
+from fuggers_py._curves_impl.errors import MixedPillarTypes
 
 
 def test_discount_curve_builder_default_interpolation_df_is_log_linear() -> None:

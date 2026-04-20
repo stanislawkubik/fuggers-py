@@ -101,6 +101,7 @@ from .contribution import (
     SectorAttribution,
     SpreadContributions,
     aggregated_attribution,
+    attribution_summary,
     calculate_attribution,
     cs01_contributions,
     duration_difference_by_sector,
@@ -111,6 +112,7 @@ from .contribution import (
     estimate_spread_returns,
     spread_contributions,
     spread_difference_by_sector,
+    top_contributors,
 )
 from .etf import (
     BasketAnalysis,
@@ -242,6 +244,7 @@ __all__ = [
     "approximate_sec_yield",
     "arbitrage_opportunity",
     "AttributionInput",
+    "attribution_summary",
     "BasketAnalysis",
     "BasketComponent",
     "BasketFlowSummary",
@@ -391,6 +394,7 @@ __all__ = [
     "active_weights",
     "aggregated_attribution",
     "benchmark_comparison",
+    "top_contributors",
     "weighted_asw",
     "weighted_best_duration",
     "weighted_best_spread",

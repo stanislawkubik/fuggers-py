@@ -6,10 +6,12 @@ from decimal import Decimal
 from math import exp
 
 import pytest
-import fuggers_py.market.curves.rates.calibrators as calibrators_module
+import fuggers_py.curves.calibrators.bootstrap as bootstrap_module
+import fuggers_py.curves.calibrators as calibrators_module
+import fuggers_py.curves.calibrators.global_fit as global_fit_module
 
-from fuggers_py.core.types import Currency, Date, Frequency
-from fuggers_py.market.curves import (
+from fuggers_py._core.types import Currency, Date, Frequency
+from fuggers_py.curves import (
     CurveSpec,
     CurveType,
     DiscountingCurve,
@@ -19,22 +21,22 @@ from fuggers_py.market.curves import (
     RelativeRateCurve,
     YieldCurve,
 )
-from fuggers_py.market.curves.errors import CurveConstructionError, InvalidCurveInput, TenorOutOfBounds
-from fuggers_py.market.curves.rates.calibrators import (
+from fuggers_py.curves.errors import CurveConstructionError, InvalidCurveInput, TenorOutOfBounds
+from fuggers_py.curves.calibrators import (
     BondFitTarget,
     CalibrationMode,
     CalibrationObjective,
     CalibrationSpec,
 )
-from fuggers_py.market.curves.rates.kernels import (
+from fuggers_py.curves.kernels import (
     CurveKernel,
     CurveKernelKind,
     KernelSpec,
 )
-from fuggers_py.market.curves.rates.reports import CalibrationReport
-from fuggers_py.market.quotes import BondQuote, SwapQuote
-from fuggers_py.products.bonds import FixedBondBuilder
-from fuggers_py.reference.bonds.types import YieldCalculationRules
+from fuggers_py.curves.reports import CalibrationReport
+from fuggers_py._runtime.quotes import BondQuote, SwapQuote
+from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._core import YieldCalculationRules
 
 
 class _FlatZeroCurve(RatesTermStructure):
@@ -391,8 +393,8 @@ def test_substep_d8_yield_curve_fit_dispatches_only_by_calibration_spec_mode(mon
             calls.append(("fit", kernel_spec.kind.name))
             return _FlatKernel(zero_rate=0.032, max_t=10.0), CalibrationReport(objective="WEIGHTED_L2")
 
-    monkeypatch.setattr(calibrators_module, "BootstrapCalibrator", _BootstrapSpy)
-    monkeypatch.setattr(calibrators_module, "GlobalFitCalibrator", _GlobalFitSpy)
+    monkeypatch.setattr(bootstrap_module, "BootstrapCalibrator", _BootstrapSpy)
+    monkeypatch.setattr(global_fit_module, "GlobalFitCalibrator", _GlobalFitSpy)
 
     bootstrap_curve = YieldCurve.fit(
         quotes=[_swap_quote("1Y", 0.03)],
@@ -668,18 +670,18 @@ def test_substep_d2_curve_kernel_contract_can_be_implemented() -> None:
 @pytest.mark.parametrize(
     "module_name",
     [
-        "fuggers_py.market.curves.rates.reports",
-        "fuggers_py.market.curves.rates.kernels",
-        "fuggers_py.market.curves.rates.kernels.base",
-        "fuggers_py.market.curves.rates.kernels.nodes",
-        "fuggers_py.market.curves.rates.kernels.parametric",
-        "fuggers_py.market.curves.rates.kernels.spline",
-        "fuggers_py.market.curves.rates.kernels.composite",
-        "fuggers_py.market.curves.rates.kernels.decorators",
-        "fuggers_py.market.curves.rates.calibrators",
-        "fuggers_py.market.curves.rates.calibrators.base",
-        "fuggers_py.market.curves.rates.calibrators.bootstrap",
-        "fuggers_py.market.curves.rates.calibrators.global_fit",
+        "fuggers_py.curves.reports",
+        "fuggers_py.curves.kernels",
+        "fuggers_py.curves.kernels.base",
+        "fuggers_py.curves.kernels.nodes",
+        "fuggers_py.curves.kernels.parametric",
+        "fuggers_py.curves.kernels.spline",
+        "fuggers_py.curves.kernels.composite",
+        "fuggers_py.curves.kernels.decorators",
+        "fuggers_py.curves.calibrators",
+        "fuggers_py.curves.calibrators.base",
+        "fuggers_py.curves.calibrators.bootstrap",
+        "fuggers_py.curves.calibrators.global_fit",
     ],
 )
 def test_substep_d1_internal_discounting_structure_imports(module_name: str) -> None:

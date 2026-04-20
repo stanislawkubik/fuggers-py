@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.credit import (
+from fuggers_py.credit import (
     adjusted_cds_breakdown,
     adjusted_cds_spread,
     cds_adjusted_risk_free_rate,

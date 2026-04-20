@@ -5,26 +5,27 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core.types import Compounding, Currency, Date, Frequency
-from fuggers_py.market.curves import CurveSpec, CurveType
-from fuggers_py.market.curves.errors import InvalidCurveInput
-from fuggers_py.market.curves.rates.calibrators import (
+from fuggers_py._core.types import Compounding, Currency, Date, Frequency
+from fuggers_py.curves import CurveSpec, CurveType
+from fuggers_py.curves.errors import InvalidCurveInput
+from fuggers_py.curves.calibrators import (
     BondFitTarget,
     CalibrationMode,
     CalibrationObjective,
     CalibrationSpec,
 )
-from fuggers_py.market.curves.rates.calibrators._quotes import (
+from fuggers_py.curves.calibrators._quotes import (
     QuoteValueKind,
     TargetSpaceCategory,
     model_quote_value,
     normalized_quote_rows,
     quote_value_target_space,
 )
-from fuggers_py.market.curves.rates.kernels import CurveKernel
-from fuggers_py.market.quotes import BondQuote, SwapQuote
-from fuggers_py.products.bonds import FixedBondBuilder
-from fuggers_py.reference.bonds.types import CompoundingMethod, YieldCalculationRules
+from fuggers_py.curves.kernels import CurveKernel
+from fuggers_py._runtime.quotes import BondQuote, SwapQuote
+from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._reference.bonds.types import CompoundingMethod
+from fuggers_py._core import YieldCalculationRules
 
 
 def _spec() -> CurveSpec:

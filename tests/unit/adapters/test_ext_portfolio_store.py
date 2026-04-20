@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.adapters import (
+from fuggers_py._core import Currency, Date
+from fuggers_py._storage import (
     InMemoryPortfolioStore,
     JsonCodec,
     PortfolioFilter,
@@ -13,8 +13,8 @@ from fuggers_py.adapters import (
     StoredPortfolio,
     StoredPosition,
 )
-from fuggers_py.core import PortfolioId
-from fuggers_py.adapters import Pagination, PortfolioStore
+from fuggers_py._core import PortfolioId
+from fuggers_py._storage import Pagination, PortfolioStore
 
 
 def _portfolio(

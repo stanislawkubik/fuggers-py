@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import CalendarData, DynamicCalendar, Frequency, WeekendCalendar
-from fuggers_py.core.calendars import last_weekday_of_month, nth_weekday_of_month, observed_date
-from fuggers_py.core.daycounts import ActActAfb, ActActIcma, Thirty360E, Thirty360EIsda, Thirty360German, Thirty360US
-from fuggers_py.core.errors import CalendarError, DayCountError
-from fuggers_py.core.types import Date
+from fuggers_py._core import CalendarData, DynamicCalendar, Frequency, WeekendCalendar
+from fuggers_py._core.calendars import last_weekday_of_month, nth_weekday_of_month, observed_date
+from fuggers_py._core.daycounts import ActActAfb, ActActIcma, Thirty360E, Thirty360EIsda, Thirty360German, Thirty360US
+from fuggers_py._core.errors import CalendarError, DayCountError
+from fuggers_py._core.types import Date
 
 
 def test_act_act_afb_counts_whole_years_then_remaining_leap_days() -> None:

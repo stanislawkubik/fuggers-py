@@ -5,16 +5,16 @@ from decimal import Decimal
 import numpy as np
 import pytest
 
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core import Compounding, Date
-from fuggers_py.market.curves.calibration.global_fit import FitterConfig, GlobalFitter
-from fuggers_py.market.curves.calibration.instruments import Deposit, InstrumentSet
-from fuggers_py.market.curves.conversion import ValueConverter
-from fuggers_py.market.curves.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from fuggers_py.market.curves.errors import InvalidCurveInput, UnsupportedValueType
-from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.curves.wrappers import CreditCurve
-from fuggers_py.math.optimization import OptimizationConfig
+from fuggers_py._core import Tenor
+from fuggers_py._core import Compounding, Date
+from fuggers_py._curves_impl.calibration.global_fit import FitterConfig, GlobalFitter
+from fuggers_py._curves_impl.calibration.instruments import Deposit, InstrumentSet
+from fuggers_py._curves_impl.conversion import ValueConverter
+from fuggers_py._curves_impl.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
+from fuggers_py._curves_impl.errors import InvalidCurveInput, UnsupportedValueType
+from fuggers_py._curves_impl.value_type import ValueType
+from fuggers_py._curves_impl.wrappers import CreditCurve
+from fuggers_py._math.optimization import OptimizationConfig
 
 
 def test_value_converter_validates_forward_inputs_and_risky_discount_factor_formula() -> None:

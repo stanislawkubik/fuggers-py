@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from fuggers_py.math.errors import (
+from fuggers_py._math.errors import (
     ConvergenceFailed,
     DivisionByZero,
     DimensionMismatch,

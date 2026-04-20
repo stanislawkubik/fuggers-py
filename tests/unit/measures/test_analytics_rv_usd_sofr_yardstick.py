@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.rv import (
+from fuggers_py._measures.rv import (
     CommonCurrencyFloatingBondView,
     decompose_asw_basis_cds_links,
     usd_sofr_adjusted_rv_from_links,
 )
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core import Currency, Date
+from fuggers_py._core import Tenor
+from fuggers_py._core import Currency, Date
 
 
 def _floating_view(*, target_currency: Currency = Currency.USD, target_index_name: str = "SOFR") -> CommonCurrencyFloatingBondView:

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.yields import (
+from fuggers_py._measures.yields import (
     StandardYieldEngine,
     YieldSolver,
     bond_equivalent_yield,
@@ -12,8 +12,8 @@ from fuggers_py.measures.yields import (
     discount_yield,
     money_market_yield,
 )
-from fuggers_py.reference.bonds.types import YieldCalculationRules
-from fuggers_py.core import Date
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Date
 
 
 def test_yield_engine_roundtrip(fixed_rate_2025_bond) -> None:

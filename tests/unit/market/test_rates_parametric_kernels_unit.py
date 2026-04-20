@@ -4,11 +4,11 @@ from math import exp
 
 import pytest
 
-from fuggers_py.core.types import Currency, Date
-from fuggers_py.market.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
-from fuggers_py.market.curves.errors import InvalidCurveInput, TenorOutOfBounds
-from fuggers_py.market.curves.rates.kernels import NelsonSiegelKernel, SvenssonKernel
-from fuggers_py.math.interpolation.parametric import NelsonSiegel, Svensson
+from fuggers_py._core.types import Currency, Date
+from fuggers_py.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
+from fuggers_py.curves.errors import InvalidCurveInput, TenorOutOfBounds
+from fuggers_py.curves.kernels import NelsonSiegelKernel, SvenssonKernel
+from fuggers_py._math.interpolation.parametric import NelsonSiegel, Svensson
 
 
 def _nominal_spec(*, extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR) -> CurveSpec:

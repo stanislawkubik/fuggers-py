@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import replace
 from decimal import Decimal
 
-from fuggers_py.measures.functions import modified_duration, yield_to_maturity
-from fuggers_py.products.bonds.instruments import FixedBond
-from fuggers_py.reference.bonds.types import YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency, Price
+from fuggers_py._measures.functions import modified_duration, yield_to_maturity
+from fuggers_py._products.bonds.instruments import FixedBond
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency, Price
 from fuggers_py.portfolio import PortfolioAnalyzer
 
 from tests.helpers._engine_scenarios import (

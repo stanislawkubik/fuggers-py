@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fuggers_py.measures.cashflows import ExDividendRules, SettlementCalculator, SettlementRules, SettlementStatus
-from fuggers_py.measures.cashflows.settlement import settlement_status
-from fuggers_py.reference.bonds.types import CalendarId
-from fuggers_py.core import Date
+from fuggers_py._measures.cashflows import ExDividendRules, SettlementCalculator, SettlementRules, SettlementStatus
+from fuggers_py._measures.cashflows.settlement import settlement_status
+from fuggers_py._core import CalendarId
+from fuggers_py._core import Date
 
 
 def test_settlement_calculator_defaults_to_weekend_only_calendar_for_simple_analytics_usage() -> None:

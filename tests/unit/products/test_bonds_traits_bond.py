@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.products.bonds.traits import Bond, BondCashFlow, CashFlowType
-from fuggers_py.reference.bonds.types import BondIdentifiers, YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency
+from fuggers_py._products.bonds.traits import Bond, BondCashFlow, CashFlowType
+from fuggers_py._reference.bonds.types import BondIdentifiers
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency
 
 
 class _StubBond(Bond):

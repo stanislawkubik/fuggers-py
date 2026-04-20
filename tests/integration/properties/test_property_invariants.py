@@ -7,18 +7,18 @@ from decimal import Decimal
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from fuggers_py.measures.functions import (
+from fuggers_py._measures.functions import (
     clean_price_from_yield,
     effective_convexity,
     effective_duration,
     yield_to_maturity,
 )
-from fuggers_py.products.bonds.instruments import FixedBond
-from fuggers_py.pricers.bonds import BondPricer as BondsBondPricer
-from fuggers_py.core import Compounding, Currency, Date, Frequency, Yield
-from fuggers_py.market.curves import DiscountCurveBuilder
-from fuggers_py.market.curves.discrete import InterpolationMethod
-from fuggers_py.math import BisectionSolver, BrentSolver, HybridSolver, SolverConfig
+from fuggers_py._products.bonds.instruments import FixedBond
+from fuggers_py._pricers.bonds import BondPricer as BondsBondPricer
+from fuggers_py._core import Compounding, Currency, Date, Frequency, Yield
+from fuggers_py._curves_impl import DiscountCurveBuilder
+from fuggers_py._curves_impl.discrete import InterpolationMethod
+from fuggers_py._math import BisectionSolver, BrentSolver, HybridSolver, SolverConfig
 from fuggers_py.portfolio import (
     Portfolio,
     active_weights,

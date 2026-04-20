@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fuggers_py.reference.bonds.types import AccruedConvention, CompoundingKind, YieldCalculationRules, YieldConvention
-from fuggers_py.core.daycounts import DayCountConvention
+from fuggers_py._reference.bonds.types import AccruedConvention, CompoundingKind, YieldConvention
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core.daycounts import DayCountConvention
 
 
 def test_yield_rules_us_treasury_matches_rust_preset_shape() -> None:

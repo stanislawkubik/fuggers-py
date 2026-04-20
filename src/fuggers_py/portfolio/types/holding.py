@@ -10,9 +10,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from fuggers_py.products.bonds.traits import Bond
-from fuggers_py.reference.bonds.types import RatingInfo, SectorInfo, SeniorityInfo
-from fuggers_py.core.types import Currency, Price
+from fuggers_py.bonds import Bond
+from fuggers_py.bonds import RatingInfo, SectorInfo, SeniorityInfo
+from fuggers_py._core.types import Currency, Price
 
 from .classification import Classification
 

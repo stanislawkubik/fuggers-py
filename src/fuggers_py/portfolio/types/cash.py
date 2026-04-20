@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.core.types import Currency
+from fuggers_py._core.types import Currency
 
 
 def _to_decimal(value: object) -> Decimal:

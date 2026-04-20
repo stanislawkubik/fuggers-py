@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Date
-from fuggers_py.core import InstrumentId
-from fuggers_py.pricers.rates.futures import cheapest_to_deliver, delivery_payoff
-from fuggers_py.products.rates.futures import (
+from fuggers_py._core import Date
+from fuggers_py._core import InstrumentId
+from fuggers_py._pricers.rates.futures import cheapest_to_deliver, delivery_payoff
+from fuggers_py._products.rates.futures import (
     DeliverableBasket,
     DeliverableBond,
     GovernmentBondFuture,

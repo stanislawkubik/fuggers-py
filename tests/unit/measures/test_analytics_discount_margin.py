@@ -5,12 +5,13 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.errors import AnalyticsError
-from fuggers_py.measures.spreads import DiscountMarginCalculator, simple_margin, z_discount_margin
-from fuggers_py.products.bonds.instruments import FloatingRateNoteBuilder
-from fuggers_py.reference.bonds.types import RateIndex, YieldCalculationRules
-from fuggers_py.core import Date, Frequency
-from fuggers_py.market.curves import DiscountCurveBuilder, ForwardCurve
+from fuggers_py._measures.errors import AnalyticsError
+from fuggers_py._measures.spreads import DiscountMarginCalculator, simple_margin, z_discount_margin
+from fuggers_py._products.bonds.instruments import FloatingRateNoteBuilder
+from fuggers_py._reference.bonds.types import RateIndex
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Date, Frequency
+from fuggers_py._curves_impl import DiscountCurveBuilder, ForwardCurve
 
 
 def _quarterly_rules() -> YieldCalculationRules:

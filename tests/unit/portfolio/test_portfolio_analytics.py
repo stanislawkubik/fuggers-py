@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.pricing import BondPricer
-from fuggers_py.measures.risk import BondRiskCalculator
-from fuggers_py.products.bonds.instruments import FixedBond, ZeroCouponBond
-from fuggers_py.core import Date, Frequency
-from fuggers_py.market.curves import DiscountCurveBuilder
+from fuggers_py._measures.pricing import BondPricer
+from fuggers_py._measures.risk import BondRiskCalculator
+from fuggers_py._products.bonds.instruments import FixedBond, ZeroCouponBond
+from fuggers_py._core import Date, Frequency
+from fuggers_py._curves_impl import DiscountCurveBuilder
 from fuggers_py.portfolio import Bucketing, Portfolio, PortfolioAnalytics, Position, Stress
 
 

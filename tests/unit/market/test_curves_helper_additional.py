@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.types import Compounding, Frequency, SpreadType
-from fuggers_py.market.curves.conversion import ValueConverter
-from fuggers_py.market.curves.errors import InvalidCurveInput
-from fuggers_py.market.curves.value_type import ValueType
+from fuggers_py._core.daycounts import DayCountConvention
+from fuggers_py._core.types import Compounding, Frequency, SpreadType
+from fuggers_py._curves_impl.conversion import ValueConverter
+from fuggers_py._curves_impl.errors import InvalidCurveInput
+from fuggers_py._curves_impl.value_type import ValueType
 
 
 def test_value_type_validates_supported_field_combinations() -> None:

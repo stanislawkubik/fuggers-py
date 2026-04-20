@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.funding import is_special, specialness_spread, specialness_value
+from fuggers_py.funding import is_special, specialness_spread, specialness_value
 
 
 def test_specialness_helpers_use_explicit_positive_for_special_sign_convention() -> None:

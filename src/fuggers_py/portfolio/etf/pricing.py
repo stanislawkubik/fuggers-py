@@ -9,9 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.core.ids import EtfId, InstrumentId
-from fuggers_py.market.snapshot import EtfHolding
-from fuggers_py.calc.output import BondQuoteOutput, EtfAnalyticsOutput
+from fuggers_py._core.ids import EtfId, InstrumentId
+
+from .holding import EtfHolding
+from ..outputs import BondQuoteOutput, EtfAnalyticsOutput
 
 
 def _holding_value(holding: EtfHolding, quote: BondQuoteOutput) -> Decimal | None:

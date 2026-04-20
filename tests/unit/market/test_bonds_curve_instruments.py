@@ -4,9 +4,9 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core.types import Compounding, Date, Frequency
-from fuggers_py.market.curves import ZeroCurveBuilder
-from fuggers_py.market.curves.bond_instruments import GovernmentCouponBond, GovernmentZeroCoupon
+from fuggers_py._core.types import Compounding, Date, Frequency
+from fuggers_py._curves_impl import ZeroCurveBuilder
+from fuggers_py._curves_impl.bond_instruments import GovernmentCouponBond, GovernmentZeroCoupon
 
 
 def _flat_curve(ref: Date, rate: str) -> object:

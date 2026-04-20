@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import fuggers_py.core as core
-from fuggers_py.core import CashFlow, Date
-from fuggers_py.core import traits as core_traits
+import fuggers_py._core as core
+from fuggers_py._core import CashFlow, Date
+from fuggers_py._core import traits as core_traits
 
 
 class DummyCurve:

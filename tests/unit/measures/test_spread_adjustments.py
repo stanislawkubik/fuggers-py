@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.spreads import (
+from fuggers_py._measures.spreads import (
     BalanceSheetSpreadOverlay,
     CapitalSpreadAdjustment,
     HaircutSpreadAdjustment,

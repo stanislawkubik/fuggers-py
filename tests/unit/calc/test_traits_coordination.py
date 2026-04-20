@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fuggers_py.calc import (
+from fuggers_py._calc import (
     InMemoryLeaderElection,
     InMemoryPartitionRegistry,
     InMemoryServiceRegistry,

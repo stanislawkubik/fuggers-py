@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Date
+from fuggers_py._core import Date
 from fuggers_py.portfolio import Portfolio, PortfolioAnalytics
 from fuggers_py.portfolio.types import HoldingAnalytics
 

@@ -4,10 +4,10 @@ import math
 
 import pytest
 
-from fuggers_py.core.types import Date
-from fuggers_py.market.curves.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from fuggers_py.market.curves.errors import InvalidCurveInput
-from fuggers_py.market.curves.value_type import ValueType
+from fuggers_py._core.types import Date
+from fuggers_py._curves_impl.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
+from fuggers_py._curves_impl.errors import InvalidCurveInput
+from fuggers_py._curves_impl.value_type import ValueType
 
 
 def test_term_structure_from_discount_factors_df_zero_forward() -> None:

@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import replace
 from decimal import Decimal
 
-from fuggers_py.products.bonds.instruments import CallEntry, CallSchedule, CallableBondBuilder, FixedBond
-from fuggers_py.reference.bonds.types import BondType, PutType, YieldCalculationRules
-from fuggers_py.core import Date, Frequency
+from fuggers_py.bonds.types import BondType
+from fuggers_py._products.bonds.instruments import CallEntry, CallSchedule, CallableBondBuilder, FixedBond
+from fuggers_py._reference.bonds.types import PutType
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Date, Frequency
 
 
 def _base_bond() -> FixedBond:

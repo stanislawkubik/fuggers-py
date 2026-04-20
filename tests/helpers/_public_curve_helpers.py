@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from fuggers_py.core import Currency, CurveId, Date
-from fuggers_py.market.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
-from fuggers_py.market.curves.rates.kernels import LinearZeroKernel, LogLinearDiscountKernel
-from fuggers_py.market.snapshot import CurvePoint
+from fuggers_py._core import Currency, CurveId, Date
+from fuggers_py._market.snapshot import CurvePoint
+from fuggers_py.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
+from fuggers_py.curves.kernels import LinearZeroKernel, LogLinearDiscountKernel
 
 
 def _curve_name(curve_id: CurveId | str) -> str:

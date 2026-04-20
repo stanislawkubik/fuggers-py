@@ -4,14 +4,14 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.pricing import BondPricer
-from fuggers_py.measures.spreads import BenchmarkSpec, GovernmentCurve, g_spread_with_benchmark_bps
-from fuggers_py.measures.yas import BloombergReference, SettlementInvoiceBuilder, YASCalculator
-from fuggers_py.measures.yields import current_yield_from_amount_pct
-from fuggers_py.products.bonds.instruments import FixedBondBuilder
-from fuggers_py.reference.bonds.types import Tenor, YieldCalculationRules
-from fuggers_py.market.curves import DiscountCurveBuilder
-from fuggers_py.core import Currency, Date, Frequency, Price
+from fuggers_py._measures.pricing import BondPricer
+from fuggers_py._measures.spreads import BenchmarkSpec, GovernmentCurve, g_spread_with_benchmark_bps
+from fuggers_py._measures.yas import BloombergReference, SettlementInvoiceBuilder, YASCalculator
+from fuggers_py._measures.yields import current_yield_from_amount_pct
+from fuggers_py._products.bonds.instruments import FixedBondBuilder
+from fuggers_py._core import Tenor, YieldCalculationRules
+from fuggers_py._curves_impl import DiscountCurveBuilder
+from fuggers_py._core import Currency, Date, Frequency, Price
 
 
 def test_bloomberg_reference_boeing() -> None:
@@ -124,7 +124,7 @@ def test_yas_calculator_does_not_swallow_unexpected_zspread_errors(fixed_rate_20
 
     calc = YASCalculator(curve=curve)
 
-    import fuggers_py.measures.yas.calculator as yas_calc_mod
+    import fuggers_py._measures.yas.calculator as yas_calc_mod
 
     def boom(*args, **kwargs):
         raise RuntimeError("boom")

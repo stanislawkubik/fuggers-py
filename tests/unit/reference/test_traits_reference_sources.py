@@ -2,18 +2,17 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.core import EtfId, InstrumentId
-from fuggers_py.market.snapshot import EtfHolding
-from fuggers_py.reference import (
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._core import EtfId, InstrumentId
+from fuggers_py._market.snapshot import EtfHolding
+from fuggers_py._reference import (
     BondReferenceData,
     BondReferenceSource,
-    BondType,
     EtfHoldingsSource,
     FloatingRateTerms,
     IssuerReferenceData,
     IssuerReferenceSource,
-    IssuerType,
     RatingRecord,
     RatingSource,
     ReferenceDataProvider,

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Date
-from fuggers_py.core.daycounts import (
+from fuggers_py._core import Date
+from fuggers_py._core.daycounts import (
     Act360,
     Act365,
     Act365Fixed,
@@ -18,7 +18,7 @@ from fuggers_py.core.daycounts import (
     Thirty360German,
     Thirty360US,
 )
-from fuggers_py.core.types import Frequency
+from fuggers_py._core.types import Frequency
 
 
 def test_act_daycounts_basic() -> None:

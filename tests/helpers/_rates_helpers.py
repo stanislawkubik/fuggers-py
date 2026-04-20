@@ -4,11 +4,10 @@ import math
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core import Compounding, Currency, Date, Yield
-from fuggers_py.market.curves import CurveSpec, CurveType, DiscountingCurve, ExtrapolationPolicy, RateSpace
-from fuggers_py.market.curves.multicurve import RateIndex
-from fuggers_py.market.state import AnalyticsCurves
+from fuggers_py._core import Compounding, Currency, Date, Tenor, Yield
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py.curves import CurveSpec, CurveType, DiscountingCurve, ExtrapolationPolicy, RateSpace
+from fuggers_py.curves.multicurve import RateIndex
 
 
 class FlatYieldCurve(DiscountingCurve):

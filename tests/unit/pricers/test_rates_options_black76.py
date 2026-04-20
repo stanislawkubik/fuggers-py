@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.core import VolSurfaceId, YearMonth
-from fuggers_py.market.vol_surfaces import VolPoint, VolQuoteType, VolSurfaceType, VolatilitySurface
-from fuggers_py.pricers.rates.options import Black76Pricer, black76_formula
-from fuggers_py.products.rates import FixedFloatSwap, FixedLegSpec, FloatingLegSpec, PayReceive
-from fuggers_py.products.rates.options import Swaption
+from fuggers_py._core import Currency, Date, PayReceive
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._core import VolSurfaceId, YearMonth
+from fuggers_py._pricers.rates.options import Black76Pricer, black76_formula
+from fuggers_py._products.rates import FixedFloatSwap, FixedLegSpec, FloatingLegSpec
+from fuggers_py._products.rates.options import Swaption
+from fuggers_py.vol_surfaces import VolPoint, VolQuoteType, VolSurfaceType, VolatilitySurface
 
 from tests.helpers._rates_helpers import flat_curve, multicurve_analytics_curves, rate_index
 

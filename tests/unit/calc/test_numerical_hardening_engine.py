@@ -4,16 +4,16 @@ from datetime import UTC, datetime
 
 import pytest
 
-from fuggers_py.core import Date
-from fuggers_py.calc import NodeId, PricingEngineBuilder
-from fuggers_py.calc.scheduler import IntervalScheduler
-from fuggers_py.market.sources import MarketDataProvider
-from fuggers_py.reference import ReferenceDataProvider
+from fuggers_py._core import Date
+from fuggers_py._calc import NodeId, PricingEngineBuilder
+from fuggers_py._calc.scheduler import IntervalScheduler
+from fuggers_py._market.sources import MarketDataProvider
+from fuggers_py._reference import ReferenceDataProvider
 
 
 @pytest.mark.asyncio
 async def test_interval_scheduler_uses_one_timestamp_per_batch(monkeypatch: pytest.MonkeyPatch) -> None:
-    import fuggers_py.calc.scheduler as scheduler_module
+    import fuggers_py._calc.scheduler as scheduler_module
 
     now = datetime(2026, 3, 14, 9, 0, tzinfo=UTC)
     monkeypatch.setattr(scheduler_module, "_now", lambda: now)

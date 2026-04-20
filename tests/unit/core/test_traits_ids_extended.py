@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from fuggers_py.core import Currency
-from fuggers_py.core import CurrencyPair, VolSurfaceId, YearMonth
+from fuggers_py._core import Currency
+from fuggers_py._core import CurrencyPair, VolSurfaceId, YearMonth
 
 
 def test_currency_pair_normalization_and_roundtrip() -> None:

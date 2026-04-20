@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Date
-from fuggers_py.calc import (
+from fuggers_py._core import Date
+from fuggers_py._calc import (
     AnalyticsPublisher,
     BondQuoteOutput,
     EtfAnalyticsOutput,
@@ -12,7 +12,7 @@ from fuggers_py.calc import (
     PortfolioAnalyticsOutput,
     QuotePublisher,
 )
-from fuggers_py.core import InstrumentId
+from fuggers_py._core import InstrumentId
 
 
 class CollectingQuotePublisher:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from fuggers_py.adapters import (
+from fuggers_py._storage import (
     AsyncTransport,
     CacheTransport,
     Codec,
@@ -85,4 +85,3 @@ def test_transport_protocols_support_noop_and_mock_implementations() -> None:
     remote.store("curves", "usd", b"curve")
     assert cache.get("quote") == b"1"
     assert remote.fetch("curves", "usd") == b"curve"
-

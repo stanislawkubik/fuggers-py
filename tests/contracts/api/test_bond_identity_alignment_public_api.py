@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-import fuggers_py.products.bonds as products_bonds
-import fuggers_py.products.bonds.instruments as bond_instruments
-from fuggers_py.products.bonds import (
+import fuggers_py.bonds as bonds_pkg
+from fuggers_py.bonds import (
     CallableBond,
     CallableBondBuilder,
     FixedBond,
@@ -16,24 +15,21 @@ from fuggers_py.products.bonds import (
     TipsBond,
     ZeroCouponBond,
 )
-from fuggers_py.products.instruments import Instrument
 
 
 @pytest.mark.feature_slug("bond-identity-alignment")
 @pytest.mark.feature_category("api_contract")
-def test_bond_root_imports_remain_stable_while_identity_surface_expands() -> None:
-    assert FixedBond is bond_instruments.FixedBond
-    assert ZeroCouponBond is bond_instruments.ZeroCouponBond
-    assert FloatingRateNote is bond_instruments.FloatingRateNote
-    assert TipsBond is bond_instruments.TipsBond
-    assert SinkingFundBond is bond_instruments.SinkingFundBond
-    assert CallableBond is bond_instruments.CallableBond
-    assert FixedBondBuilder is bond_instruments.FixedBondBuilder
-    assert FloatingRateNoteBuilder is bond_instruments.FloatingRateNoteBuilder
-    assert SinkingFundBondBuilder is bond_instruments.SinkingFundBondBuilder
-    assert CallableBondBuilder is bond_instruments.CallableBondBuilder
-    assert products_bonds.FixedBondBuilder is FixedBondBuilder
-    assert Instrument.__name__ == "Instrument"
+def test_bond_root_imports_are_the_stable_public_identity_surface() -> None:
+    assert bonds_pkg.FixedBond is FixedBond
+    assert bonds_pkg.ZeroCouponBond is ZeroCouponBond
+    assert bonds_pkg.FloatingRateNote is FloatingRateNote
+    assert bonds_pkg.TipsBond is TipsBond
+    assert bonds_pkg.SinkingFundBond is SinkingFundBond
+    assert bonds_pkg.CallableBond is CallableBond
+    assert bonds_pkg.FixedBondBuilder is FixedBondBuilder
+    assert bonds_pkg.FloatingRateNoteBuilder is FloatingRateNoteBuilder
+    assert bonds_pkg.SinkingFundBondBuilder is SinkingFundBondBuilder
+    assert bonds_pkg.CallableBondBuilder is CallableBondBuilder
 
 
 @pytest.mark.feature_slug("bond-identity-alignment")

@@ -11,9 +11,9 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import TypedDict, cast
 
-from fuggers_py.market.curves import DiscountingCurve
-from fuggers_py.core.types import Date
-from fuggers_py.reference.bonds.types import CreditRating
+from fuggers_py.curves import DiscountingCurve
+from fuggers_py._core.types import Date
+from fuggers_py.bonds import CreditRating
 
 from ..analytics.base import PortfolioAnalytics
 from ..analytics.credit import (
@@ -212,8 +212,8 @@ def calculate_migration_risk(portfolio: Portfolio) -> MigrationRisk:
     """Return the BBB and BB crossover risk for the portfolio."""
 
     total_weight = sum((_position_weight(position) for position in portfolio.investable_holdings()), Decimal(0))
-    fallen_positions = [position for position in portfolio.investable_holdings() if _position_rating(position) is CreditRating.BBB]
-    rising_positions = [position for position in portfolio.investable_holdings() if _position_rating(position) is CreditRating.BB]
+    fallen_positions = [position for position in portfolio.investable_holdings() if _position_rating(position) == CreditRating.BBB]
+    rising_positions = [position for position in portfolio.investable_holdings() if _position_rating(position) == CreditRating.BB]
 
     def _weight_for(positions: tuple[Position, ...] | list[Position]) -> Decimal:
         if total_weight == 0:

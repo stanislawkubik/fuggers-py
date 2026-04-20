@@ -5,11 +5,11 @@ from decimal import Decimal
 import numpy as np
 import pytest
 
-from fuggers_py.core import Compounding, Date
-from fuggers_py.market.curves import CreditCurve, DiscountCurveBuilder, ValueConverter
-from fuggers_py.market.curves.calibration import FitterConfig, GlobalFitter, ParametricModel
-from fuggers_py.market.curves.term_structure import TermStructure
-from fuggers_py.market.curves.value_type import ValueType
+from fuggers_py._core import Compounding, Date
+from fuggers_py._curves_impl import CreditCurve, DiscountCurveBuilder, ValueConverter
+from fuggers_py._curves_impl.calibration import FitterConfig, GlobalFitter, ParametricModel
+from fuggers_py._curves_impl.term_structure import TermStructure
+from fuggers_py._curves_impl.value_type import ValueType
 
 from ._helpers import D, assert_decimal_close, load_fixture, parse_date
 

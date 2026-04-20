@@ -4,13 +4,14 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.calc import PricingEngineBuilder
-from fuggers_py.calc.errors import EngineConfigurationError
-from fuggers_py.core import InstrumentId
-from fuggers_py.market.sources import MarketDataProvider
-from fuggers_py.reference import BondReferenceData, BondType, IssuerType, ReferenceDataProvider
-from fuggers_py.calc import EngineConfig, NodeConfig, UpdateFrequency
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._calc import PricingEngineBuilder
+from fuggers_py._calc.errors import EngineConfigurationError
+from fuggers_py._core import InstrumentId
+from fuggers_py._market.sources import MarketDataProvider
+from fuggers_py._reference import BondReferenceData, ReferenceDataProvider
+from fuggers_py._calc import EngineConfig, NodeConfig, UpdateFrequency
 
 
 class _BondSource:

@@ -6,7 +6,7 @@ from math import exp
 
 import pytest
 
-from fuggers_py.measures.spreads import (
+from fuggers_py._measures.spreads import (
     ASWType as AnalyticsASWType,
     BenchmarkKind,
     BenchmarkSpec,
@@ -22,17 +22,17 @@ from fuggers_py.measures.spreads import (
     i_spread_bps,
     z_spread_from_curve,
 )
-from fuggers_py.measures.errors import AnalyticsError
-from fuggers_py.reference.bonds.types import ASWType
-from fuggers_py.products.bonds.traits import BondCashFlow, CashFlowType
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.market.curves import DiscountCurveBuilder
-from fuggers_py.core import Currency, Date
+from fuggers_py._measures.errors import AnalyticsError
+from fuggers_py._reference.bonds.types import ASWType
+from fuggers_py._products.bonds.traits import BondCashFlow, CashFlowType
+from fuggers_py._core import Tenor
+from fuggers_py._curves_impl import DiscountCurveBuilder
+from fuggers_py._core import Currency, Date
 
 
 def test_asw_type_remains_available_from_analytics_surface() -> None:
     assert AnalyticsASWType is ASWType
-    assert not hasattr(importlib.import_module("fuggers_py.measures.spreads.asw"), "ASWType")
+    assert not hasattr(importlib.import_module("fuggers_py._measures.spreads.asw"), "ASWType")
 
 
 def test_security_id_wrapper() -> None:

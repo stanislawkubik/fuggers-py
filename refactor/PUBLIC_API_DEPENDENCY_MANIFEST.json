@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "packages": {
+    "fuggers_py": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py.bonds",
+        "fuggers_py.credit",
+        "fuggers_py.curves",
+        "fuggers_py.funding",
+        "fuggers_py.inflation",
+        "fuggers_py.portfolio",
+        "fuggers_py.rates",
+        "fuggers_py.vol_surfaces"
+      ]
+    },
+    "fuggers_py.curves": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py._math",
+        "fuggers_py.bonds",
+        "fuggers_py.credit",
+        "fuggers_py.funding",
+        "fuggers_py.inflation",
+        "fuggers_py.rates"
+      ]
+    },
+    "fuggers_py.vol_surfaces": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py._math",
+        "fuggers_py._runtime",
+        "fuggers_py.bonds",
+        "fuggers_py.credit",
+        "fuggers_py.inflation",
+        "fuggers_py.rates"
+      ]
+    },
+    "fuggers_py.bonds": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py._math",
+        "fuggers_py.curves",
+        "fuggers_py.inflation",
+        "fuggers_py.rates",
+        "fuggers_py.vol_surfaces"
+      ]
+    },
+    "fuggers_py.rates": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py._math",
+        "fuggers_py.bonds",
+        "fuggers_py.curves",
+        "fuggers_py.vol_surfaces"
+      ]
+    },
+    "fuggers_py.inflation": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py._math",
+        "fuggers_py.bonds",
+        "fuggers_py.curves",
+        "fuggers_py.rates",
+        "fuggers_py.vol_surfaces"
+      ]
+    },
+    "fuggers_py.credit": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py._math",
+        "fuggers_py.bonds",
+        "fuggers_py.curves",
+        "fuggers_py.rates",
+        "fuggers_py.vol_surfaces"
+      ]
+    },
+    "fuggers_py.funding": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py._math",
+        "fuggers_py.bonds",
+        "fuggers_py.curves",
+        "fuggers_py.rates"
+      ]
+    },
+    "fuggers_py.portfolio": {
+      "allowed_targets": [
+        "fuggers_py._core",
+        "fuggers_py._math",
+        "fuggers_py._runtime",
+        "fuggers_py._storage",
+        "fuggers_py.bonds",
+        "fuggers_py.credit",
+        "fuggers_py.curves",
+        "fuggers_py.funding",
+        "fuggers_py.inflation",
+        "fuggers_py.rates",
+        "fuggers_py.vol_surfaces"
+      ]
+    }
+  }
+}

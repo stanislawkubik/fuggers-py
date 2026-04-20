@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fuggers_py.products.bonds.cashflows import Schedule, ScheduleConfig
-from fuggers_py.reference.bonds.types import CalendarId, StubPeriodRules
-from fuggers_py.core.types import Date, Frequency
+from fuggers_py._products.bonds.cashflows import Schedule, ScheduleConfig
+from fuggers_py._reference.bonds.types import StubPeriodRules
+from fuggers_py._core import CalendarId
+from fuggers_py._core.types import Date, Frequency
 
 
 def test_schedule_generation_backward_semi_annual() -> None:

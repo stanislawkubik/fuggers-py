@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves import (
+from fuggers_py._curves_impl import (
     BondCurve,
     BondCurveFitter,
     BondFairValueRequest,

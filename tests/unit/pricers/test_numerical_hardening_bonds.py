@@ -5,14 +5,15 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.risk import analytical_convexity
-from fuggers_py.products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
-from fuggers_py.products.bonds.instruments import FixedBond, FixedBondBuilder
-from fuggers_py.pricers.bonds import BondPricer
-from fuggers_py.pricers.bonds.yield_engine import _prepare_cashflows
-from fuggers_py.pricers.bonds.risk import RiskMetrics
-from fuggers_py.reference.bonds.types import CompoundingMethod, StubPeriodRules, YieldCalculationRules
-from fuggers_py.core import Compounding, Date, Frequency, Yield
+from fuggers_py._measures.risk import analytical_convexity
+from fuggers_py._products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
+from fuggers_py._products.bonds.instruments import FixedBond, FixedBondBuilder
+from fuggers_py._pricers.bonds import BondPricer
+from fuggers_py._pricers.bonds.yield_engine import _prepare_cashflows
+from fuggers_py._pricers.bonds.risk import RiskMetrics
+from fuggers_py._reference.bonds.types import CompoundingMethod, StubPeriodRules
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Compounding, Date, Frequency, Yield
 
 
 def test_analytical_convexity_matches_closed_form_periodic_cashflow_formula() -> None:

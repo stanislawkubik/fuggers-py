@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.spreads import ProceedsAssetSwap
-from fuggers_py.products.bonds.instruments import FixedBond
-from fuggers_py.reference.bonds.types import YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.market.curves import DiscountCurveBuilder
+from fuggers_py._measures.spreads import ProceedsAssetSwap
+from fuggers_py._products.bonds.instruments import FixedBond
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._curves_impl import DiscountCurveBuilder
 
 
 def test_proceeds_asset_swap_uses_settlement_normalized_swap_rate() -> None:

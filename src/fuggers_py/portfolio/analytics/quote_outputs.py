@@ -9,11 +9,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Protocol
 
-from fuggers_py.core.ids import InstrumentId, PortfolioId
-from fuggers_py.market.snapshot import EtfHolding
-from fuggers_py.calc.output import BondQuoteOutput, PortfolioAnalyticsOutput
-from fuggers_py.reference.reference_data import BondReferenceData
+from fuggers_py._core.ids import InstrumentId, PortfolioId
+
+from ..etf.holding import EtfHolding
+from ..outputs import BondQuoteOutput, PortfolioAnalyticsOutput
+
+
+class _ReferenceDataLike(Protocol):
+    sector: str | None
+    rating: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,7 +48,7 @@ class PortfolioAnalyzer:
         positions: list[PortfolioPosition | EtfHolding] | tuple[PortfolioPosition | EtfHolding, ...],
         quote_outputs: dict[InstrumentId, BondQuoteOutput],
         *,
-        reference_data: dict[InstrumentId, BondReferenceData] | None = None,
+        reference_data: dict[InstrumentId, _ReferenceDataLike] | None = None,
     ) -> PortfolioAnalyticsOutput:
         """Aggregate positions into portfolio-level market value and risk.
 

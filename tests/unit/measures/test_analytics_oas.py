@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.spreads import OASCalculator
-from fuggers_py.products.bonds.instruments import CallType, CallableBondBuilder, FixedBond
-from fuggers_py.pricers.bonds.options import HullWhiteModel
-from fuggers_py.core import Date, Frequency
-from fuggers_py.market.curves import DiscountCurveBuilder
+from fuggers_py._measures.spreads import OASCalculator
+from fuggers_py._products.bonds.instruments import CallType, CallableBondBuilder, FixedBond
+from fuggers_py._pricers.bonds.options import HullWhiteModel
+from fuggers_py._core import Date, Frequency
+from fuggers_py._curves_impl import DiscountCurveBuilder
 
 
 def _callable_setup():

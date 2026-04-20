@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from fuggers_py.math.extrapolation import FlatExtrapolator, LinearExtrapolator, SmithWilson
+from fuggers_py._math.extrapolation import FlatExtrapolator, LinearExtrapolator, SmithWilson
 
 
 def test_flat_extrapolator_constant() -> None:

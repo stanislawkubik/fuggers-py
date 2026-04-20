@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import (
+from fuggers_py._core import (
     CashFlow,
     CashFlowSchedule,
     CashFlowType,
@@ -17,7 +17,7 @@ from fuggers_py.core import (
     SpreadType,
     Yield,
 )
-from fuggers_py.core.errors import InvalidSpreadError
+from fuggers_py._core.errors import InvalidSpreadError
 
 
 def test_date_constructors_and_accessors() -> None:

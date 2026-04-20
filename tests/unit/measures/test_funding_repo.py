@@ -3,11 +3,10 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.market.curve_support import forward_rate_between_dates, zero_rate_at_date
-from fuggers_py.measures.funding import repo_carry_return, repo_financing_cost, repo_net_carry
-from fuggers_py.products.funding import RepoTrade
+from fuggers_py._core import Currency, Date
+from fuggers_py._core.daycounts import DayCountConvention
+from fuggers_py._market.curve_support import forward_rate_between_dates, zero_rate_at_date
+from fuggers_py.funding import RepoTrade, repo_carry_return, repo_financing_cost, repo_net_carry
 from tests.helpers._rates_helpers import flat_curve
 
 

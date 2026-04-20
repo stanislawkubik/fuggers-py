@@ -11,6 +11,6 @@ def test_examples_catalog_readme_exists_for_flat_examples_root() -> None:
     readme_path = REPO_ROOT / "examples" / "README.md"
 
     assert readme_path.exists()
-    assert "01_cash_bond_and_curve_workflow.ipynb" in readme_path.read_text(
+    assert "01_public_curves_and_surfaces.ipynb" in readme_path.read_text(
         encoding="utf-8"
     )

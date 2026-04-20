@@ -2,20 +2,20 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.core import InstrumentId, YearMonth
-from fuggers_py.reference import (
+from fuggers_py._core import Currency, Date
+from fuggers_py._core import InstrumentId, YearMonth
+from fuggers_py._reference import (
     BondFutureContractReference,
     BondFutureReferenceData,
     DeliverableBondReference,
 )
-from fuggers_py.pricers.rates.futures import (
+from fuggers_py._pricers.rates.futures import (
     invoice_amount,
     invoice_breakdown,
     invoice_clean_price,
     invoice_price,
 )
-from fuggers_py.products.rates.futures import (
+from fuggers_py._products.rates.futures import (
     DeliverableBasket,
     DeliverableBond,
     GovernmentBondFuture,

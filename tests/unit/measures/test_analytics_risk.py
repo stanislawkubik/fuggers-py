@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.pricing import BondPricer
-from fuggers_py.measures.risk import (
+from fuggers_py._measures.pricing import BondPricer
+from fuggers_py._measures.risk import (
     BondRiskCalculator,
     analytical_convexity,
     dv01_from_duration,
@@ -16,7 +16,7 @@ from fuggers_py.measures.risk import (
     notional_from_dv01,
     price_change_with_convexity,
 )
-from fuggers_py.core import Date, Price
+from fuggers_py._core import Date, Price
 
 
 def test_dv01_formula_example() -> None:

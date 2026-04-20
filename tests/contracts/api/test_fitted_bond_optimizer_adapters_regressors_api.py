@@ -1,52 +1,20 @@
 from __future__ import annotations
 
-from decimal import Decimal
-
 import pytest
 
-from fuggers_py.core import Date
-from fuggers_py.market.quotes import BondQuote
-from fuggers_py.market import curves as market_curves
-from fuggers_py.market.curves import (
-    BondCurve,
-    BondCurveFitter,
-    BondFairValueRequest,
-    CurveObjective,
-)
-
-from tests.helpers._fitted_bond_helpers import exponential_model, make_curve_observations, nominal_bond_lookup
+import fuggers_py.curves as curves
 
 
 @pytest.mark.feature_slug("fitted-bond-optimizer-adapters-regressors")
 @pytest.mark.feature_category("api_contract")
-def test_public_surface_exposes_direct_bond_curve_constructor_and_extended_fair_value_request() -> None:
-    observations, _ = make_curve_observations(
-        curve_model=exponential_model(),
-        regression_coefficient=Decimal("0"),
-    )
-    bond = nominal_bond_lookup()[observations[0].instrument_id.as_str()]
-    curve = BondCurve(
-        observations,
-        shape=exponential_model(),
-        objective=CurveObjective.L1,
-        use_observation_weights=False,
-    )
-    request = BondFairValueRequest(
-        bond=bond,
-        settlement_date=Date.from_ymd(2026, 1, 15),
-        quote=BondQuote(
-            instrument=bond,
-            clean_price=Decimal("99.25"),
-            as_of=Date.from_ymd(2026, 1, 15),
-        ),
-        regression_exposures={"liquidity": Decimal("0.4")},
+def test_public_curve_modules_do_not_expose_old_optimizer_curve_adapters_or_fair_value_requests() -> None:
+    removed_names = (
+        "BondCurve",
+        "BondCurveFitter",
+        "BondFairValueRequest",
+        "CurveObjective",
+        "FittedBondObservation",
     )
 
-    assert market_curves.BondCurve is BondCurve
-    assert market_curves.BondCurveFitter is BondCurveFitter
-    assert hasattr(market_curves, "FittedBondObservation") is False
-    assert market_curves.BondFairValueRequest is BondFairValueRequest
-    assert curve.objective is CurveObjective.L1
-    assert curve.diagnostics.observation_count == len(observations)
-    assert request.quote is not None
-    assert request.regression_exposures["liquidity"] == Decimal("0.4")
+    for name in removed_names:
+        assert not hasattr(curves, name)

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date
+from fuggers_py._core import Currency, Date
 from fuggers_py.portfolio import (
     ClassifierDistribution,
     DaysToLiquidate,

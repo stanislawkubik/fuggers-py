@@ -4,12 +4,12 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.types import Compounding, Date, Frequency
-from fuggers_py.market.curves import ZeroCurveBuilder
-from fuggers_py.market.curves.calibration import Deposit, InstrumentSet, PiecewiseBootstrapper, Swap
-from fuggers_py.market.curves.value_type import ValueTypeKind
+from fuggers_py._core import Tenor
+from fuggers_py._core.daycounts import DayCountConvention
+from fuggers_py._core.types import Compounding, Date, Frequency
+from fuggers_py._curves_impl import ZeroCurveBuilder
+from fuggers_py._curves_impl.calibration import Deposit, InstrumentSet, PiecewiseBootstrapper, Swap
+from fuggers_py._curves_impl.value_type import ValueTypeKind
 
 
 def test_piecewise_bootstrap_from_synthetic_quotes() -> None:

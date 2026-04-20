@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.pricers.rates.options import BachelierPricer, bachelier_formula
-from fuggers_py.products.rates.futures import GovernmentBondFuture
-from fuggers_py.products.rates.options import FuturesOption
+from fuggers_py._core import Currency, Date
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._pricers.rates.options import BachelierPricer, bachelier_formula
+from fuggers_py._products.rates.futures import GovernmentBondFuture
+from fuggers_py._products.rates.options import FuturesOption
 
 from tests.helpers._rates_helpers import flat_curve
 

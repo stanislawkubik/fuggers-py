@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from decimal import Decimal, getcontext
 
-from fuggers_py.core import Date
+from fuggers_py._core import Date
 from tests.helpers._paths import FIXTURES_ROOT
 
 

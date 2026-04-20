@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Date
-from fuggers_py.calc import (
+from fuggers_py._core import Date
+from fuggers_py._calc import (
     AnalyticsOutput,
     BasisSwapQuoteOutput,
     CdsQuoteOutput,
@@ -14,7 +14,7 @@ from fuggers_py.calc import (
     SwapQuoteOutput,
     PortfolioAnalyticsOutput,
 )
-from fuggers_py.core import InstrumentId
+from fuggers_py._core import InstrumentId
 
 
 def test_extended_quote_outputs_coerce_decimals_and_ids() -> None:

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.options import aggregate_option_greeks, option_rv_signal, scale_option_greeks, vega_notional
-from fuggers_py.pricers.rates.options import black76_formula
+from fuggers_py._measures.options import aggregate_option_greeks, option_rv_signal, scale_option_greeks, vega_notional
+from fuggers_py._pricers.rates.options import black76_formula
 
 
 def test_black76_delta_and_vega_match_finite_differences() -> None:

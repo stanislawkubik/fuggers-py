@@ -4,10 +4,10 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core.types import Compounding, Date
-from fuggers_py.market.curves import ZeroCurveBuilder
-from fuggers_py.market.curves.bumping import (
+from fuggers_py._core import Tenor
+from fuggers_py._core.types import Compounding, Date
+from fuggers_py._curves_impl import ZeroCurveBuilder
+from fuggers_py._curves_impl.bumping import (
     KeyRateBump,
     ParallelBump,
     flattener_50bp,

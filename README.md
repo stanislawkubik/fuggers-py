@@ -2,7 +2,8 @@
 
 [![Docs](https://img.shields.io/readthedocs/fuggers-py?label=docs)](https://fuggers-py.readthedocs.io/en/latest/)
 
-`fuggers-py` is a fixed-income analytics library organized by responsibility-first package boundaries.
+`fuggers-py` is a fixed-income analytics library with domain-first public
+modules.
 
 Public docs: [fuggers-py.readthedocs.io](https://fuggers-py.readthedocs.io/en/latest/).
 Current feature readiness and the pre-`1.0` stability policy are documented in
@@ -17,19 +18,22 @@ Current feature readiness and the pre-`1.0` stability policy are documented in
 
 ## Package layout
 
-- `fuggers_py.core`: primitives, calendars, daycounts, shared ids, common low-level types
-- `fuggers_py.reference`: conventions, security metadata, contract specs, index metadata
-- `fuggers_py.market`: market state, quote/fixing objects, indices, and snapshots
-- `fuggers_py.products`: contract definitions by product family
-- `fuggers_py.pricers`: valuation engines and low-level risk algorithms
-- `fuggers_py.measures`: user-facing analytics and desk-style measures
+- `fuggers_py.curves`: fitted curve objects and curve fitting inputs
+- `fuggers_py.vol_surfaces`: volatility surface records and surface sources
+- `fuggers_py.bonds`: bond instruments, quotes, pricing, risk, spreads, and YAS-style tools
+- `fuggers_py.rates`: swaps, futures, swaptions, fixing storage, and rates pricing or risk
+- `fuggers_py.inflation`: CPI helpers, inflation swaps, and inflation analytics
+- `fuggers_py.credit`: CDS instruments, quotes, pricing, and bond-CDS basis analytics
+- `fuggers_py.funding`: repo trades, repo or haircut quotes, and financing analytics
 - `fuggers_py.portfolio`: holdings, aggregation, attribution, liquidity, ETF, stress, results
-- `fuggers_py.calc`: orchestration, dispatch, graph execution, and runtime wiring
-- `fuggers_py.adapters`: file, storage, JSON, transport, and external-boundary adapters
-- `fuggers_py.math`: numerical infrastructure
+- Shared types such as `Date`, `Currency`, `Price`, `Yield`, `InstrumentId`, and `Tenor` come from the `fuggers_py` root
+
+Internal implementation roots such as `_core`, `_math`, `_market`, `_calc`,
+`_adapters`, `_products`, `_pricers`, `_measures`, and `_reference` are not
+public API.
 
 See [docs/SRC_STRUCTURE.md](docs/SRC_STRUCTURE.md) for the directory-by-directory structure under `src/fuggers_py/`.
-See [docs/MODULE_REFERENCE.md](docs/MODULE_REFERENCE.md) for the full file-by-file module inventory of the live source tree.
+See [docs/MODULE_REFERENCE.md](docs/MODULE_REFERENCE.md) for the archived module-reference note from before the public API cutover.
 See [docs/STATUS.md](docs/STATUS.md) for what is ready today, what is still scaffold-only, and what is expected to change before `1.x`.
 
 ## Quick start
@@ -37,13 +41,12 @@ See [docs/STATUS.md](docs/STATUS.md) for what is ready today, what is still scaf
 ```python
 from decimal import Decimal
 
-from fuggers_py.calc import PricingSpec
-from fuggers_py.core import Currency, Date, Price
-from fuggers_py.market.state import QuoteSide
+from fuggers_py import Currency, Date, Price
+from fuggers_py.bonds import FixedBondBuilder
 
 as_of = Date.from_ymd(2026, 1, 15)
 clean_price = Price.new(Decimal("99.125"), Currency.USD)
-spec = PricingSpec(quote_side=QuoteSide.MID)
+builder = FixedBondBuilder.new()
 ```
 
 ## Development

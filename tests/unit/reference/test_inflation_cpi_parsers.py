@@ -5,8 +5,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import YearMonth
-from fuggers_py.reference.inflation import (
+from fuggers_py._core import YearMonth
+from fuggers_py.inflation import (
     load_monthly_cpi_fixings_csv,
     parse_bls_cpi_json,
     parse_fred_cpi_csv,

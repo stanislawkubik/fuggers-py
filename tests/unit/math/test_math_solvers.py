@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from fuggers_py.math import (
+from fuggers_py._math import (
     BisectionSolver,
     BrentSolver,
     HybridSolver,
@@ -13,8 +13,8 @@ from fuggers_py.math import (
     SecantSolver,
     Solver,
 )
-from fuggers_py.math.errors import ConvergenceFailed, InvalidBracket
-from fuggers_py.math.solvers import (
+from fuggers_py._math.errors import ConvergenceFailed, InvalidBracket
+from fuggers_py._math.solvers import (
     SolverConfig,
     bisection,
     brent,

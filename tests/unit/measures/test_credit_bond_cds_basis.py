@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.credit import bond_cds_basis, bond_cds_basis_breakdown
+from fuggers_py.credit import bond_cds_basis, bond_cds_basis_breakdown
 
 
 def test_bond_cds_basis_uses_adjusted_cds_spread_and_explicit_sign_convention() -> None:

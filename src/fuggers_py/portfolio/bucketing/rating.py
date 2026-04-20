@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fuggers_py.reference.bonds.types import CreditRating
+from fuggers_py.bonds import CreditRating
 
 from ..portfolio import Portfolio
 from ..results import RatingDistribution

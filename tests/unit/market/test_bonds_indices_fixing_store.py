@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.market.indices import IndexFixing, IndexFixingStore, IndexSource
-from fuggers_py.core import Date
+from fuggers_py.rates import IndexFixing, IndexFixingStore, IndexSource
+from fuggers_py._core import Date
 
 
 def test_add_and_get_fixing() -> None:

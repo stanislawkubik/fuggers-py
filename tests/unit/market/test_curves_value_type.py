@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fuggers_py.core.daycounts import DayCountConvention
-from fuggers_py.core.types import Compounding, Frequency, SpreadType
-from fuggers_py.market.curves.value_type import ValueType, ValueTypeKind
+from fuggers_py._core.daycounts import DayCountConvention
+from fuggers_py._core.types import Compounding, Frequency, SpreadType
+from fuggers_py._curves_impl.value_type import ValueType, ValueTypeKind
 
 
 def test_value_type_constructors_and_predicates() -> None:

@@ -5,9 +5,9 @@ from dataclasses import dataclass
 
 import pytest
 
-from fuggers_py.market.indices import IndexConventions, IndexFixingStore, ObservationShiftType, OvernightCompounding
-from fuggers_py.core import Date
-from fuggers_py.core.calendars import WeekendCalendar
+from fuggers_py.rates import IndexConventions, IndexFixingStore, ObservationShiftType, OvernightCompounding
+from fuggers_py._core import Date
+from fuggers_py._core.calendars import WeekendCalendar
 
 
 def _flat_store(rate: str = "0.05") -> IndexFixingStore:

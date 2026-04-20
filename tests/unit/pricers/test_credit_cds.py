@@ -1,33 +1,32 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from dataclasses import replace
 from decimal import Decimal
 
 import pytest
 
-from fuggers_py.pricers.credit import CdsPricer
-from fuggers_py.products.credit import CreditDefaultSwap, ProtectionSide
-from fuggers_py.core import Date
-from fuggers_py.market.curves import CreditCurve
-from fuggers_py.market.curves.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.state import AnalyticsCurves
+from fuggers_py.credit import CdsPricer, CreditDefaultSwap, ProtectionSide
+from fuggers_py._core import Date
+from fuggers_py._market.state import AnalyticsCurves
 
 from tests.helpers._rates_helpers import flat_curve
 
 
-def _flat_credit_curve(reference_date: Date, hazard_rate: str, recovery_rate: str = "0.4") -> CreditCurve:
-    hazard = float(hazard_rate)
-    inner = DiscreteCurve(
-        reference_date,
-        tenors=[1e-8, 10.0],
-        values=[1.0, math.exp(-hazard * 10.0)],
-        value_type=ValueType.survival_probability(),
-        interpolation_method=InterpolationMethod.LOG_LINEAR,
-        extrapolation_method=ExtrapolationMethod.FLAT,
-    )
-    return CreditCurve(inner, recovery_rate=Decimal(recovery_rate))
+@dataclass(frozen=True, slots=True)
+class _FlatCreditCurve:
+    reference_date: Date
+    hazard_rate: Decimal
+
+    def survival_probability(self, date: Date) -> Decimal:
+        tenor = max(self.reference_date.days_between(date), 0) / 365.0
+        return Decimal(str(math.exp(-float(self.hazard_rate) * tenor)))
+
+
+def _flat_credit_curve(reference_date: Date, hazard_rate: str, recovery_rate: str = "0.4") -> _FlatCreditCurve:
+    del recovery_rate
+    return _FlatCreditCurve(reference_date=reference_date, hazard_rate=Decimal(hazard_rate))
 
 
 def test_cds_pricer_exposes_leg_and_upfront_identities() -> None:

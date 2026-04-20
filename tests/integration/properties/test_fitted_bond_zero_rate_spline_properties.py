@@ -8,8 +8,8 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from fuggers_py.core import Date
-from fuggers_py.market.curves import CubicSplineZeroRateCurve, CubicSplineZeroRateCurveModel
+from fuggers_py._core import Date
+from fuggers_py._curves_impl import CubicSplineZeroRateCurve, CubicSplineZeroRateCurveModel
 
 
 PROPERTY_SETTINGS = settings(

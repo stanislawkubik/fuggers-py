@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.spreads import (
+from fuggers_py._measures.spreads import (
     GQDSecuredUnsecuredBasisModel,
     SecuredUnsecuredBasisModel,
     adjusted_term_rate,

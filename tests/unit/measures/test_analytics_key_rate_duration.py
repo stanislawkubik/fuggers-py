@@ -4,13 +4,13 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.pricing import BondPricer
-from fuggers_py.measures.risk.duration import STANDARD_KEY_RATE_TENORS, key_rate_duration_at_tenor
-from fuggers_py.products.bonds.instruments import FixedBond
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core.types import Compounding, Date, Frequency
-from fuggers_py.market.curves import ZeroCurveBuilder
-from fuggers_py.market.curves.bumping import ParallelBump
+from fuggers_py._measures.pricing import BondPricer
+from fuggers_py._measures.risk.duration import STANDARD_KEY_RATE_TENORS, key_rate_duration_at_tenor
+from fuggers_py._products.bonds.instruments import FixedBond
+from fuggers_py._core import Tenor
+from fuggers_py._core.types import Compounding, Date, Frequency
+from fuggers_py._curves_impl import ZeroCurveBuilder
+from fuggers_py._curves_impl.bumping import ParallelBump
 
 
 def _curve(ref: Date) -> object:

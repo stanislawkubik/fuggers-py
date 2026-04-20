@@ -6,8 +6,8 @@ from decimal import Decimal
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from fuggers_py.core import Compounding, Date, WeekendCalendar
-from fuggers_py.core.daycounts import (
+from fuggers_py._core import Compounding, Date, WeekendCalendar
+from fuggers_py._core.daycounts import (
     Act360,
     Act365Fixed,
     Act365Leap,
@@ -18,7 +18,7 @@ from fuggers_py.core.daycounts import (
     Thirty360German,
     Thirty360US,
 )
-from fuggers_py.market.curves.conversion import ValueConverter
+from fuggers_py._curves_impl.conversion import ValueConverter
 from fuggers_py.portfolio import Portfolio
 from fuggers_py.portfolio.analytics import PortfolioAnalytics
 from fuggers_py.portfolio.contribution import (

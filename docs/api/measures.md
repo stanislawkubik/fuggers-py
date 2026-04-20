@@ -1,99 +1,15 @@
 # `fuggers_py.measures`
 
-User-facing analytics, report-oriented helpers, and desk measures.
+Retired public namespace.
 
-```{eval-rst}
-.. automodule:: fuggers_py.measures
-   :members:
-   :member-order: bysource
+This path is no longer part of the public API.
+
+Use the domain-first public modules instead:
+
+```python
+from fuggers_py.bonds import current_yield, g_spread, modified_duration
+from fuggers_py.credit import bond_cds_basis
+from fuggers_py.funding import implied_repo_rate
 ```
 
-## `fuggers_py.measures.functions`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.functions
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.yields`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.yields
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.risk`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.risk
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.spreads`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.spreads
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.credit`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.credit
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.funding`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.funding
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.rv`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.rv
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.cashflows`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.cashflows
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.options`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.options
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.measures.yas`
-
-```{eval-rst}
-.. automodule:: fuggers_py.measures.yas
-   :members:
-   :member-order: bysource
-   :no-index:
-```
+Analytics implementation now lives under the internal `_measures` package.

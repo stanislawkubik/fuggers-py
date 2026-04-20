@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fuggers_py.calc import BondQuoteOutput, PricingSpec
+from fuggers_py._calc import BondQuoteOutput, PricingSpec
 
 from tests.helpers._engine_scenarios import CALLABLE_ID, SETTLEMENT, fixed_curves, router, scenario_b_instrument
 

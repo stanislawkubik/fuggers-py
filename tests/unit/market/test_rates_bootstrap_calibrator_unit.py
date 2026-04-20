@@ -5,29 +5,28 @@ from math import exp
 
 import pytest
 
-from fuggers_py.core.types import Currency, Date, Frequency, Price
-from fuggers_py.math.solvers.types import SolverConfig
-from fuggers_py.market.curves import (
+from fuggers_py._core.types import Currency, Date, Frequency, Price
+from fuggers_py._math.solvers.types import SolverConfig
+from fuggers_py.curves import (
     CurveSpec,
     CurveType,
     ExtrapolationPolicy,
     YieldCurve,
 )
-from fuggers_py.market.curves.errors import CurveConstructionError, InvalidCurveInput
-from fuggers_py.market.curves.rates.calibrators import (
-    BootstrapCalibrator,
-    BootstrapSolverKind,
+from fuggers_py.curves.errors import CurveConstructionError, InvalidCurveInput
+from fuggers_py.curves.calibrators import (
     BondFitTarget,
     CalibrationMode,
     CalibrationObjective,
     CalibrationSpec,
     CurveCalibrator,
 )
-from fuggers_py.market.curves.rates.kernels import CurveKernelKind, KernelSpec
-from fuggers_py.market.curves.rates.reports import CalibrationPoint, CalibrationReport
-from fuggers_py.market.quotes import BondQuote, RawQuote, RepoQuote, SwapQuote
-from fuggers_py.products.bonds import FixedBondBuilder
-from fuggers_py.reference.bonds.types import YieldCalculationRules
+from fuggers_py.curves.calibrators.bootstrap import BootstrapCalibrator, BootstrapSolverKind
+from fuggers_py.curves.kernels import CurveKernelKind, KernelSpec
+from fuggers_py.curves.reports import CalibrationPoint, CalibrationReport
+from fuggers_py._runtime.quotes import BondQuote, RawQuote, RepoQuote, SwapQuote
+from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._core import YieldCalculationRules
 
 
 def _spec(*, extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR) -> CurveSpec:

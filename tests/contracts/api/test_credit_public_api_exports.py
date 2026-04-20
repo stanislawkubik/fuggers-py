@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from fuggers_py.calc import CdsQuoteOutput, RvSignalOutput
-from fuggers_py.market.quotes import CdsQuote
-from fuggers_py.market.curves.credit import (
-    CdsBootstrapPoint,
-    CdsBootstrapResult,
-    bootstrap_credit_curve,
-)
-from fuggers_py.measures.credit import (
+import ast
+from pathlib import Path
+
+import fuggers_py.credit as credit_pkg
+from fuggers_py.credit import (
     AdjustedCdsBreakdown,
     BondCdsBasisBreakdown,
+    Cds,
+    CdsPremiumPeriod,
+    CdsPricer,
+    CdsPricingResult,
+    CdsQuote,
+    CreditDefaultSwap,
+    ProtectionSide,
     RiskFreeProxyBreakdown,
     adjusted_cds_breakdown,
     adjusted_cds_spread,
@@ -18,51 +22,65 @@ from fuggers_py.measures.credit import (
     cds_adjusted_risk_free_rate,
     proxy_risk_free_breakdown,
 )
-from fuggers_py.pricers.credit import CdsPricer, CdsPricingResult
-from fuggers_py.products.credit import Cds, CreditDefaultSwap, ProtectionSide
-from fuggers_py.reference import CdsReferenceData
-from fuggers_py.measures.credit import AdjustedCdsBreakdown as analytics_adjusted_cds_breakdown_type
-from fuggers_py.measures.credit import BondCdsBasisBreakdown as analytics_bond_cds_basis_breakdown_type
-from fuggers_py.measures.credit import RiskFreeProxyBreakdown as analytics_risk_free_proxy_breakdown_type
-from fuggers_py.measures.credit import adjusted_cds_breakdown as analytics_adjusted_cds_breakdown
-from fuggers_py.measures.credit import adjusted_cds_spread as analytics_adjusted_cds_spread
-from fuggers_py.measures.credit import bond_cds_basis as analytics_bond_cds_basis
-from fuggers_py.measures.credit import bond_cds_basis_breakdown as analytics_bond_cds_basis_breakdown
-from fuggers_py.measures.credit import cds_adjusted_risk_free_rate as analytics_cds_adjusted_risk_free_rate
-from fuggers_py.measures.credit import proxy_risk_free_breakdown as analytics_proxy_risk_free_breakdown
-from fuggers_py.market.curves.credit import CdsBootstrapPoint as curves_cds_bootstrap_point
-from fuggers_py.market.curves.credit import CdsBootstrapResult as curves_cds_bootstrap_result
-from fuggers_py.market.curves.credit import bootstrap_credit_curve as curves_bootstrap_credit_curve
-from fuggers_py.products.credit import Cds as instruments_cds
-from fuggers_py.products.credit import CreditDefaultSwap as instruments_credit_default_swap
-from fuggers_py.products.credit import ProtectionSide as instruments_protection_side
-from fuggers_py.pricers.credit import CdsPricer as pricing_cds_pricer
-from fuggers_py.pricers.credit import CdsPricingResult as pricing_cds_pricing_result
-from fuggers_py.market.quotes import CdsQuote as data_cds_quote
-from fuggers_py.calc import CdsQuoteOutput as data_cds_quote_output
-from fuggers_py.reference import CdsReferenceData as data_cds_reference_data
-from fuggers_py.calc import RvSignalOutput as data_rv_signal_output
 
 
-def test_credit_root_exports_scaffold_records() -> None:
-    assert CdsQuote is data_cds_quote
-    assert CdsQuoteOutput is data_cds_quote_output
-    assert CdsReferenceData is data_cds_reference_data
-    assert RvSignalOutput is data_rv_signal_output
-    assert Cds is instruments_cds
-    assert CreditDefaultSwap is instruments_credit_default_swap
-    assert ProtectionSide is instruments_protection_side
-    assert CdsPricer is pricing_cds_pricer
-    assert CdsPricingResult is pricing_cds_pricing_result
-    assert CdsBootstrapPoint is curves_cds_bootstrap_point
-    assert CdsBootstrapResult is curves_cds_bootstrap_result
-    assert bootstrap_credit_curve is curves_bootstrap_credit_curve
-    assert AdjustedCdsBreakdown is analytics_adjusted_cds_breakdown_type
-    assert adjusted_cds_breakdown is analytics_adjusted_cds_breakdown
-    assert adjusted_cds_spread is analytics_adjusted_cds_spread
-    assert BondCdsBasisBreakdown is analytics_bond_cds_basis_breakdown_type
-    assert bond_cds_basis is analytics_bond_cds_basis
-    assert bond_cds_basis_breakdown is analytics_bond_cds_basis_breakdown
-    assert RiskFreeProxyBreakdown is analytics_risk_free_proxy_breakdown_type
-    assert cds_adjusted_risk_free_rate is analytics_cds_adjusted_risk_free_rate
-    assert proxy_risk_free_breakdown is analytics_proxy_risk_free_breakdown
+def test_credit_root_is_a_small_direct_import_surface() -> None:
+    credit_init = Path(credit_pkg.__file__)
+    tree = ast.parse(credit_init.read_text(encoding="utf-8"))
+
+    assert "__getattr__" not in {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+    assert "__getattr__" not in {node.name for node in ast.walk(tree) if isinstance(node, ast.AsyncFunctionDef)}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name):
+                assert node.func.id not in {"import_module", "__import__"}
+            elif isinstance(node.func, ast.Attribute):
+                assert not (
+                    isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == "importlib"
+                    and node.func.attr == "import_module"
+                )
+
+
+def test_credit_root_exports_current_first_layer_surface() -> None:
+    expected_key_exports = {
+        "AdjustedCdsBreakdown",
+        "BondCdsBasisBreakdown",
+        "Cds",
+        "CdsPremiumPeriod",
+        "CdsPricer",
+        "CdsPricingResult",
+        "CdsQuote",
+        "CreditDefaultSwap",
+        "ProtectionSide",
+        "RiskFreeProxyBreakdown",
+        "adjusted_cds_spread",
+        "bond_cds_basis",
+        "proxy_risk_free_breakdown",
+    }
+
+    assert expected_key_exports <= set(credit_pkg.__all__)
+    assert credit_pkg.Cds is Cds
+    assert credit_pkg.CdsPremiumPeriod is CdsPremiumPeriod
+    assert credit_pkg.CdsPricer is CdsPricer
+    assert credit_pkg.CdsPricingResult is CdsPricingResult
+    assert credit_pkg.CdsQuote is CdsQuote
+    assert credit_pkg.CreditDefaultSwap is CreditDefaultSwap
+    assert credit_pkg.ProtectionSide is ProtectionSide
+    assert credit_pkg.AdjustedCdsBreakdown is AdjustedCdsBreakdown
+    assert credit_pkg.BondCdsBasisBreakdown is BondCdsBasisBreakdown
+    assert credit_pkg.RiskFreeProxyBreakdown is RiskFreeProxyBreakdown
+    assert credit_pkg.adjusted_cds_breakdown is adjusted_cds_breakdown
+    assert credit_pkg.adjusted_cds_spread is adjusted_cds_spread
+    assert credit_pkg.bond_cds_basis is bond_cds_basis
+    assert credit_pkg.bond_cds_basis_breakdown is bond_cds_basis_breakdown
+    assert credit_pkg.cds_adjusted_risk_free_rate is cds_adjusted_risk_free_rate
+    assert credit_pkg.proxy_risk_free_breakdown is proxy_risk_free_breakdown
+    assert Cds.__module__ == "fuggers_py.credit.products"
+    assert CreditDefaultSwap.__module__ == "fuggers_py.credit.products"
+    assert CdsPricer.__module__ == "fuggers_py.credit.pricing"
+    assert CdsPricingResult.__module__ == "fuggers_py.credit.pricing"
+    assert AdjustedCdsBreakdown.__module__ == "fuggers_py.credit.analytics"
+    assert BondCdsBasisBreakdown.__module__ == "fuggers_py.credit.analytics"
+    assert RiskFreeProxyBreakdown.__module__ == "fuggers_py.credit.analytics"
+    assert CdsQuote.__module__ == "fuggers_py.credit.quotes"

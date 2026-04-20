@@ -4,15 +4,14 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core import Currency, Date
-from fuggers_py.pricers.credit import CdsPricer
-from fuggers_py.products.credit import CreditDefaultSwap
-from fuggers_py.market.curves import DelegatedCurve, DelegationFallback, DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from fuggers_py.market.curves.term_structure import TermStructure
-from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.pricers.rates._curve_resolver import resolve_discount_curve, resolve_projection_curve
+from fuggers_py._core import Tenor
+from fuggers_py._core import Currency, Date
+from fuggers_py.credit import CdsPricer, CreditDefaultSwap
+from fuggers_py._curves_impl import DelegatedCurve, DelegationFallback, DiscreteCurve, ExtrapolationMethod, InterpolationMethod
+from fuggers_py._curves_impl.term_structure import TermStructure
+from fuggers_py._curves_impl.value_type import ValueType
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._pricers.rates._curve_resolver import resolve_discount_curve, resolve_projection_curve
 
 from tests.helpers._rates_helpers import flat_curve
 

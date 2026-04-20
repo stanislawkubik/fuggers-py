@@ -6,11 +6,11 @@ from typing import Mapping, Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from fuggers_py.core import Currency, Date, Frequency, InstrumentId, YearMonth
-from fuggers_py.market.quotes import BondQuote
-from fuggers_py.market.snapshot import InflationFixing
-from fuggers_py.market.sources import InMemoryInflationFixingSource
-from fuggers_py.market.curves import (
+from fuggers_py._core import Currency, Date, Frequency, InstrumentId, YearMonth
+from fuggers_py._runtime.quotes import BondQuote
+from fuggers_py._market.snapshot import InflationFixing
+from fuggers_py._market.sources import InMemoryInflationFixingSource
+from fuggers_py._curves_impl import (
     BondCurveFitter,
     CubicSplineZeroRateCurveModel,
     ExponentialSplineCurveModel,
@@ -21,12 +21,13 @@ from fuggers_py.market.curves import (
     TipsRealBondPricingAdapter,
     dirty_price_from_curve,
 )
-from fuggers_py.market.curves.fitted_bonds.fair_value import _discount_factor_from_curve
-from fuggers_py.products.bonds import FixedBondBuilder, TipsBond
-from fuggers_py.products.bonds.traits import Bond
-from fuggers_py.reference.bonds.types import YieldCalculationRules
-from fuggers_py.reference.inflation import USD_CPI_U_NSA
-from fuggers_py.reference.reference_data import BondReferenceData, BondType, IssuerType
+from fuggers_py._curves_impl.fitted_bonds.fair_value import _discount_factor_from_curve
+from fuggers_py._products.bonds import FixedBondBuilder, TipsBond
+from fuggers_py._products.bonds.traits import Bond
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py.inflation import USD_CPI_U_NSA
+from fuggers_py._reference.reference_data import BondReferenceData
 
 
 REFERENCE_DATE = Date.from_ymd(2026, 1, 15)

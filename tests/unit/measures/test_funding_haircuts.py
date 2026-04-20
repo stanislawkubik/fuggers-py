@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.funding import (
+from fuggers_py.funding import (
     all_in_financing_cost,
     financed_cash,
     haircut_amount,

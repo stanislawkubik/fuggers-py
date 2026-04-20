@@ -11,8 +11,8 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.core.types import Date
-from fuggers_py.market.curves import DiscountingCurve
+from fuggers_py._core.types import Date
+from fuggers_py.curves import DiscountingCurve
 
 from ..analytics import PortfolioAnalytics
 from ..portfolio import Portfolio

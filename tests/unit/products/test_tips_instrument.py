@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.products.bonds import TipsBond
-from fuggers_py.reference import YieldCalculationRules
-from fuggers_py.products.bonds.traits import CashFlowType
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.core import YearMonth
-from fuggers_py.market.snapshot import InflationFixing
-from fuggers_py.market.sources import InMemoryInflationFixingSource
-from fuggers_py.reference.inflation import USD_CPI_U_NSA
+from fuggers_py._products.bonds import TipsBond
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._products.bonds.traits import CashFlowType
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._core import YearMonth
+from fuggers_py._market.snapshot import InflationFixing
+from fuggers_py._market.sources import InMemoryInflationFixingSource
+from fuggers_py.inflation import USD_CPI_U_NSA
 
 
 def _fixing(month: str, value: str) -> InflationFixing:

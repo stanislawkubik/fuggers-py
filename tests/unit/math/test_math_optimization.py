@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from fuggers_py.math.optimization import OptimizationConfig, gauss_newton, gradient_descent, levenberg_marquardt
+from fuggers_py._math.optimization import OptimizationConfig, gauss_newton, gradient_descent, levenberg_marquardt
 
 
 def test_gradient_descent_quadratic_converges() -> None:

@@ -1,43 +1,38 @@
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.types import CalendarId
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.core.calendars import BusinessDayConvention
-from fuggers_py.market.curves import (
-    DiscreteCurve,
-    ExtrapolationMethod,
-    InterpolationMethod,
-    ValueType,
-)
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.market.curves.inflation import InflationIndexCurve
-from fuggers_py.reference.inflation import USD_CPI_U_NSA
-from fuggers_py.pricers.rates import InflationSwapPricer, StandardCouponInflationSwapPricingResult
-from fuggers_py.products.rates import PayReceive, ScheduleDefinition, StandardCouponInflationSwap
+from fuggers_py._core import CalendarId, PayReceive
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._core.calendars import BusinessDayConvention
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py.inflation import USD_CPI_U_NSA
+from fuggers_py.inflation import InflationSwapPricer, StandardCouponInflationSwapPricingResult
+from fuggers_py.inflation import StandardCouponInflationSwap
+from fuggers_py.rates import ScheduleDefinition
 
 from tests.helpers._rates_helpers import flat_curve
 
 
-def _inflation_curve() -> InflationIndexCurve:
-    reference_date = Date.from_ymd(2024, 1, 2)
-    act365 = lambda date: float(Decimal(reference_date.days_between(date)) / Decimal(365))
-    return InflationIndexCurve(
-        reference_date=reference_date,
-        anchor_reference_cpi=Decimal("100"),
-        convention=USD_CPI_U_NSA,
-        curve=DiscreteCurve(
-            reference_date,
-            tenors=[0.0, act365(Date.from_ymd(2024, 7, 2)), act365(Date.from_ymd(2025, 1, 2))],
-            values=[1.0, 1.01, 1.025],
-            value_type=ValueType.inflation_index_ratio(),
-            interpolation_method=InterpolationMethod.LINEAR,
-            extrapolation_method=ExtrapolationMethod.FLAT,
-        ),
+@dataclass(frozen=True, slots=True)
+class ProjectionCurve:
+    values: dict[Date, Decimal]
+
+    def reference_cpi(self, date: Date, convention) -> Decimal:
+        del convention
+        return self.values[date]
+
+
+def _inflation_curve() -> ProjectionCurve:
+    return ProjectionCurve(
+        values={
+            Date.from_ymd(2024, 1, 2): Decimal("100.0"),
+            Date.from_ymd(2024, 7, 2): Decimal("101.0"),
+            Date.from_ymd(2025, 1, 2): Decimal("102.5"),
+        }
     )
 
 

@@ -3,22 +3,28 @@ from __future__ import annotations
 from dataclasses import replace
 from decimal import Decimal
 
-from fuggers_py.products.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
-from fuggers_py.market.indices import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
-from fuggers_py.reference.bonds.types import CreditRating, RatingInfo, RateIndex, Sector, SectorInfo, YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.market.curves import DiscountCurveBuilder
+from fuggers_py.curves import CurveType
+from fuggers_py._products.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
+from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
+from fuggers_py._reference.bonds.types import CreditRating, RatingInfo, RateIndex, Sector, SectorInfo
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._market.snapshot import CurvePoint
 from fuggers_py.portfolio import Classification, Holding, Portfolio, PortfolioBuilder
+from tests.helpers._public_curve_helpers import linear_zero_curve
 
 
 def make_curve(ref: Date, *, shift: Decimal = Decimal(0)):
-    return (
-        DiscountCurveBuilder(reference_date=ref)
-        .add_zero_rate(0.5, Decimal("0.03") + shift)
-        .add_zero_rate(2.0, Decimal("0.0325") + shift)
-        .add_zero_rate(5.0, Decimal("0.0350") + shift)
-        .add_zero_rate(10.0, Decimal("0.04") + shift)
-        .build()
+    return linear_zero_curve(
+        "portfolio.discount",
+        ref,
+        (
+            CurvePoint(Decimal("0.5"), Decimal("0.03") + shift),
+            CurvePoint(Decimal("2.0"), Decimal("0.0325") + shift),
+            CurvePoint(Decimal("5.0"), Decimal("0.0350") + shift),
+            CurvePoint(Decimal("10.0"), Decimal("0.04") + shift),
+        ),
+        curve_type=CurveType.OVERNIGHT_DISCOUNT,
     )
 
 

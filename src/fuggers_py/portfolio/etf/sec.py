@@ -13,7 +13,7 @@ from enum import Enum
 from typing import overload
 import warnings
 
-from fuggers_py.core import Date
+from fuggers_py._core import Date
 
 from ..analytics import PortfolioAnalytics
 from ..portfolio import Portfolio

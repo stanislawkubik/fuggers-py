@@ -4,12 +4,13 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.errors import InvalidBondSpec, SettlementError
-from fuggers_py.market.indices import BondIndex, IndexFixingStore
-from fuggers_py.market.indices.conventions import IndexConventions
-from fuggers_py.reference.bonds.types import PriceQuote, PriceQuoteConvention, RateIndex, RoundingConvention, SettlementAdjustment, SettlementRules
-from fuggers_py.reference.bonds.types.amortization import AmortizationEntry, AmortizationSchedule, AmortizationType
-from fuggers_py.core import Currency, Date, WeekendCalendar
+from fuggers_py._reference.bonds.errors import InvalidBondSpec, SettlementError
+from fuggers_py.rates import BondIndex, IndexFixingStore
+from fuggers_py.rates import IndexConventions
+from fuggers_py._reference.bonds.types import PriceQuote, PriceQuoteConvention, RateIndex, RoundingConvention, SettlementRules
+from fuggers_py._core import SettlementAdjustment
+from fuggers_py._reference.bonds.types.amortization import AmortizationEntry, AmortizationSchedule, AmortizationType
+from fuggers_py._core import Currency, Date, WeekendCalendar
 
 
 def test_bond_index_fixing_and_period_fallback_paths() -> None:

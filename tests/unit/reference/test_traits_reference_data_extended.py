@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.core import InstrumentId, YearMonth
-from fuggers_py.reference import (
+from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._core import InstrumentId, YearMonth
+from fuggers_py._reference import (
     BondReferenceData,
-    BondType,
     BondFutureContractReference,
     BondFutureReferenceData,
     CdsReferenceData,
     DeliverableBondReference,
     FutureReferenceData,
-    IssuerType,
     RepoReferenceData,
     SwapReferenceData,
 )

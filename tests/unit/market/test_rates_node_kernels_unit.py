@@ -4,15 +4,15 @@ from math import exp, sqrt
 
 import pytest
 
-from fuggers_py.core.types import Currency, Date
-from fuggers_py.market.curves import (
+from fuggers_py._core.types import Currency, Date
+from fuggers_py.curves import (
     CurveSpec,
     CurveType,
     ExtrapolationPolicy,
     YieldCurve,
 )
-from fuggers_py.market.curves.errors import InvalidCurveInput, TenorOutOfBounds
-from fuggers_py.market.curves.rates.kernels import (
+from fuggers_py.curves.errors import InvalidCurveInput, TenorOutOfBounds
+from fuggers_py.curves.kernels import (
     LinearZeroKernel,
     LogLinearDiscountKernel,
     MonotoneConvexKernel,

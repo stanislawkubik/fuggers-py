@@ -1,36 +1,29 @@
 # `fuggers_py.reference`
 
-Security metadata, market conventions, and reference-data types.
+Retired public namespace.
 
-```{eval-rst}
-.. automodule:: fuggers_py.reference
-   :members:
-   :member-order: bysource
+This path is no longer part of the public API.
+
+For shared conventions and types, use the root package or the owning
+first-layer module instead:
+
+```python
+from fuggers_py import (
+    BondType,
+    CalendarId,
+    IndexConventions,
+    IssuerType,
+    OvernightCompounding,
+    SettlementAdjustment,
+    Tenor,
+    USD_CPI_U_NSA,
+    YieldCalculationRules,
+)
+
+from fuggers_py.bonds import YieldCalculationRules
+from fuggers_py.inflation import USD_CPI_U_NSA
+from fuggers_py.rates import IndexConventions, OvernightCompounding
 ```
 
-## `fuggers_py.reference.base`
-
-```{eval-rst}
-.. automodule:: fuggers_py.reference.base
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.reference.reference_data`
-
-```{eval-rst}
-.. automodule:: fuggers_py.reference.reference_data
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.reference.inflation`
-
-```{eval-rst}
-.. automodule:: fuggers_py.reference.inflation
-   :members:
-   :member-order: bysource
-   :no-index:
-```
+Reference-data implementation now lives under the internal `_reference`
+package.

@@ -7,13 +7,13 @@ from typing import cast
 import numpy as np
 import pytest
 
-from fuggers_py.core import Date
-from fuggers_py.market.curves import (
+from fuggers_py._core import Date
+from fuggers_py._curves_impl import (
     CubicSplineZeroRateCurve,
     CubicSplineZeroRateCurveModel,
     ExponentialSplineCurveModel,
 )
-from fuggers_py.market.curves.fitted_bonds._splines import cached_natural_cubic_spline_grid
+from fuggers_py._curves_impl.fitted_bonds._splines import cached_natural_cubic_spline_grid
 
 from tests.helpers._fitted_bond_helpers import cubic_model
 

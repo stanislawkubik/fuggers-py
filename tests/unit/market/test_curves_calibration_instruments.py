@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core.types import Compounding, Date, Frequency
-from fuggers_py.market.curves import ZeroCurveBuilder
-from fuggers_py.market.curves.calibration import Deposit, Fra, InstrumentSet, Ois, Swap
-from fuggers_py.market.curves.errors import InvalidCurveInput
+from fuggers_py._core import Tenor
+from fuggers_py._core.types import Compounding, Date, Frequency
+from fuggers_py._curves_impl import ZeroCurveBuilder
+from fuggers_py._curves_impl.calibration import Deposit, Fra, InstrumentSet, Ois, Swap
+from fuggers_py._curves_impl.errors import InvalidCurveInput
 
 
 def _flat_curve(rate: float, *, compounding: Compounding) -> tuple[Date, object]:

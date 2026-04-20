@@ -7,16 +7,25 @@ ROOT = REPO_ROOT
 EXAMPLES = REPO_ROOT / "examples"
 
 EXPECTED_ROOT_CONTENTS = {
-    "01_cash_bond_and_curve_workflow.ipynb",
-    "02_financed_tips_multi_curve_workflow.ipynb",
-    "03_credit_basis_cross_market_and_optionality.ipynb",
-    "04_portfolio_etf_and_engine_pipeline.ipynb",
+    "01_public_curves_and_surfaces.ipynb",
     "05_fitted_nominal_real_breakeven_minimal.ipynb",
     "README.md",
     "synthetic_data",
 }
 
 BANNED_PATTERNS = (
+    "fuggers_py._market.curves",
+    "fuggers_py._market.vol_surfaces",
+    "fuggers_py._market.quotes",
+    "fuggers_py._products.",
+    "fuggers_py._pricers.",
+    "fuggers_py._measures.",
+    "fuggers_py._reference.",
+    "fuggers_py._calc.",
+    "fuggers_py._adapters.",
+    "fuggers_py.fixings",
+    "fuggers_py.derivatives",
+    "from fuggers_py.core import",
     "fuggers_py.traits",
     "fuggers_py.ext",
     "tests.",

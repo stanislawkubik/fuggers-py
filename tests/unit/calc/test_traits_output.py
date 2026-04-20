@@ -4,9 +4,9 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Date
-from fuggers_py.calc import BondQuoteOutput
-from fuggers_py.core import InstrumentId
+from fuggers_py._core import Date
+from fuggers_py._calc import BondQuoteOutput
+from fuggers_py._core import InstrumentId
 
 
 def test_bond_quote_output_optional_fields_and_repr() -> None:

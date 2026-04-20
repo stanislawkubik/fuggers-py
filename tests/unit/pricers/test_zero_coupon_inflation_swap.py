@@ -5,15 +5,14 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Currency, Date
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.core import YearMonth
-from fuggers_py.market.snapshot import InflationFixing
-from fuggers_py.market.sources import InMemoryInflationFixingSource
-from fuggers_py.reference.inflation import USD_CPI_U_NSA, reference_cpi
-from fuggers_py.pricers.rates import InflationSwapPricer
-from fuggers_py.products.rates import PayReceive, ZeroCouponInflationSwap
-
+from fuggers_py._core import Currency, Date, PayReceive
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._core import YearMonth
+from fuggers_py._market.snapshot import InflationFixing
+from fuggers_py._market.sources import InMemoryInflationFixingSource
+from fuggers_py.inflation import USD_CPI_U_NSA, reference_cpi
+from fuggers_py.inflation import InflationSwapPricer
+from fuggers_py.inflation import ZeroCouponInflationSwap
 from tests.helpers._rates_helpers import flat_curve
 
 

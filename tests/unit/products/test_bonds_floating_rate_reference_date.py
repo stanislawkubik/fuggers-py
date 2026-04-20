@@ -3,9 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from decimal import Decimal
 
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.products.bonds.instruments import FloatingRateNoteBuilder
-from fuggers_py.reference.bonds.types import RateIndex, YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._products.bonds.instruments import FloatingRateNoteBuilder
+from fuggers_py._reference.bonds.types import RateIndex
+from fuggers_py._core import YieldCalculationRules
 
 
 def _quarterly_treasury_rules() -> YieldCalculationRules:

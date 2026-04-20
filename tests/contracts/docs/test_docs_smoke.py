@@ -14,6 +14,11 @@ ROOT = REPO_ROOT
 DOC_SMOKE_CASES: dict[str, tuple[int, ...]] = {
     "README.md": (0,),
     "docs/SRC_STRUCTURE.md": (0,),
+    "docs/api/bonds.md": (0,),
+    "docs/api/rates.md": (0,),
+    "docs/api/inflation.md": (0,),
+    "docs/api/credit.md": (0,),
+    "docs/api/funding.md": (0,),
 }
 
 

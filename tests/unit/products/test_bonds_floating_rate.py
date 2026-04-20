@@ -6,12 +6,14 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.reference.bonds.errors import InvalidBondSpec
-from fuggers_py.market.indices import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
-from fuggers_py.products.bonds.instruments import FloatingRateNoteBuilder
-from fuggers_py.reference.bonds.types import BondType, RateIndex, SOFRConvention, YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.market.curves import DiscountCurveBuilder
+from fuggers_py.bonds.types import BondType
+from fuggers_py._reference.bonds.errors import InvalidBondSpec
+from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
+from fuggers_py._products.bonds.instruments import FloatingRateNoteBuilder
+from fuggers_py._reference.bonds.types import RateIndex, SOFRConvention
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._curves_impl import DiscountCurveBuilder
 
 
 def _quarterly_treasury_rules() -> YieldCalculationRules:

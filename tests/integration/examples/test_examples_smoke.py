@@ -12,10 +12,7 @@ EXAMPLES = REPO_ROOT / "examples"
 SYNTHETIC_DATA = EXAMPLES / "synthetic_data"
 
 EXPECTED_NOTEBOOKS = {
-    "01_cash_bond_and_curve_workflow.ipynb",
-    "02_financed_tips_multi_curve_workflow.ipynb",
-    "03_credit_basis_cross_market_and_optionality.ipynb",
-    "04_portfolio_etf_and_engine_pipeline.ipynb",
+    "01_public_curves_and_surfaces.ipynb",
     "05_fitted_nominal_real_breakeven_minimal.ipynb",
 }
 

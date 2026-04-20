@@ -1,54 +1,17 @@
 # `fuggers_py.calc`
 
-Pricing routers, shared output DTOs, orchestration, and runtime wiring.
+Retired public namespace.
 
-```{eval-rst}
-.. automodule:: fuggers_py.calc
-   :members:
-   :member-order: bysource
+This path is no longer part of the public API.
+
+For ordinary library use, start with the domain-first modules and shared root
+language:
+
+```python
+from fuggers_py import Date, Price
+from fuggers_py.bonds import FixedBondBuilder
+from fuggers_py.curves import YieldCurve
+from fuggers_py.portfolio import Portfolio
 ```
 
-## `fuggers_py.calc.pricing_router`
-
-```{eval-rst}
-.. automodule:: fuggers_py.calc.pricing_router
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.calc.output`
-
-```{eval-rst}
-.. automodule:: fuggers_py.calc.output
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.calc.pricing_specs`
-
-```{eval-rst}
-.. automodule:: fuggers_py.calc.pricing_specs
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.calc.builder`
-
-```{eval-rst}
-.. automodule:: fuggers_py.calc.builder
-   :members:
-   :member-order: bysource
-   :no-index:
-```
-
-## `fuggers_py.calc.config`
-
-```{eval-rst}
-.. automodule:: fuggers_py.calc.config
-   :members:
-   :member-order: bysource
-   :no-index:
-```
+Runtime and engine wiring now live under the internal `_calc` package.

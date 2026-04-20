@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from fuggers_py.core import Date
-import fuggers_py.market.curves.rates as rates
-from fuggers_py.market.quotes import SwapQuote
-from fuggers_py.market.curves.rates import (
+from fuggers_py import Date
+import fuggers_py.curves as curves
+from fuggers_py.rates import SwapQuote
+from fuggers_py.curves import (
     BondFitTarget,
     CalibrationMode,
     CalibrationObjective,
@@ -44,15 +44,15 @@ def test_curves_rates_exports_the_public_construction_surface() -> None:
         "CalibrationObjective",
         "CalibrationPoint",
         "CalibrationReport",
-        "CurveSpec",
+        "CalibrationSpec",
         "CurveKernel",
         "CurveKernelKind",
+        "CurveSpec",
         "CurveType",
-        "CalibrationSpec",
         "DiscountingCurve",
         "ExtrapolationPolicy",
-        "GlobalFitPoint",
         "GlobalFitOptimizerKind",
+        "GlobalFitPoint",
         "GlobalFitReport",
         "KernelSpec",
         "RateSpace",
@@ -61,27 +61,38 @@ def test_curves_rates_exports_the_public_construction_surface() -> None:
         "YieldCurve",
     ]
 
-    assert rates.__all__ == expected_exports, "market.curves.rates should export the full public rates surface."
+    assert curves.__all__ == expected_exports, "curves should export the full public rates surface."
 
 
 def test_curves_rates_reexports_construction_and_report_types() -> None:
-    assert CurveSpec is rates.CurveSpec
-    assert CurveKernelKind is rates.CurveKernelKind
-    assert KernelSpec is rates.KernelSpec
-    assert CalibrationMode is rates.CalibrationMode
-    assert CalibrationObjective is rates.CalibrationObjective
-    assert BondFitTarget is rates.BondFitTarget
-    assert CalibrationSpec is rates.CalibrationSpec
-    assert GlobalFitOptimizerKind is rates.GlobalFitOptimizerKind
-    assert CalibrationReport is rates.CalibrationReport
-    assert GlobalFitReport is rates.GlobalFitReport
+    assert CurveSpec is curves.CurveSpec
+    assert CurveKernelKind is curves.CurveKernelKind
+    assert KernelSpec is curves.KernelSpec
+    assert CalibrationMode is curves.CalibrationMode
+    assert CalibrationObjective is curves.CalibrationObjective
+    assert BondFitTarget is curves.BondFitTarget
+    assert CalibrationSpec is curves.CalibrationSpec
+    assert GlobalFitOptimizerKind is curves.GlobalFitOptimizerKind
+    assert CalibrationReport is curves.CalibrationReport
+    assert GlobalFitReport is curves.GlobalFitReport
     assert issubclass(DiscountingCurve, RatesTermStructure)
     assert issubclass(YieldCurve, DiscountingCurve)
     assert issubclass(RelativeRateCurve, RatesTermStructure)
+    assert BondFitTarget.__module__ == "fuggers_py.curves.calibrators.base"
+    assert CalibrationMode.__module__ == "fuggers_py.curves.calibrators.base"
+    assert CalibrationObjective.__module__ == "fuggers_py.curves.calibrators.base"
+    assert CalibrationSpec.__module__ == "fuggers_py.curves.calibrators.base"
+    assert CurveKernel.__module__ == "fuggers_py.curves.kernels.base"
+    assert CurveKernelKind.__module__ == "fuggers_py.curves.kernels.base"
+    assert KernelSpec.__module__ == "fuggers_py.curves.kernels.base"
+    assert CalibrationReport.__module__ == "fuggers_py.curves.reports"
+    assert GlobalFitReport.__module__ == "fuggers_py.curves.reports"
+    assert GlobalFitOptimizerKind.__module__ == "fuggers_py.curves.calibrators.base"
 
 
 def test_yield_curve_fit_can_be_called_from_the_rates_public_surface() -> None:
     reference_date = Date.from_ymd(2026, 4, 9)
+
     curve = YieldCurve.fit(
         quotes=[
             SwapQuote(instrument_id="1Y", tenor="1Y", rate=0.025, currency="USD", as_of=reference_date),

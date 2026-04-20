@@ -1,9 +1,8 @@
 # `fuggers_py.math`
 
-Numerical infrastructure used by the pricing and analytics layers.
+Retired public namespace.
 
-```{eval-rst}
-.. automodule:: fuggers_py.math
-   :members:
-   :member-order: bysource
-```
+`fuggers_py.math` is no longer part of the public API.
+
+Numerical helpers now live under the internal `fuggers_py._math` package and
+are consumed by the domain modules and `fuggers_py.curves`.

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.measures.inflation import (
+from fuggers_py._measures.inflation import (
     LinkerSwapParityCheck,
     breakeven_inflation_rate,
     linker_swap_parity_check,

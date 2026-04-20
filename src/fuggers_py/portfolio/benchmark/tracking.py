@@ -9,8 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from fuggers_py.core.types import Date
-from fuggers_py.market.curves import DiscountingCurve
+from fuggers_py._core.types import Date
+from fuggers_py.curves import DiscountingCurve
 
 from .comparison import PortfolioBenchmark
 

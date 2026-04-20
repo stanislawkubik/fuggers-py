@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fuggers_py.reference.bonds.types import Tenor
-from fuggers_py.core.types import Currency, Date
-from fuggers_py.market.curve_support import STANDARD_KEY_RATE_TENORS
+from fuggers_py._core import Tenor
+from fuggers_py._core.types import Currency, Date
+from ...curves.date_support import STANDARD_KEY_RATE_TENORS
 
 from .weighting import WeightingMethod
 

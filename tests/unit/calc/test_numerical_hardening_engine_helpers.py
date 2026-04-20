@@ -4,11 +4,9 @@ import asyncio
 from datetime import UTC, datetime
 from decimal import Decimal
 
-import pytest
-
-from fuggers_py.core import Currency, Date
-from fuggers_py.calc.calc_graph import CalculationGraph, NodeId
-from fuggers_py.calc.market_data_listener import (
+from fuggers_py._core import Currency, Date
+from fuggers_py._calc.calc_graph import CalculationGraph, NodeId
+from fuggers_py._calc.market_data_listener import (
     FxRateUpdate,
     InflationFixingUpdate,
     MarketDataListener,
@@ -16,15 +14,14 @@ from fuggers_py.calc.market_data_listener import (
     QuoteUpdate,
     VolSurfaceUpdate,
 )
-from fuggers_py.calc.scheduler import NodeUpdate, ThrottleManager, UpdateSource
-from fuggers_py.core import CurrencyPair, InstrumentId, VolSurfaceId, YearMonth
-from fuggers_py.market.quotes import RawQuote
-from fuggers_py.calc.pricing_specs import QuoteSide
-from fuggers_py.market.snapshot import FxRate, InflationFixing
-from fuggers_py.market.vol_surfaces import VolSurfaceType, VolatilitySurface
+from fuggers_py._calc.scheduler import NodeUpdate, ThrottleManager, UpdateSource
+from fuggers_py._core import CurrencyPair, InstrumentId, VolSurfaceId, YearMonth
+from fuggers_py._runtime.quotes import RawQuote
+from fuggers_py._calc.pricing_specs import QuoteSide
+from fuggers_py._market.snapshot import FxRate, InflationFixing
+from fuggers_py.vol_surfaces import VolSurfaceType, VolatilitySurface
 
 
-@pytest.mark.asyncio
 async def test_market_data_publisher_unsubscribe_stops_delivery() -> None:
     publisher = MarketDataPublisher()
     primary = publisher.subscribe()
@@ -46,7 +43,6 @@ async def test_market_data_publisher_unsubscribe_stops_delivery() -> None:
     assert removed.empty()
 
 
-@pytest.mark.asyncio
 async def test_market_data_listener_drain_scheduler_update_preserves_payload_and_marks_dependents_dirty() -> None:
     graph = CalculationGraph()
     trigger = NodeId("curve:usd.discount")
@@ -71,7 +67,6 @@ async def test_market_data_listener_drain_scheduler_update_preserves_payload_and
     assert dependent in graph.query_dirty()
 
 
-@pytest.mark.asyncio
 async def test_market_data_listener_throttles_repeated_quote_updates() -> None:
     graph = CalculationGraph()
     listener = MarketDataListener(
@@ -97,7 +92,6 @@ async def test_market_data_listener_throttles_repeated_quote_updates() -> None:
     assert listener.quote_source.get_quote("THROTTLED", side=QuoteSide.MID) is not None
 
 
-@pytest.mark.asyncio
 async def test_market_data_listener_handles_fx_inflation_and_volatility_paths() -> None:
     graph = CalculationGraph()
     listener = MarketDataListener(calc_graph=graph)

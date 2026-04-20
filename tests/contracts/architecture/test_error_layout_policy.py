@@ -58,7 +58,7 @@ def test_library_exception_classes_live_in_error_modules() -> None:
 
 
 def test_error_modules_share_the_fuggers_error_root() -> None:
-    from fuggers_py.core.errors import FuggersError
+    from fuggers_py._core.errors import FuggersError
 
     offenders: list[str] = []
     for path in _error_module_paths():

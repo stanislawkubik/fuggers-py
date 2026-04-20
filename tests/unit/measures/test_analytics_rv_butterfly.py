@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.measures.rv import construct_butterfly
+from fuggers_py._measures.rv import construct_butterfly
 
 from tests.helpers._fitted_bond_helpers import exponential_model, fit_result
 

@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.market.indices import (
+from fuggers_py.rates import (
     BondIndex,
     IndexConventions,
     IndexFixingStore,
     OvernightCompounding,
 )
-from fuggers_py.products.bonds.instruments import FloatingRateNoteBuilder
-from fuggers_py.reference.bonds.types import RateIndex, YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency
+from fuggers_py._products.bonds.instruments import FloatingRateNoteBuilder
+from fuggers_py._reference.bonds.types import RateIndex
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency
 
 
 def _sofr_store() -> IndexFixingStore:

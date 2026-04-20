@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.products.bonds.instruments import FixedBond
-from fuggers_py.reference.bonds.types import CreditRating, RatingInfo, Sector, SectorInfo, YieldCalculationRules
-from fuggers_py.core import Currency, Date, Frequency
-from fuggers_py.market.curves import DiscountCurveBuilder
+from fuggers_py._products.bonds.instruments import FixedBond
+from fuggers_py._reference.bonds.types import CreditRating, RatingInfo, Sector, SectorInfo
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Currency, Date, Frequency
+from fuggers_py._curves_impl import DiscountCurveBuilder
 from fuggers_py.portfolio import (
     AnalyticsConfig,
     CashPosition,

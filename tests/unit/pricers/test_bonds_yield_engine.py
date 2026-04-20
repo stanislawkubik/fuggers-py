@@ -4,10 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.products.bonds.instruments import FixedBondBuilder
-from fuggers_py.pricers.bonds import BondPricer
-from fuggers_py.reference.bonds.types import YieldCalculationRules, YieldConvention
-from fuggers_py.core import Compounding, Date, Frequency, Yield
+from fuggers_py._products.bonds.instruments import FixedBondBuilder
+from fuggers_py._pricers.bonds import BondPricer
+from fuggers_py._reference.bonds.types import YieldConvention
+from fuggers_py._core import YieldCalculationRules
+from fuggers_py._core import Compounding, Date, Frequency, Yield
 
 
 def test_yield_engine_round_trip_matches_example_treasury_bond() -> None:

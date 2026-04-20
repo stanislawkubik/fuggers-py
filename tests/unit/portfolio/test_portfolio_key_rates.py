@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.core import Date
+from fuggers_py._core import Date
 from fuggers_py.portfolio import aggregate_key_rate_profile, calculate_portfolio_analytics
 
 from tests.helpers._portfolio_helpers import make_curve, make_portfolio

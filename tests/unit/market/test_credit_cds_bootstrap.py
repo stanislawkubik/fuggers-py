@@ -5,16 +5,15 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py.market.curves.credit import bootstrap_credit_curve
-from fuggers_py.pricers.credit import CdsPricer
-from fuggers_py.products.credit import CreditDefaultSwap
-from fuggers_py.core import Date
-from fuggers_py.market.curves import CreditCurve
-from fuggers_py.market.curves.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
-from fuggers_py.market.curves.value_type import ValueType
-from fuggers_py.market.state import AnalyticsCurves
-from fuggers_py.market.quotes import CdsQuote
-from fuggers_py.reference import CdsReferenceData
+from fuggers_py._curves_impl.credit import bootstrap_credit_curve
+from fuggers_py.credit import CdsPricer, CreditDefaultSwap
+from fuggers_py._core import Date
+from fuggers_py._curves_impl import CreditCurve
+from fuggers_py._curves_impl.discrete import DiscreteCurve, ExtrapolationMethod, InterpolationMethod
+from fuggers_py._curves_impl.value_type import ValueType
+from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._runtime.quotes import CdsQuote
+from fuggers_py._reference import CdsReferenceData
 
 from tests.helpers._rates_helpers import flat_curve
 
