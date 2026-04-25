@@ -4,10 +4,10 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.pricing import BondPricer
-from fuggers_py._pricers.bonds import BondPricer as BondsBondPricer
-from fuggers_py._curves_impl import DiscountCurveBuilder
+from fuggers_py.bonds.analytics_pricing import BondPricer
+from fuggers_py.bonds import BondPricer as BondsBondPricer
 from fuggers_py._core import Date, Price
+from tests.helpers._rates_helpers import flat_curve
 
 
 def test_price_result_dirty_equals_clean_plus_accrued(fixed_rate_2025_bond) -> None:
@@ -30,9 +30,7 @@ def test_curve_pricing_matches_manual_pv(fixed_rate_2025_bond) -> None:
     bond = fixed_rate_2025_bond
     settlement = Date.from_ymd(2020, 6, 15)
 
-    builder = DiscountCurveBuilder(reference_date=settlement)
-    builder.add_zero_rate(1.0, Decimal("0.03")).add_zero_rate(10.0, Decimal("0.03"))
-    curve = builder.build()
+    curve = flat_curve(settlement, "0.03")
 
     pricer = BondPricer()
     result = pricer.price_from_curve(bond, curve, settlement)

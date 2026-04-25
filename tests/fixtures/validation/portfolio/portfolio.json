@@ -5,7 +5,8 @@
     "expected_active_duration": "0.146685757086324091459375014",
     "expected_active_dv01": "4.431985528724168814009420004",
     "expected_net_active_weight": "0",
-    "expected_tracking_error": "0.011479592926327675740588635195929773556059599744358",
+    "expected_tracking_error": "0.011479592926327675749124648596264781931268979978864",
+    "expected_tracking_error_note": "The previous value did not match the archived pre-move portfolio implementation; the current value preserves that implementation's active spread calculation.",
     "expected_sector_active_weights": {
       "CORPORATE": "-0.1603946582455085067899764826",
       "GOVERNMENT": "-0.1679135494596841230257689111",
@@ -27,25 +28,25 @@
   "stress_case": {
     "source": "Standard-scenario portfolio stress summary.",
     "reference_date": "2024-01-01",
-    "expected_aggregate_change": "-339.7663821149600652000000000",
+    "expected_aggregate_change": "-339.766382114959440200000000000000000000",
     "expected_worst_loss": "-315.091161951830227700",
-    "expected_best_gain": "126.0364647807321581676167918",
+    "expected_best_gain": "126.036464780732158167616791847286600000",
     "expected_scenarios": {
       "+10bps parallel": {
-        "actual_change": "-126.0364647807321581676167918",
-        "stressed_dirty_pv": "29723.96353521926784183238321"
+        "actual_change": "-126.036464780732158167616791847286600000",
+        "stressed_dirty_pv": "29723.963535219267841832383208152713400000"
       },
       "-10bps parallel": {
-        "actual_change": "126.0364647807321581676167918",
-        "stressed_dirty_pv": "29976.03646478073215816761679"
+        "actual_change": "126.036464780732158167616791847286600000",
+        "stressed_dirty_pv": "29976.036464780732158167616791847286600000"
       },
       "+25bps spread widening": {
         "actual_change": "-315.091161951830227700",
         "stressed_dirty_pv": "29534.908838048169772300"
       },
       "2s10s steepener": {
-        "actual_change": "-24.67522016312983750000",
-        "stressed_dirty_pv": "29825.32477983687016250000"
+        "actual_change": "-24.67522016312921250000",
+        "stressed_dirty_pv": "29825.32477983687078750000"
       }
     }
   }

@@ -7,12 +7,14 @@ import pytest
 from fuggers_py.bonds.types import BondType, IssuerType
 from fuggers_py._core import Currency, Date, Frequency, InstrumentId
 from fuggers_py._runtime.quotes import InstrumentQuote, RawQuote, RepoQuote
-from fuggers_py._reference import (
-    BondReferenceData,
+from fuggers_py._core import (
     ReferenceData,
-    RepoReferenceData,
     ResolvableReference,
 )
+from fuggers_py.bonds import (
+    BondReferenceData,
+)
+from fuggers_py.funding import RepoReferenceData
 
 
 @pytest.mark.feature_slug("non-bond-instrument-adoption")

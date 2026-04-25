@@ -4,12 +4,12 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._reference.bonds.errors import InvalidBondSpec, SettlementError
+from fuggers_py._core import InvalidBondSpec, SettlementError
 from fuggers_py.rates import BondIndex, IndexFixingStore
 from fuggers_py.rates import IndexConventions
-from fuggers_py._reference.bonds.types import PriceQuote, PriceQuoteConvention, RateIndex, RoundingConvention, SettlementRules
+from fuggers_py.bonds.types import PriceQuote, PriceQuoteConvention, RateIndex, RoundingConvention, SettlementRules
 from fuggers_py._core import SettlementAdjustment
-from fuggers_py._reference.bonds.types.amortization import AmortizationEntry, AmortizationSchedule, AmortizationType
+from fuggers_py.bonds.types.amortization import AmortizationEntry, AmortizationSchedule, AmortizationType
 from fuggers_py._core import Currency, Date, WeekendCalendar
 
 

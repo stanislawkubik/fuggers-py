@@ -4,14 +4,14 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.pricing import BondPricer
-from fuggers_py._measures.spreads import BenchmarkSpec, GovernmentCurve, g_spread_with_benchmark_bps
-from fuggers_py._measures.yas import BloombergReference, SettlementInvoiceBuilder, YASCalculator
-from fuggers_py._measures.yields import current_yield_from_amount_pct
-from fuggers_py._products.bonds.instruments import FixedBondBuilder
+from fuggers_py.bonds.analytics_pricing import BondPricer
+from fuggers_py.bonds.spreads import BenchmarkSpec, GovernmentCurve, g_spread_with_benchmark_bps
+from fuggers_py.bonds.yas import BloombergReference, SettlementInvoiceBuilder, YASCalculator
+from fuggers_py.bonds.yields import current_yield_from_amount_pct
+from fuggers_py.bonds.instruments import FixedBondBuilder
 from fuggers_py._core import Tenor, YieldCalculationRules
-from fuggers_py._curves_impl import DiscountCurveBuilder
 from fuggers_py._core import Currency, Date, Frequency, Price
+from tests.helpers._rates_helpers import flat_curve
 
 
 def test_bloomberg_reference_boeing() -> None:
@@ -43,9 +43,7 @@ def test_yas_structural_consistency(fixed_rate_2025_bond) -> None:
     bond = fixed_rate_2025_bond
     settlement = Date.from_ymd(2020, 6, 15)
 
-    curve_builder = DiscountCurveBuilder(reference_date=settlement)
-    curve_builder.add_zero_rate(1.0, Decimal("0.03")).add_zero_rate(10.0, Decimal("0.03"))
-    curve = curve_builder.build()
+    curve = flat_curve(settlement, "0.03")
 
     calc = YASCalculator(curve=curve)
     analysis = calc.calculate(bond, Price.new(Decimal("105"), bond.currency()), settlement)
@@ -62,9 +60,7 @@ def test_yas_structural_consistency(fixed_rate_2025_bond) -> None:
 def test_validate_bloomberg_smoke(fixed_rate_2025_bond) -> None:
     bond = fixed_rate_2025_bond
     settlement = Date.from_ymd(2020, 6, 15)
-    curve_builder = DiscountCurveBuilder(reference_date=settlement)
-    curve_builder.add_zero_rate(1.0, Decimal("0.03")).add_zero_rate(10.0, Decimal("0.03"))
-    curve = curve_builder.build()
+    curve = flat_curve(settlement, "0.03")
 
     calc = YASCalculator(curve=curve)
     failures = calc.validate_bloomberg(
@@ -90,9 +86,7 @@ def test_yas_calculator_populates_benchmark_fields_with_government_curve() -> No
     )
 
     settlement = Date.from_ymd(2020, 1, 1)
-    curve_builder = DiscountCurveBuilder(reference_date=settlement)
-    curve_builder.add_zero_rate(1.0, Decimal("0.03")).add_zero_rate(10.0, Decimal("0.03"))
-    curve = curve_builder.build()
+    curve = flat_curve(settlement, "0.03")
 
     gov_curve = GovernmentCurve.us_treasury(settlement)
     gov_curve.add_benchmark(Tenor.parse("2Y"), Decimal("0.02"))
@@ -118,13 +112,11 @@ def test_yas_calculator_populates_benchmark_fields_with_government_curve() -> No
 def test_yas_calculator_does_not_swallow_unexpected_zspread_errors(fixed_rate_2025_bond, monkeypatch) -> None:
     bond = fixed_rate_2025_bond
     settlement = Date.from_ymd(2020, 6, 15)
-    curve_builder = DiscountCurveBuilder(reference_date=settlement)
-    curve_builder.add_zero_rate(1.0, Decimal("0.03")).add_zero_rate(10.0, Decimal("0.03"))
-    curve = curve_builder.build()
+    curve = flat_curve(settlement, "0.03")
 
     calc = YASCalculator(curve=curve)
 
-    import fuggers_py._measures.yas.calculator as yas_calc_mod
+    import fuggers_py.bonds._yas.calculator as yas_calc_mod
 
     def boom(*args, **kwargs):
         raise RuntimeError("boom")

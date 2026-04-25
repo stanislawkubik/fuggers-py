@@ -5,7 +5,6 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import Enum, auto
 
 import numpy as np
 from numpy.typing import NDArray
@@ -20,11 +19,10 @@ from fuggers_py._math.utils import assert_finite_array, assert_strictly_increasi
 
 from ..conversion import ValueConverter
 from ..errors import CurveConstructionError, InvalidCurveInput
-from ..enums import ExtrapolationPolicy
-from ..kernels import CurveKernel, CurveKernelKind, KernelSpec
+from ..kernels.base import CurveKernel, KernelSpec
 from ..kernels.parametric import NelsonSiegelKernel, SvenssonKernel
 from ..kernels.spline import CubicSplineKernel, ExponentialSplineKernel
-from ..reports import CalibrationReport, GlobalFitPoint, GlobalFitReport
+from ..reports import CalibrationPoint, CalibrationReport
 from ..spec import CurveSpec
 from ._quotes import (
     QuoteRow,
@@ -37,22 +35,22 @@ from ._quotes import (
     normalized_quote_rows,
     quote_value_target_space,
 )
-from .base import CalibrationSpec, CurveCalibrator, GlobalFitOptimizerKind, _require_global_fit_calibration_spec
+from .base import CalibrationSpec, CurveCalibrator, _require_global_fit_calibration_spec
 
 _CONTINUOUS = Compounding.CONTINUOUS
 _MIN_TAU = 1e-8
 _PROXY_SOLVER_CONFIG = SolverConfig(tolerance=1e-12, max_iterations=100)
 _GLOBAL_FIT_KINDS = {
-    CurveKernelKind.CUBIC_SPLINE,
-    CurveKernelKind.NELSON_SIEGEL,
-    CurveKernelKind.SVENSSON,
-    CurveKernelKind.EXPONENTIAL_SPLINE,
+    "cubic_spline",
+    "nelson_siegel",
+    "svensson",
+    "exponential_spline",
 }
 _ALLOWED_KERNEL_PARAMETERS_BY_KIND = {
-    CurveKernelKind.CUBIC_SPLINE: frozenset({"knots", "initial_parameters"}),
-    CurveKernelKind.NELSON_SIEGEL: frozenset({"initial_parameters", "max_t"}),
-    CurveKernelKind.SVENSSON: frozenset({"initial_parameters", "max_t"}),
-    CurveKernelKind.EXPONENTIAL_SPLINE: frozenset({"decay_factors", "initial_parameters", "initial_coefficients", "max_t"}),
+    "cubic_spline": frozenset({"knots", "initial_parameters"}),
+    "nelson_siegel": frozenset({"initial_parameters", "max_t"}),
+    "svensson": frozenset({"initial_parameters", "max_t"}),
+    "exponential_spline": frozenset({"decay_factors", "initial_parameters", "initial_coefficients", "max_t"}),
 }
 
 
@@ -61,25 +59,25 @@ def _curve_input_error(exc: Exception) -> InvalidCurveInput:
 
 
 def _allow_extrapolation(spec: CurveSpec) -> bool:
-    return spec.extrapolation_policy is not ExtrapolationPolicy.ERROR
+    return spec.extrapolation_policy != "error"
 
 
-def _validate_kernel_parameters(kind: CurveKernelKind, kernel_spec: KernelSpec) -> None:
+def _validate_kernel_parameters(kind: str, kernel_spec: KernelSpec) -> None:
     allowed = _ALLOWED_KERNEL_PARAMETERS_BY_KIND[kind]
     unexpected = set(kernel_spec.parameters) - allowed
     if unexpected:
         names = ", ".join(sorted(unexpected))
         allowed_names = ", ".join(sorted(allowed))
         raise InvalidCurveInput(
-            f"{kind.name} does not accept kernel_spec parameters: {names}. "
+            f"{kind} does not accept kernel_spec parameters: {names}. "
             f"Allowed parameters are: {allowed_names}."
         )
-    if kind is CurveKernelKind.EXPONENTIAL_SPLINE:
+    if kind == "exponential_spline":
         has_initial_parameters = "initial_parameters" in kernel_spec.parameters
         has_initial_coefficients = "initial_coefficients" in kernel_spec.parameters
         if has_initial_parameters and has_initial_coefficients:
             raise InvalidCurveInput(
-                "EXPONENTIAL_SPLINE accepts only one of kernel_spec.parameters['initial_parameters'] "
+                "exponential_spline accepts only one of kernel_spec.parameters['initial_parameters'] "
                 "or kernel_spec.parameters['initial_coefficients']."
             )
 
@@ -104,7 +102,7 @@ def _resolve_decay_factors(kernel_spec: KernelSpec) -> NDArray[np.float64] | Non
 def _required_decay_factors(kernel_spec: KernelSpec) -> NDArray[np.float64]:
     decay_factors = _resolve_decay_factors(kernel_spec)
     if decay_factors is None:
-        raise InvalidCurveInput("EXPONENTIAL_SPLINE requires kernel_spec.parameters['decay_factors'].")
+        raise InvalidCurveInput("exponential_spline requires kernel_spec.parameters['decay_factors'].")
     return decay_factors
 
 
@@ -138,33 +136,33 @@ def _resolve_knots(kernel_spec: KernelSpec) -> NDArray[np.float64] | None:
 def _required_knots(kernel_spec: KernelSpec) -> NDArray[np.float64]:
     knots = _resolve_knots(kernel_spec)
     if knots is None:
-        raise InvalidCurveInput("CUBIC_SPLINE requires kernel_spec.parameters['knots'].")
+        raise InvalidCurveInput("cubic_spline requires kernel_spec.parameters['knots'].")
     return knots
 
 
 def _kernel_parameter_count(
-    kind: CurveKernelKind,
+    kind: str,
     *,
     decay_factors: NDArray[np.float64] | None = None,
     knots: NDArray[np.float64] | None = None,
 ) -> int:
-    if kind is CurveKernelKind.CUBIC_SPLINE:
+    if kind == "cubic_spline":
         if knots is None:
-            raise InvalidCurveInput("CUBIC_SPLINE requires knots to resolve parameter count.")
+            raise InvalidCurveInput("cubic_spline requires knots to resolve parameter count.")
         return int(knots.size)
-    if kind is CurveKernelKind.NELSON_SIEGEL:
+    if kind == "nelson_siegel":
         return 4
-    if kind is CurveKernelKind.SVENSSON:
+    if kind == "svensson":
         return 6
-    if kind is CurveKernelKind.EXPONENTIAL_SPLINE:
+    if kind == "exponential_spline":
         if decay_factors is None:
-            raise InvalidCurveInput("EXPONENTIAL_SPLINE requires decay_factors to resolve parameter count.")
+            raise InvalidCurveInput("exponential_spline requires decay_factors to resolve parameter count.")
         return int(decay_factors.size + 1)
-    raise CurveConstructionError(f"global-fit calibration does not support kernel kind {kind.name}.")
+    raise CurveConstructionError(f"global-fit calibration does not support kernel kind {kind}.")
 
 
 def _parameter_count(
-    kind: CurveKernelKind,
+    kind: str,
     *,
     decay_factors: NDArray[np.float64] | None = None,
     knots: NDArray[np.float64] | None = None,
@@ -176,16 +174,16 @@ def _parameter_count(
     )
 
 
-def _tau_indexes(kind: CurveKernelKind) -> tuple[int, ...]:
-    if kind is CurveKernelKind.CUBIC_SPLINE:
+def _tau_indexes(kind: str) -> tuple[int, ...]:
+    if kind == "cubic_spline":
         return ()
-    if kind is CurveKernelKind.NELSON_SIEGEL:
+    if kind == "nelson_siegel":
         return (3,)
-    if kind is CurveKernelKind.SVENSSON:
+    if kind == "svensson":
         return (4, 5)
-    if kind is CurveKernelKind.EXPONENTIAL_SPLINE:
+    if kind == "exponential_spline":
         return ()
-    raise CurveConstructionError(f"global-fit calibration does not support kernel kind {kind.name}.")
+    raise CurveConstructionError(f"global-fit calibration does not support kernel kind {kind}.")
 
 
 class _FlatZeroProxyKernel(CurveKernel):
@@ -235,7 +233,7 @@ def _quote_zero_proxy(quote_row: QuoteRow, *, spec: CurveSpec) -> float:
 
 
 def _default_initial_parameters(
-    kind: CurveKernelKind,
+    kind: str,
     quote_rows: Sequence[QuoteRow],
     *,
     spec: CurveSpec,
@@ -250,11 +248,11 @@ def _default_initial_parameters(
     median_tenor = float(np.median(tenors))
     max_tenor = float(tenors[-1])
 
-    if kind is CurveKernelKind.CUBIC_SPLINE:
+    if kind == "cubic_spline":
         if knots is None:
-            raise InvalidCurveInput("CUBIC_SPLINE requires knots to build default initial parameters.")
+            raise InvalidCurveInput("cubic_spline requires knots to build default initial parameters.")
         return np.interp(knots, tenors, zero_rates).astype(float, copy=False)
-    if kind is CurveKernelKind.NELSON_SIEGEL:
+    if kind == "nelson_siegel":
         return np.asarray(
             [
                 long_rate,
@@ -264,7 +262,7 @@ def _default_initial_parameters(
             ],
             dtype=float,
         )
-    if kind is CurveKernelKind.SVENSSON:
+    if kind == "svensson":
         tau1 = max(median_tenor * 0.5, 0.25)
         tau2 = max(max_tenor * 0.75, tau1 + 0.25)
         return np.asarray(
@@ -278,9 +276,9 @@ def _default_initial_parameters(
             ],
             dtype=float,
         )
-    if kind is CurveKernelKind.EXPONENTIAL_SPLINE:
+    if kind == "exponential_spline":
         if decay_factors is None:
-            raise InvalidCurveInput("EXPONENTIAL_SPLINE requires decay_factors to build default initial parameters.")
+            raise InvalidCurveInput("exponential_spline requires decay_factors to build default initial parameters.")
         basis = np.column_stack(
             [
                 np.ones_like(tenors, dtype=float),
@@ -289,11 +287,11 @@ def _default_initial_parameters(
         )
         coefficients, *_ = np.linalg.lstsq(basis, zero_rates, rcond=None)
         return np.asarray(coefficients, dtype=float)
-    raise CurveConstructionError(f"global-fit calibration does not support kernel kind {kind.name}.")
+    raise CurveConstructionError(f"global-fit calibration does not support kernel kind {kind}.")
 
 
 def _resolve_initial_parameters(
-    kind: CurveKernelKind,
+    kind: str,
     quote_rows: Sequence[QuoteRow],
     kernel_spec: KernelSpec,
     *,
@@ -301,7 +299,7 @@ def _resolve_initial_parameters(
     decay_factors: NDArray[np.float64] | None = None,
     knots: NDArray[np.float64] | None = None,
 ) -> NDArray[np.float64]:
-    if kind is CurveKernelKind.EXPONENTIAL_SPLINE:
+    if kind == "exponential_spline":
         initial_parameters = kernel_spec.parameters.get("initial_coefficients", kernel_spec.parameters.get("initial_parameters"))
     else:
         initial_parameters = kernel_spec.parameters.get("initial_parameters")
@@ -327,13 +325,13 @@ def _resolve_initial_parameters(
     )
     if int(resolved.size) != kernel_parameter_count:
         raise InvalidCurveInput(
-            f"initial_parameters must have length {kernel_parameter_count} for kernel kind {kind.name}."
+            f"initial_parameters must have length {kernel_parameter_count} for kernel kind {kind}."
         )
     return resolved
 
 
 def _encode_parameters(
-    kind: CurveKernelKind,
+    kind: str,
     raw_parameters: NDArray[np.float64],
     *,
     decay_factors: NDArray[np.float64] | None = None,
@@ -353,7 +351,7 @@ def _encode_parameters(
 
 
 def _decode_parameters(
-    kind: CurveKernelKind,
+    kind: str,
     encoded_parameters: NDArray[np.float64],
     *,
     decay_factors: NDArray[np.float64] | None = None,
@@ -373,18 +371,18 @@ def _decode_parameters(
 
 
 def _resolve_max_t(
-    kind: CurveKernelKind,
+    kind: str,
     quote_rows: Sequence[QuoteRow],
     kernel_spec: KernelSpec,
     *,
     knots: NDArray[np.float64] | None = None,
 ) -> float:
     observation_max_t = max(quote_row.tenor for quote_row in quote_rows)
-    if kind is CurveKernelKind.CUBIC_SPLINE:
+    if kind == "cubic_spline":
         if knots is None:
-            raise InvalidCurveInput("CUBIC_SPLINE requires knots to resolve max_t.")
+            raise InvalidCurveInput("cubic_spline requires knots to resolve max_t.")
         if kernel_spec.parameters.get("max_t") is not None:
-            raise InvalidCurveInput("CUBIC_SPLINE uses the last knot as max_t. Do not pass max_t.")
+            raise InvalidCurveInput("cubic_spline uses the last knot as max_t. Do not pass max_t.")
         max_t = float(knots[-1])
         if max_t < observation_max_t:
             raise InvalidCurveInput("kernel_spec.parameters['knots'] must reach the last observation tenor.")
@@ -401,7 +399,7 @@ def _resolve_max_t(
 
 
 def _build_kernel(
-    kind: CurveKernelKind,
+    kind: str,
     raw_parameters: NDArray[np.float64],
     *,
     max_t: float,
@@ -409,15 +407,15 @@ def _build_kernel(
     decay_factors: NDArray[np.float64] | None = None,
     knots: NDArray[np.float64] | None = None,
 ) -> CurveKernel:
-    if kind is CurveKernelKind.CUBIC_SPLINE:
+    if kind == "cubic_spline":
         if knots is None:
-            raise InvalidCurveInput("CUBIC_SPLINE requires knots to build the kernel.")
+            raise InvalidCurveInput("cubic_spline requires knots to build the kernel.")
         return CubicSplineKernel(
             knot_tenors=knots,
             zero_rates=raw_parameters,
             allow_extrapolation=allow_extrapolation,
         )
-    if kind is CurveKernelKind.NELSON_SIEGEL:
+    if kind == "nelson_siegel":
         return NelsonSiegelKernel(
             beta0=float(raw_parameters[0]),
             beta1=float(raw_parameters[1]),
@@ -426,7 +424,7 @@ def _build_kernel(
             max_t=max_t,
             allow_extrapolation=allow_extrapolation,
         )
-    if kind is CurveKernelKind.SVENSSON:
+    if kind == "svensson":
         return SvenssonKernel(
             beta0=float(raw_parameters[0]),
             beta1=float(raw_parameters[1]),
@@ -437,21 +435,21 @@ def _build_kernel(
             max_t=max_t,
             allow_extrapolation=allow_extrapolation,
         )
-    if kind is CurveKernelKind.EXPONENTIAL_SPLINE:
+    if kind == "exponential_spline":
         if decay_factors is None:
-            raise InvalidCurveInput("EXPONENTIAL_SPLINE requires decay_factors to build the kernel.")
+            raise InvalidCurveInput("exponential_spline requires decay_factors to build the kernel.")
         return ExponentialSplineKernel(
             coefficients=raw_parameters,
             decay_factors=decay_factors,
             max_t=max_t,
             allow_extrapolation=allow_extrapolation,
         )
-    raise CurveConstructionError(f"global-fit calibration does not support kernel kind {kind.name}.")
+    raise CurveConstructionError(f"global-fit calibration does not support kernel kind {kind}.")
 
 
 def _observed_kind_label(quote_row: QuoteRow) -> str:
     if quote_row.value_kind in {QuoteValueKind.ZERO_RATE, QuoteValueKind.BOND_YTM}:
-        return f"{quote_row.observed_kind}_{quote_row.compounding.name}"
+        return f"{quote_row.observed_kind}_{quote_row.compounding.value}"
     return quote_row.observed_kind
 
 
@@ -524,7 +522,7 @@ def _regressor_matrix(
     for row_index, quote_row in enumerate(quote_rows):
         if len(quote_row.regressor_values) != regressor_count:
             raise InvalidCurveInput(
-                "each QuoteRow.regressor_values entry must align with CalibrationSpec.regressor_names."
+                "each QuoteRow.regressor_values entry must align with CalibrationSpec.regressors."
             )
         matrix[row_index, :] = np.asarray(quote_row.regressor_values, dtype=float)
     if matrix.shape != (len(quote_rows), regressor_count):
@@ -556,7 +554,7 @@ def _profiled_regressor_coefficients(
     coefficients, *_ = np.linalg.lstsq(weighted_regressor_matrix, weighted_target, rcond=None)
     beta = np.asarray(coefficients, dtype=float)
     if beta.shape != (regressor_matrix.shape[1],):
-        raise CurveConstructionError("profiled regressor coefficient vector must match regressor_names.")
+        raise CurveConstructionError("profiled regressor coefficient vector must match regressors.")
     if not np.all(np.isfinite(beta)):
         raise CurveConstructionError("profiled regressor coefficient vector must be finite.")
     return beta
@@ -692,7 +690,7 @@ def _global_fit_point(
     final_state: _ProfiledFitState,
     spec: CurveSpec,
     solver_iterations: int,
-) -> GlobalFitPoint:
+) -> CalibrationPoint:
     curve_only_value = float(final_state.curve_only_values[index])
     fitted_value = float(final_state.fitted_values[index])
     diagnostics = _bond_price_diagnostics(
@@ -701,7 +699,7 @@ def _global_fit_point(
         spec=spec,
         fitted_value=fitted_value,
     )
-    return GlobalFitPoint(
+    return CalibrationPoint(
         instrument_id=quote_row.instrument_id,
         tenor=quote_row.tenor,
         observed_value=quote_row.value,
@@ -723,17 +721,17 @@ def _global_fit_point(
 
 def _global_fit_report(
     *,
-    kind: CurveKernelKind,
+    kind: str,
     quote_rows: Sequence[QuoteRow],
     final_state: _ProfiledFitState,
     optimization_result: OptimizationResult,
     calibration_spec: CalibrationSpec,
     spec: CurveSpec,
-    optimizer_kind: GlobalFitOptimizerKind,
+    optimizer_kind: str,
     decay_factors: NDArray[np.float64] | None = None,
     knots: NDArray[np.float64] | None = None,
-) -> GlobalFitReport:
-    residuals = tuple(
+) -> CalibrationReport:
+    points = tuple(
         _global_fit_point(
             quote_row,
             index=index,
@@ -743,33 +741,33 @@ def _global_fit_report(
         )
         for index, quote_row in enumerate(quote_rows)
     )
-    max_abs_residual = max((abs(point.residual) for point in residuals), default=0.0)
+    max_abs_residual = max((abs(point.residual) for point in points), default=0.0)
     raw_parameters = _decode_parameters(
         kind,
         optimization_result.parameters,
         decay_factors=decay_factors,
         knots=knots,
     )
-    return GlobalFitReport(
+    return CalibrationReport(
         converged=optimization_result.converged,
-        objective=calibration_spec.objective.name,
+        method=calibration_spec.method,
+        objective=calibration_spec.objective,
         iterations=optimization_result.iterations,
         max_abs_residual=max_abs_residual,
-        points=residuals,
-        solver=optimizer_kind.name,
-        regressor_names=calibration_spec.regressor_names,
+        points=points,
+        solver=optimizer_kind,
+        regressors=calibration_spec.regressors,
         regressor_coefficients=tuple(float(value) for value in final_state.regressor_coefficients),
-        kernel_kind=kind.name,
-        fitted_kernel_parameters=tuple(float(value) for value in raw_parameters),
+        kernel=kind,
+        kernel_parameters=tuple(float(value) for value in raw_parameters),
         objective_value=_final_objective_value(final_state.weighted_residuals),
-        residuals=residuals,
     )
 
 
 class _GlobalFitResiduals:
     def __init__(
         self,
-        kind: CurveKernelKind,
+        kind: str,
         quote_rows: Sequence[QuoteRow],
         *,
         spec: CurveSpec,
@@ -851,13 +849,13 @@ class GlobalFitCalibrator(CurveCalibrator):
     """Shared imperfect-fit calibrator for the global rate-curve kernels.
 
     One algorithm covers all supported kernel kinds:
-    ``NELSON_SIEGEL``, ``SVENSSON``, ``EXPONENTIAL_SPLINE``, and
-    ``CUBIC_SPLINE``. For the cubic-spline case, the spline meaning is fixed:
+    ``nelson_siegel``, ``svensson``, ``exponential_spline``, and
+    ``cubic_spline``. For the cubic-spline case, the spline meaning is fixed:
     natural cubic spline, zero-rate space, fixed knot grid from
     ``KernelSpec.parameters['knots']``, and knot zero values as fitted
     parameters.
 
-    When ``CalibrationSpec.regressor_names`` is non-empty, this calibrator
+    When ``CalibrationSpec.regressors`` is non-empty, this calibrator
     profiles the linear regressor coefficients by weighted least squares
     inside each curve-parameter evaluation instead of adding those
     coefficients to the nonlinear optimizer state.
@@ -873,23 +871,26 @@ class GlobalFitCalibrator(CurveCalibrator):
     require the bootstrap-style strictly increasing tenor sequence.
 
     The constructor owns the route-level ``CalibrationSpec``. This calibrator
-    only accepts ``mode=GLOBAL_FIT`` and currently only supports
-    ``objective=WEIGHTED_L2``.
+    only accepts ``method="global_fit"`` and currently only supports
+    ``objective="weighted_l2"``.
     """
 
     def __init__(
         self,
         *,
         calibration_spec: CalibrationSpec,
-        optimizer_kind: GlobalFitOptimizerKind = GlobalFitOptimizerKind.LEVENBERG_MARQUARDT,
+        optimizer_kind: str = "levenberg_marquardt",
         optimization_config: OptimizationConfig = OptimizationConfig(),
     ) -> None:
         self._calibration_spec = _require_global_fit_calibration_spec(calibration_spec)
-        if not isinstance(optimizer_kind, GlobalFitOptimizerKind):
-            raise InvalidCurveInput("optimizer_kind must be a GlobalFitOptimizerKind.")
+        if not isinstance(optimizer_kind, str):
+            raise InvalidCurveInput("optimizer_kind must be a string.")
+        optimizer = optimizer_kind.strip().lower()
+        if optimizer not in {"levenberg_marquardt", "gauss_newton"}:
+            raise InvalidCurveInput("optimizer_kind must be 'levenberg_marquardt' or 'gauss_newton'.")
         if not isinstance(optimization_config, OptimizationConfig):
             raise InvalidCurveInput("optimization_config must be an OptimizationConfig.")
-        self._optimizer_kind = optimizer_kind
+        self._optimizer_kind = optimizer
         self._optimization_config = optimization_config
 
     def _optimize(
@@ -897,7 +898,7 @@ class GlobalFitCalibrator(CurveCalibrator):
         residuals: _GlobalFitResiduals,
         initial_parameters: NDArray[np.float64],
     ) -> OptimizationResult:
-        if self._optimizer_kind is GlobalFitOptimizerKind.GAUSS_NEWTON:
+        if self._optimizer_kind == "gauss_newton":
             return gauss_newton(residuals, initial_parameters, config=self._optimization_config)
         return levenberg_marquardt(residuals, initial_parameters, config=self._optimization_config)
 
@@ -915,7 +916,7 @@ class GlobalFitCalibrator(CurveCalibrator):
         calibration_spec = self._calibration_spec
         if kernel_spec.kind not in _GLOBAL_FIT_KINDS:
             raise CurveConstructionError(
-                f"global-fit calibration does not support kernel kind {kernel_spec.kind.name}.",
+                f"global-fit calibration does not support kernel kind {kernel_spec.kind}.",
             )
         _validate_kernel_parameters(kernel_spec.kind, kernel_spec)
 
@@ -926,9 +927,9 @@ class GlobalFitCalibrator(CurveCalibrator):
             require_strictly_positive_tenor=True,
         )
         _require_single_target_space(quote_rows)
-        decay_factors = _required_decay_factors(kernel_spec) if kernel_spec.kind is CurveKernelKind.EXPONENTIAL_SPLINE else None
-        knots = _required_knots(kernel_spec) if kernel_spec.kind is CurveKernelKind.CUBIC_SPLINE else None
-        regressor_count = len(calibration_spec.regressor_names)
+        decay_factors = _required_decay_factors(kernel_spec) if kernel_spec.kind == "exponential_spline" else None
+        knots = _required_knots(kernel_spec) if kernel_spec.kind == "cubic_spline" else None
+        regressor_count = len(calibration_spec.regressors)
         required_count = _parameter_count(
             kernel_spec.kind,
             decay_factors=decay_factors,
@@ -936,7 +937,7 @@ class GlobalFitCalibrator(CurveCalibrator):
         )
         if len(quote_rows) < required_count:
             raise InvalidCurveInput(
-                f"global-fit calibration of {kernel_spec.kind.name} requires at least {required_count} quotes."
+                f"global-fit calibration of {kernel_spec.kind} requires at least {required_count} quotes."
             )
 
         raw_initial_parameters = _resolve_initial_parameters(
@@ -989,5 +990,4 @@ class GlobalFitCalibrator(CurveCalibrator):
 
 __all__ = [
     "GlobalFitCalibrator",
-    "GlobalFitOptimizerKind",
 ]

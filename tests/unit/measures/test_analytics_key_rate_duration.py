@@ -4,31 +4,34 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.pricing import BondPricer
-from fuggers_py._measures.risk.duration import STANDARD_KEY_RATE_TENORS, key_rate_duration_at_tenor
-from fuggers_py._products.bonds.instruments import FixedBond
+from fuggers_py.bonds.analytics_pricing import BondPricer
+from fuggers_py.bonds.risk import key_rate_duration_at_tenor
+from fuggers_py.curves import STANDARD_KEY_RATE_TENORS
+from fuggers_py.bonds.instruments import FixedBond
 from fuggers_py._core import Tenor
-from fuggers_py._core.types import Compounding, Date, Frequency
-from fuggers_py._curves_impl import ZeroCurveBuilder
-from fuggers_py._curves_impl.bumping import ParallelBump
+from fuggers_py._core.types import Date, Frequency
+from fuggers_py._runtime.snapshot import CurvePoint
+from tests.helpers._public_curve_helpers import linear_zero_curve
 
 
 def _curve(ref: Date) -> object:
-    return (
-        ZeroCurveBuilder(reference_date=ref, compounding=Compounding.CONTINUOUS)
-        .add_rate(ref.add_days(365), Decimal("0.02"))
-        .add_rate(ref.add_days(365 * 5), Decimal("0.03"))
-        .add_rate(ref.add_days(365 * 10), Decimal("0.035"))
-        .add_rate(ref.add_days(365 * 30), Decimal("0.04"))
-        .build()
+    return linear_zero_curve(
+        "tests.key-rate",
+        ref,
+        (
+            CurvePoint(Decimal("1"), Decimal("0.02")),
+            CurvePoint(Decimal("5"), Decimal("0.03")),
+            CurvePoint(Decimal("10"), Decimal("0.035")),
+            CurvePoint(Decimal("30"), Decimal("0.04")),
+        ),
     )
 
 
 def _effective_duration_from_curve(bond: FixedBond, curve: object, settlement: Date, bump: float = 1e-4) -> Decimal:
     pricer = BondPricer()
     p0 = pricer.price_from_curve(bond, curve, settlement).dirty.as_percentage()
-    p_up = pricer.price_from_curve(bond, ParallelBump(bump).apply(curve), settlement).dirty.as_percentage()
-    p_dn = pricer.price_from_curve(bond, ParallelBump(-bump).apply(curve), settlement).dirty.as_percentage()
+    p_up = pricer.price_from_curve(bond, curve.shifted(shift=bump), settlement).dirty.as_percentage()
+    p_dn = pricer.price_from_curve(bond, curve.shifted(shift=-bump), settlement).dirty.as_percentage()
     return (p_dn - p_up) / (Decimal(2) * p0 * Decimal(str(bump)))
 
 

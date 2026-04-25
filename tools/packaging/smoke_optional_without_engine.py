@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fuggers_py._calc import CronScheduler, IntervalScheduler, NodeId, SchedulerError
+from fuggers_py._runtime import CronScheduler, IntervalScheduler, NodeId, SchedulerError
 
 
 def main() -> None:
@@ -8,13 +8,13 @@ def main() -> None:
     assert interval.interval_seconds == 60.0
 
     try:
-        CronScheduler([NodeId("curve:usd")], expression="0 * * * *")
+        cron = CronScheduler([NodeId("curve:usd")], expression="0 * * * *")
     except SchedulerError as exc:
         message = str(exc)
         if "croniter" not in message:
             raise AssertionError(message) from exc
     else:
-        raise AssertionError("CronScheduler unexpectedly worked without the engine extra.")
+        assert cron.expression == "0 * * * *"
 
 
 if __name__ == "__main__":

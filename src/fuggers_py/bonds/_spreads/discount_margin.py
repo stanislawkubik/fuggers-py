@@ -18,7 +18,7 @@ from fuggers_py._core.types import Date, Price
 from fuggers_py._math import SolverConfig, brent, newton_raphson
 from fuggers_py._math.errors import ConvergenceFailed, DivisionByZero, InvalidBracket
 
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 
 
 DEFAULT_SOLVER_CONFIG = SolverConfig(tolerance=1e-10, max_iterations=200)

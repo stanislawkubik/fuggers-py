@@ -11,10 +11,12 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from fuggers_py.bonds import Bond
-from fuggers_py.bonds import RatingInfo, SectorInfo, SeniorityInfo
 from fuggers_py._core.types import Currency, Price
 
 from .classification import Classification
+from .rating import RatingInfo
+from .sector import SectorInfo
+from .seniority import SeniorityInfo
 
 
 def _to_decimal(value: object) -> Decimal:

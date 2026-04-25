@@ -8,12 +8,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import TYPE_CHECKING
 from typing import ClassVar
 
 from fuggers_py._core.ids import InstrumentId
 from fuggers_py._core.types import CashFlow, CashFlowSchedule, Currency, Date, Frequency
 from fuggers_py.bonds._instrument_base import KindedInstrumentMixin
+from fuggers_py.inflation.conventions import InflationConvention, InflationIndexDefinition
 
 from ..cashflows import AccruedInterestCalculator, AccruedInterestInputs, Schedule, ScheduleConfig
 from fuggers_py.bonds.errors import InvalidBondSpec
@@ -21,9 +21,6 @@ from ..traits import Bond, BondAnalytics, BondCashFlow, CashFlowType
 from fuggers_py.bonds.types import BondIdentifiers, InflationIndexType, StubPeriodRules
 from fuggers_py._core import YieldCalculationRules
 from .fixed import _reference_period_bounds, _to_decimal
-
-if TYPE_CHECKING:
-    from fuggers_py.inflation import InflationConvention, InflationIndexDefinition
 
 
 InflationFixingSourceLike = object

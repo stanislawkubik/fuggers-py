@@ -7,39 +7,28 @@ import pytest
 
 from fuggers_py._core.types import Currency, Date, Frequency, Price
 from fuggers_py._math.optimization import OptimizationConfig
-from fuggers_py.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
+from fuggers_py.curves import CurveSpec, YieldCurve
 from fuggers_py.curves.errors import CurveConstructionError, InvalidCurveInput
-from fuggers_py.curves.calibrators import (
-    BondFitTarget,
-    CalibrationMode,
-    CalibrationObjective,
-    CalibrationSpec,
-    CurveCalibrator,
-    GlobalFitOptimizerKind,
-)
+from fuggers_py.curves.calibrators import CalibrationSpec
+from fuggers_py.curves.calibrators.base import CurveCalibrator
 from fuggers_py.curves.calibrators.global_fit import GlobalFitCalibrator
-from fuggers_py.curves.kernels import (
-    CubicSplineKernel,
-    CurveKernelKind,
-    ExponentialSplineKernel,
-    KernelSpec,
-    NelsonSiegelKernel,
-    SvenssonKernel,
-)
-from fuggers_py.curves.reports import CalibrationReport, GlobalFitReport
+from fuggers_py.curves.kernels import KernelSpec
+from fuggers_py.curves.kernels.parametric import NelsonSiegelKernel, SvenssonKernel
+from fuggers_py.curves.kernels.spline import CubicSplineKernel, ExponentialSplineKernel
+from fuggers_py.curves.reports import CalibrationReport
 from fuggers_py._runtime.quotes import BondQuote, RepoQuote, SwapQuote
-from fuggers_py._products.bonds import FixedBondBuilder
-from fuggers_py._reference.bonds.errors import BondPricingError
+from fuggers_py.bonds import FixedBondBuilder
+from fuggers_py.bonds.errors import BondPricingError
 from fuggers_py._core import YieldCalculationRules
 
 
-def _spec(*, extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR) -> CurveSpec:
+def _spec(*, extrapolation_policy: str = "error") -> CurveSpec:
     return CurveSpec(
         name="USD Nominal",
         reference_date=Date.parse("2026-04-09"),
         day_count="ACT_365_FIXED",
         currency=Currency.USD,
-        type=CurveType.NOMINAL,
+        type="nominal",
         extrapolation_policy=extrapolation_policy,
     )
 
@@ -153,15 +142,15 @@ def _exp_spline_zero(t: float, coefficients: tuple[float, ...], decay_factors: t
 
 def _global_fit_calibration_spec(
     *,
-    objective: CalibrationObjective = CalibrationObjective.WEIGHTED_L2,
-    bond_fit_target: BondFitTarget = BondFitTarget.DIRTY_PRICE,
-    regressor_names: tuple[str, ...] = (),
+    objective: str = "weighted_l2",
+    bond_target: str = "dirty_price",
+    regressors: tuple[str, ...] = (),
 ) -> CalibrationSpec:
     return CalibrationSpec(
-        mode=CalibrationMode.GLOBAL_FIT,
+        method="global_fit",
         objective=objective,
-        regressor_names=regressor_names,
-        bond_fit_target=bond_fit_target,
+        regressors=regressors,
+        bond_target=bond_target,
     )
 
 
@@ -197,28 +186,28 @@ def _bond_quotes_with_liquidity_shift(
 
 def test_step9_global_fit_calibrator_is_exported() -> None:
     assert issubclass(GlobalFitCalibrator, CurveCalibrator)
-    assert CalibrationMode.GLOBAL_FIT.name == "GLOBAL_FIT"
-    assert GlobalFitOptimizerKind.LEVENBERG_MARQUARDT.name == "LEVENBERG_MARQUARDT"
+    assert _global_fit_calibration_spec().method == "global_fit"
+    assert _global_fit_calibration_spec().objective == "weighted_l2"
 
 
 def test_step9_global_fit_constructor_validates_calibration_spec() -> None:
     with pytest.raises(
-        ValueError,
-        match="GlobalFitCalibrator requires calibration_spec.mode == CalibrationMode.GLOBAL_FIT",
+        InvalidCurveInput,
+        match="GlobalFitCalibrator requires calibration_spec.method == 'global_fit'",
     ):
         GlobalFitCalibrator(
             calibration_spec=CalibrationSpec(
-                mode=CalibrationMode.BOOTSTRAP,
-                objective=CalibrationObjective.EXACT_FIT,
+                method="bootstrap",
+                objective="exact_fit",
             )
         )
 
     with pytest.raises(
-        ValueError,
-        match="GlobalFitCalibrator does not support CalibrationObjective.EXACT_FIT",
+        InvalidCurveInput,
+        match="CalibrationSpec.method='global_fit' requires objective='weighted_l2'",
     ):
         GlobalFitCalibrator(
-            calibration_spec=_global_fit_calibration_spec(objective=CalibrationObjective.EXACT_FIT),
+            calibration_spec=_global_fit_calibration_spec(objective="exact_fit"),
         )
 
 
@@ -227,7 +216,7 @@ def test_step9_global_fit_quote_driven_fit_validates_tenor_and_quote_count() -> 
         GlobalFitCalibrator(calibration_spec=_global_fit_calibration_spec()).fit(
             [SwapQuote("0Y", rate=0.03, tenor="0Y", currency=Currency.USD, as_of=Date.parse("2026-04-09"))],
             spec=_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+            kernel_spec=KernelSpec(kind="nelson_siegel"),
         )
 
     with pytest.raises(InvalidCurveInput, match="requires at least 4 quotes"):
@@ -238,7 +227,48 @@ def test_step9_global_fit_quote_driven_fit_validates_tenor_and_quote_count() -> 
                 _swap_quote(5.0, 0.0330),
             ],
             spec=_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+            kernel_spec=KernelSpec(kind="nelson_siegel"),
+        )
+
+
+@pytest.mark.parametrize(
+    ("quote", "match"),
+    [
+        (
+            SwapQuote("SWAP-1Y", rate=0.03, tenor="1Y", currency=Currency.USD, as_of=Date.parse("2026-04-10")),
+            r"SwapQuote\.as_of must equal CurveSpec\.reference_date",
+        ),
+        (
+            SwapQuote("SWAP-1Y", rate=0.03, tenor="1Y", currency=Currency.USD),
+            r"SwapQuote\.as_of is required",
+        ),
+        (
+            SwapQuote("SWAP-1Y", rate=0.03, tenor="1Y", currency=Currency.EUR, as_of=Date.parse("2026-04-09")),
+            r"SwapQuote\.currency must equal CurveSpec\.currency",
+        ),
+        (
+            RepoQuote("REPO-1Y", rate=0.03, term="1Y", currency=Currency.USD, as_of=Date.parse("2026-04-10")),
+            r"RepoQuote\.as_of must equal CurveSpec\.reference_date",
+        ),
+        (
+            RepoQuote("REPO-1Y", rate=0.03, term="1Y", currency=Currency.USD),
+            r"RepoQuote\.as_of is required",
+        ),
+        (
+            RepoQuote("REPO-1Y", rate=0.03, term="1Y", currency=Currency.EUR, as_of=Date.parse("2026-04-09")),
+            r"RepoQuote\.currency must equal CurveSpec\.currency",
+        ),
+    ],
+)
+def test_step9_global_fit_rejects_swap_and_repo_quote_date_currency_mismatches(
+    quote: object,
+    match: str,
+) -> None:
+    with pytest.raises(InvalidCurveInput, match=match):
+        GlobalFitCalibrator(calibration_spec=_global_fit_calibration_spec()).fit(
+            [quote],
+            spec=_spec(),
+            kernel_spec=KernelSpec(kind="nelson_siegel"),
         )
 
 
@@ -260,21 +290,21 @@ def test_step9_global_fit_allows_duplicate_tenors() -> None:
     kernel, report = calibrator.fit(
         quotes,
         spec=_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+        kernel_spec=KernelSpec(kind="nelson_siegel"),
     )
 
     assert isinstance(kernel, NelsonSiegelKernel)
     assert report.converged is True
     assert report.max_abs_residual == pytest.approx(0.0, abs=1e-10)
-    assert report.regressor_names == ()
+    assert report.regressors == ()
     assert report.regressor_coefficients == ()
-    assert isinstance(report, GlobalFitReport)
-    assert report.kernel_kind == CurveKernelKind.NELSON_SIEGEL.name
-    assert len(report.fitted_kernel_parameters) == 4
+    assert isinstance(report, CalibrationReport)
+    assert report.kernel == "nelson_siegel"
+    assert len(report.kernel_parameters) == 4
     assert report.objective_value == pytest.approx(0.0, abs=1e-12)
-    assert report.residuals == report.points
-    assert report.residuals[0].curve_only_value == pytest.approx(report.residuals[0].fitted_value, abs=1e-12)
-    assert report.residuals[0].price_residual is None
+    assert report.points == report.points
+    assert report.points[0].curve_only_value == pytest.approx(report.points[0].fitted_value, abs=1e-12)
+    assert report.points[0].price_residual is None
 
 
 def test_step9_global_fit_rejects_mixed_target_spaces_before_optimization() -> None:
@@ -287,7 +317,7 @@ def test_step9_global_fit_rejects_mixed_target_spaces_before_optimization() -> N
     )
 
     with pytest.raises(InvalidCurveInput, match="mixed target spaces") as exc_info:
-        GlobalFitCalibrator(calibration_spec=_global_fit_calibration_spec(bond_fit_target=BondFitTarget.CLEAN_PRICE)).fit(
+        GlobalFitCalibrator(calibration_spec=_global_fit_calibration_spec(bond_target="clean_price")).fit(
             [
                 _swap_quote(1.0, 0.0310, instrument_id="1Y"),
                 _swap_quote(2.0, 0.0320, instrument_id="2Y"),
@@ -299,7 +329,7 @@ def test_step9_global_fit_rejects_mixed_target_spaces_before_optimization() -> N
                 ),
             ],
             spec=_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+            kernel_spec=KernelSpec(kind="nelson_siegel"),
         )
 
     message = str(exc_info.value)
@@ -311,7 +341,7 @@ def test_step9_global_fit_rejects_mixed_target_spaces_before_optimization() -> N
     ("kernel_spec", "zero_rate_fn", "bond_specs", "expected_kernel_type", "expected_shift"),
     [
         (
-            KernelSpec(kind=CurveKernelKind.SVENSSON),
+            KernelSpec(kind="svensson"),
             lambda tenor: _sv_zero(tenor, 0.036, -0.012, 0.018, -0.006, 1.7, 4.5),
             (
                 ("UST2Y-A", 2, Decimal("0.040"), 0.0),
@@ -326,7 +356,7 @@ def test_step9_global_fit_rejects_mixed_target_spaces_before_optimization() -> N
         ),
         (
             KernelSpec(
-                kind=CurveKernelKind.EXPONENTIAL_SPLINE,
+                kind="exponential_spline",
                 parameters={"decay_factors": (0.40, 1.20)},
             ),
             lambda tenor: _exp_spline_zero(tenor, (0.031, -0.007, 0.004), (0.40, 1.20)),
@@ -341,7 +371,7 @@ def test_step9_global_fit_rejects_mixed_target_spaces_before_optimization() -> N
         ),
         (
             KernelSpec(
-                kind=CurveKernelKind.CUBIC_SPLINE,
+                kind="cubic_spline",
                 parameters={"knots": (2.1, 3.1, 5.1)},
             ),
             lambda tenor: 0.03,
@@ -366,8 +396,8 @@ def test_step9_global_fit_supports_supported_global_fit_kernels_with_bond_regres
     settlement = Date.parse("2026-04-09")
     calibrator = GlobalFitCalibrator(
         calibration_spec=_global_fit_calibration_spec(
-            bond_fit_target=BondFitTarget.CLEAN_PRICE,
-            regressor_names=("liquidity",),
+            bond_target="clean_price",
+            regressors=("liquidity",),
         ),
         optimization_config=OptimizationConfig(max_iterations=400, tolerance=1e-14),
     )
@@ -386,7 +416,7 @@ def test_step9_global_fit_supports_supported_global_fit_kernels_with_bond_regres
     assert isinstance(kernel, expected_kernel_type)
     assert report.converged is True
     assert report.max_abs_residual == pytest.approx(0.0, abs=1e-7)
-    assert report.regressor_names == ("liquidity",)
+    assert report.regressors == ("liquidity",)
     assert report.regressor_coefficients == pytest.approx((expected_shift,), abs=1e-7)
     assert report.points[0].observed_kind == "BOND_CLEAN_PRICE"
 
@@ -394,7 +424,7 @@ def test_step9_global_fit_supports_supported_global_fit_kernels_with_bond_regres
 def test_step9_global_fit_does_not_count_profiled_regressors_as_extra_curve_parameters() -> None:
     true_parameters = (0.035, -0.01, 0.02, 2.5)
     calibrator = GlobalFitCalibrator(
-        calibration_spec=_global_fit_calibration_spec(regressor_names=("liquidity",)),
+        calibration_spec=_global_fit_calibration_spec(regressors=("liquidity",)),
         optimization_config=OptimizationConfig(max_iterations=200, tolerance=1e-14),
     )
 
@@ -406,17 +436,17 @@ def test_step9_global_fit_does_not_count_profiled_regressors_as_extra_curve_para
             _swap_quote(10.0, _ns_zero(10.0, *true_parameters), instrument_id="10Y"),
         ],
         spec=_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+        kernel_spec=KernelSpec(kind="nelson_siegel"),
     )
 
     assert isinstance(kernel, NelsonSiegelKernel)
     assert report.converged is True
-    assert report.regressor_names == ("liquidity",)
+    assert report.regressors == ("liquidity",)
     assert report.regressor_coefficients == pytest.approx((0.0,), abs=1e-12)
 
 
 def test_step9_global_fit_cubic_spline_requires_knots_at_calibrator_entry() -> None:
-    with pytest.raises(InvalidCurveInput, match="CUBIC_SPLINE requires kernel_spec.parameters\\['knots'\\]"):
+    with pytest.raises(InvalidCurveInput, match="cubic_spline requires kernel_spec.parameters\\['knots'\\]"):
         GlobalFitCalibrator(calibration_spec=_global_fit_calibration_spec()).fit(
             [
                 _swap_quote(1.0, 0.03),
@@ -424,7 +454,7 @@ def test_step9_global_fit_cubic_spline_requires_knots_at_calibrator_entry() -> N
                 _swap_quote(5.0, 0.033),
             ],
             spec=_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.CUBIC_SPLINE),
+            kernel_spec=KernelSpec(kind="cubic_spline"),
         )
 
 
@@ -453,8 +483,8 @@ def test_step9_global_fit_uses_quote_row_regressor_values_in_one_shared_residual
     )
     calibrator = GlobalFitCalibrator(
         calibration_spec=_global_fit_calibration_spec(
-            bond_fit_target=BondFitTarget.CLEAN_PRICE,
-            regressor_names=("liquidity",),
+            bond_target="clean_price",
+            regressors=("liquidity",),
         ),
         optimization_config=OptimizationConfig(max_iterations=300, tolerance=1e-14),
     )
@@ -488,7 +518,7 @@ def test_step9_global_fit_uses_quote_row_regressor_values_in_one_shared_residual
         ],
         spec=_spec(),
         kernel_spec=KernelSpec(
-            kind=CurveKernelKind.CUBIC_SPLINE,
+            kind="cubic_spline",
             parameters={"knots": (2.1, 3.1, 7.1)},
         ),
     )
@@ -496,27 +526,27 @@ def test_step9_global_fit_uses_quote_row_regressor_values_in_one_shared_residual
     assert isinstance(kernel, CubicSplineKernel)
     assert report.converged is True
     assert report.max_abs_residual == pytest.approx(0.0, abs=1e-9)
-    assert isinstance(report, GlobalFitReport)
+    assert isinstance(report, CalibrationReport)
     assert tuple(point.observed_kind for point in report.points) == (
         "BOND_CLEAN_PRICE",
         "BOND_CLEAN_PRICE",
         "BOND_CLEAN_PRICE",
         "BOND_CLEAN_PRICE",
     )
-    assert report.regressor_names == ("liquidity",)
+    assert report.regressors == ("liquidity",)
     assert report.regressor_coefficients == pytest.approx((0.5,), abs=1e-9)
-    assert report.kernel_kind == CurveKernelKind.CUBIC_SPLINE.name
-    assert report.fitted_kernel_parameters == pytest.approx((zero_rate, zero_rate, zero_rate), abs=1e-7)
+    assert report.kernel == "cubic_spline"
+    assert report.kernel_parameters == pytest.approx((zero_rate, zero_rate, zero_rate), abs=1e-7)
     assert report.objective_value == pytest.approx(0.0, abs=1e-12)
-    assert len(report.residuals) == 4
-    assert report.residuals == report.points
-    assert report.residuals[0].price_residual == pytest.approx(0.0, abs=1e-9)
-    assert report.residuals[0].modeled_ytm is not None
-    assert report.residuals[0].observed_ytm is not None
-    assert report.residuals[0].ytm_residual == pytest.approx(0.0, abs=1e-9)
-    assert report.residuals[0].ytm_bp_residual == pytest.approx(0.0, abs=1e-5)
-    assert report.residuals[1].regressor_values == (1.0,)
-    assert report.residuals[1].regressor_contribution == pytest.approx(0.5, abs=1e-9)
+    assert len(report.points) == 4
+    assert report.points == report.points
+    assert report.points[0].price_residual == pytest.approx(0.0, abs=1e-9)
+    assert report.points[0].modeled_ytm is not None
+    assert report.points[0].observed_ytm is not None
+    assert report.points[0].ytm_residual == pytest.approx(0.0, abs=1e-9)
+    assert report.points[0].ytm_bp_residual == pytest.approx(0.0, abs=1e-5)
+    assert report.points[1].regressor_values == (1.0,)
+    assert report.points[1].regressor_contribution == pytest.approx(0.5, abs=1e-9)
 
 
 def test_step9_global_fit_calibrator_fits_nelson_siegel_zero_observations() -> None:
@@ -532,19 +562,20 @@ def test_step9_global_fit_calibrator_fits_nelson_siegel_zero_observations() -> N
             for tenor in tenors
         ],
         spec=_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+        kernel_spec=KernelSpec(kind="nelson_siegel"),
     )
     curve = YieldCurve(spec=_spec(), kernel=kernel, calibration_report=report)
 
     assert isinstance(kernel, NelsonSiegelKernel)
     assert isinstance(report, CalibrationReport)
-    assert isinstance(report, GlobalFitReport)
+    assert isinstance(report, CalibrationReport)
     assert report.converged is True
-    assert report.objective == CalibrationObjective.WEIGHTED_L2.name
+    assert report.objective == "weighted_l2"
     assert report.max_abs_residual == pytest.approx(0.0, abs=1e-10)
-    assert report.regressor_names == ()
+    assert report.regressors == ()
     assert report.regressor_coefficients == ()
     assert report.objective_value == pytest.approx(0.0, abs=1e-12)
+    assert report.points[0].observed_kind == "SWAP_ZERO_RATE_CONTINUOUS"
     assert curve.rate_at(4.0) == pytest.approx(_ns_zero(4.0, *true_parameters), abs=1e-10)
 
 
@@ -566,7 +597,7 @@ def test_step9_global_fit_suppresses_optional_bond_ytm_diagnostics_only_for_expe
     monkeypatch.setattr(bonds[0].__class__, "yield_from_price", _raise_bond_pricing_error)
 
     _, report = GlobalFitCalibrator(
-        calibration_spec=_global_fit_calibration_spec(bond_fit_target=BondFitTarget.CLEAN_PRICE),
+        calibration_spec=_global_fit_calibration_spec(bond_target="clean_price"),
         optimization_config=OptimizationConfig(max_iterations=200, tolerance=1e-14),
     ).fit(
         [
@@ -583,17 +614,17 @@ def test_step9_global_fit_suppresses_optional_bond_ytm_diagnostics_only_for_expe
         ],
         spec=_spec(),
         kernel_spec=KernelSpec(
-            kind=CurveKernelKind.CUBIC_SPLINE,
+            kind="cubic_spline",
             parameters={"knots": (2.1, 3.1, 7.1)},
         ),
     )
 
-    assert isinstance(report, GlobalFitReport)
-    assert report.residuals[0].price_residual == pytest.approx(0.0, abs=1e-9)
-    assert report.residuals[0].observed_ytm is None
-    assert report.residuals[0].modeled_ytm is None
-    assert report.residuals[0].ytm_residual is None
-    assert report.residuals[0].ytm_bp_residual is None
+    assert isinstance(report, CalibrationReport)
+    assert report.points[0].price_residual == pytest.approx(0.0, abs=1e-9)
+    assert report.points[0].observed_ytm is None
+    assert report.points[0].modeled_ytm is None
+    assert report.points[0].ytm_residual is None
+    assert report.points[0].ytm_bp_residual is None
 
 
 def test_step9_global_fit_does_not_hide_unexpected_bond_diagnostic_failures(
@@ -615,7 +646,7 @@ def test_step9_global_fit_does_not_hide_unexpected_bond_diagnostic_failures(
 
     with pytest.raises(RuntimeError, match="unexpected diagnostic failure"):
         GlobalFitCalibrator(
-            calibration_spec=_global_fit_calibration_spec(bond_fit_target=BondFitTarget.CLEAN_PRICE),
+            calibration_spec=_global_fit_calibration_spec(bond_target="clean_price"),
             optimization_config=OptimizationConfig(max_iterations=200, tolerance=1e-14),
         ).fit(
             [
@@ -632,7 +663,7 @@ def test_step9_global_fit_does_not_hide_unexpected_bond_diagnostic_failures(
             ],
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.CUBIC_SPLINE,
+                kind="cubic_spline",
                 parameters={"knots": (2.1, 3.1, 7.1)},
             ),
         )
@@ -652,7 +683,7 @@ def test_step9_global_fit_calibrator_fits_svensson_with_explicit_initial_paramet
         ],
         spec=_spec(),
         kernel_spec=KernelSpec(
-            kind=CurveKernelKind.SVENSSON,
+            kind="svensson",
             parameters={
                 "initial_parameters": [0.035, -0.01, 0.017, -0.005, 1.5, 4.0],
             },
@@ -662,7 +693,7 @@ def test_step9_global_fit_calibrator_fits_svensson_with_explicit_initial_paramet
 
     assert isinstance(kernel, SvenssonKernel)
     assert report.converged is True
-    assert report.objective == CalibrationObjective.WEIGHTED_L2.name
+    assert report.objective == "weighted_l2"
     assert report.max_abs_residual == pytest.approx(0.0, abs=1e-10)
     assert curve.rate_at(4.0) == pytest.approx(_sv_zero(4.0, *true_parameters), abs=1e-10)
 
@@ -679,7 +710,7 @@ def test_step9_global_fit_calibrator_accepts_repo_rate_quotes() -> None:
     kernel, report = calibrator.fit(
         quotes,
         spec=_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+        kernel_spec=KernelSpec(kind="nelson_siegel"),
     )
     curve = YieldCurve(spec=_spec(), kernel=kernel, calibration_report=report)
 
@@ -704,8 +735,11 @@ def test_step9_global_fit_calibrator_fits_exponential_spline_zero_observations()
         ],
         spec=_spec(),
         kernel_spec=KernelSpec(
-            kind=CurveKernelKind.EXPONENTIAL_SPLINE,
-            parameters={"decay_factors": decay_factors},
+            kind="exponential_spline",
+            parameters={
+                "decay_factors": decay_factors,
+                "initial_parameters": true_coefficients,
+            },
         ),
     )
     curve = YieldCurve(spec=_spec(), kernel=kernel, calibration_report=report)
@@ -734,7 +768,7 @@ def test_step9_global_fit_calibrator_fits_cubic_spline_on_fixed_knot_grid() -> N
         ],
         spec=_spec(),
         kernel_spec=KernelSpec(
-            kind=CurveKernelKind.CUBIC_SPLINE,
+            kind="cubic_spline",
             parameters={"knots": knots},
         ),
     )
@@ -781,13 +815,13 @@ def test_step9_global_fit_calibrator_accepts_bond_clean_price_quotes() -> None:
         )
 
     calibrator = GlobalFitCalibrator(
-        calibration_spec=_global_fit_calibration_spec(bond_fit_target=BondFitTarget.CLEAN_PRICE),
+        calibration_spec=_global_fit_calibration_spec(bond_target="clean_price"),
         optimization_config=OptimizationConfig(max_iterations=400, tolerance=1e-14),
     )
     kernel, report = calibrator.fit(
         quotes,
         spec=_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+        kernel_spec=KernelSpec(kind="nelson_siegel"),
     )
     curve = YieldCurve(spec=_spec(), kernel=kernel, calibration_report=report)
 
@@ -836,8 +870,11 @@ def test_step9_global_fit_calibrator_accepts_bond_quotes_for_exponential_spline(
         quotes,
         spec=_spec(),
         kernel_spec=KernelSpec(
-            kind=CurveKernelKind.EXPONENTIAL_SPLINE,
-            parameters={"decay_factors": decay_factors},
+            kind="exponential_spline",
+            parameters={
+                "decay_factors": decay_factors,
+                "initial_parameters": true_coefficients,
+            },
         ),
     )
     curve = YieldCurve(spec=_spec(), kernel=kernel, calibration_report=report)
@@ -888,7 +925,7 @@ def test_step9_global_fit_calibrator_accepts_bond_ytm_quotes() -> None:
     kernel, report = calibrator.fit(
         quotes,
         spec=_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
+        kernel_spec=KernelSpec(kind="nelson_siegel"),
     )
     curve = YieldCurve(spec=_spec(), kernel=kernel, calibration_report=report)
 
@@ -911,9 +948,9 @@ def test_step9_global_fit_calibrator_reparameterizes_negative_tau_guess_and_vali
 
     kernel, report = calibrator.fit(
         quotes,
-        spec=_spec(extrapolation_policy=ExtrapolationPolicy.HOLD_LAST_ZERO_RATE),
+        spec=_spec(extrapolation_policy="hold_last_zero_rate"),
         kernel_spec=KernelSpec(
-            kind=CurveKernelKind.NELSON_SIEGEL,
+            kind="nelson_siegel",
             parameters={"initial_parameters": [0.04, -0.01, 0.0, -2.0], "max_t": 15.0},
         ),
     )
@@ -927,21 +964,21 @@ def test_step9_global_fit_calibrator_reparameterizes_negative_tau_guess_and_vali
         calibrator.fit(
             quotes,
             spec=_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.LINEAR_ZERO),
+            kernel_spec=KernelSpec(kind="linear_zero"),
         )
 
     with pytest.raises(InvalidCurveInput, match="requires kernel_spec.parameters\\['decay_factors'\\]"):
         calibrator.fit(
             quotes,
             spec=_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.EXPONENTIAL_SPLINE),
+            kernel_spec=KernelSpec(kind="exponential_spline"),
         )
 
     with pytest.raises(InvalidCurveInput, match="requires kernel_spec.parameters\\['knots'\\]"):
         calibrator.fit(
             quotes,
             spec=_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.CUBIC_SPLINE),
+            kernel_spec=KernelSpec(kind="cubic_spline"),
         )
 
     with pytest.raises(InvalidCurveInput, match="at least three knots"):
@@ -949,7 +986,7 @@ def test_step9_global_fit_calibrator_reparameterizes_negative_tau_guess_and_vali
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.CUBIC_SPLINE,
+                kind="cubic_spline",
                 parameters={"knots": [1.0, 5.0]},
             ),
         )
@@ -959,30 +996,30 @@ def test_step9_global_fit_calibrator_reparameterizes_negative_tau_guess_and_vali
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.SVENSSON,
+                kind="svensson",
                 parameters={"initial_parameters": [0.03, -0.01, 0.01, -0.005]},
             ),
         )
 
-    with pytest.raises(InvalidCurveInput, match="NELSON_SIEGEL does not accept kernel_spec parameters: knots"):
+    with pytest.raises(InvalidCurveInput, match="nelson_siegel does not accept kernel_spec parameters: knots"):
         calibrator.fit(
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.NELSON_SIEGEL,
+                kind="nelson_siegel",
                 parameters={"knots": [1.0, 2.0, 5.0]},
             ),
         )
 
     with pytest.raises(
         InvalidCurveInput,
-        match="SVENSSON does not accept kernel_spec parameters: initial_coefficients",
+        match="svensson does not accept kernel_spec parameters: initial_coefficients",
     ):
         calibrator.fit(
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.SVENSSON,
+                kind="svensson",
                 parameters={"initial_coefficients": [0.03, -0.01, 0.01, -0.005, 2.0, 4.0]},
             ),
         )
@@ -992,7 +1029,7 @@ def test_step9_global_fit_calibrator_reparameterizes_negative_tau_guess_and_vali
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.EXPONENTIAL_SPLINE,
+                kind="exponential_spline",
                 parameters={
                     "decay_factors": [0.40, 1.20],
                     "initial_coefficients": [0.03, -0.01],
@@ -1005,7 +1042,7 @@ def test_step9_global_fit_calibrator_reparameterizes_negative_tau_guess_and_vali
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.EXPONENTIAL_SPLINE,
+                kind="exponential_spline",
                 parameters={
                     "decay_factors": [0.40, 1.20],
                     "initial_parameters": [0.03, -0.01, 0.002],
@@ -1019,7 +1056,7 @@ def test_step9_global_fit_calibrator_reparameterizes_negative_tau_guess_and_vali
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.CUBIC_SPLINE,
+                kind="cubic_spline",
                 parameters={
                     "knots": [1.0, 2.0, 5.0, 10.0],
                     "initial_parameters": [0.03, 0.031, 0.032],
@@ -1029,23 +1066,23 @@ def test_step9_global_fit_calibrator_reparameterizes_negative_tau_guess_and_vali
 
     with pytest.raises(InvalidCurveInput, match="length 4"):
         GlobalFitCalibrator(
-            calibration_spec=_global_fit_calibration_spec(regressor_names=("liquidity",)),
+            calibration_spec=_global_fit_calibration_spec(regressors=("liquidity",)),
             optimization_config=OptimizationConfig(max_iterations=200, tolerance=1e-14),
         ).fit(
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.NELSON_SIEGEL,
+                kind="nelson_siegel",
                 parameters={"initial_parameters": [0.03, -0.01, 0.01, 2.0, 0.5]},
             ),
         )
 
-    with pytest.raises(InvalidCurveInput, match="CUBIC_SPLINE does not accept kernel_spec parameters: max_t"):
+    with pytest.raises(InvalidCurveInput, match="cubic_spline does not accept kernel_spec parameters: max_t"):
         calibrator.fit(
             quotes,
             spec=_spec(),
             kernel_spec=KernelSpec(
-                kind=CurveKernelKind.CUBIC_SPLINE,
+                kind="cubic_spline",
                 parameters={
                     "knots": [1.0, 2.0, 5.0, 10.0],
                     "max_t": 12.0,

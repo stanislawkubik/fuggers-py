@@ -3,11 +3,11 @@ from __future__ import annotations
 from decimal import Decimal
 
 from fuggers_py._core import Currency, Date
-from fuggers_py._calc import QuoteSide
+from fuggers_py._runtime import QuoteSide
 from fuggers_py._core import CurveId, InstrumentId
 from fuggers_py._runtime.quotes import RawQuote
-from fuggers_py._market.snapshot import CurveInputs, CurvePoint, IndexFixing
-from fuggers_py._market.sources import InMemoryFixingSource, InMemoryQuoteSource
+from fuggers_py._runtime.snapshot import CurveInputs, CurvePoint, IndexFixing
+from fuggers_py._runtime.sources import InMemoryFixingSource, InMemoryQuoteSource
 
 
 def test_raw_quote_curve_inputs_and_fixing_sources() -> None:

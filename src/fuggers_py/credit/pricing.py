@@ -8,7 +8,7 @@ from decimal import Decimal
 
 from fuggers_py._core import Currency, Date, DayCountConvention
 
-from .products import CreditDefaultSwap
+from .instruments import CreditDefaultSwap
 
 _DAY_COUNT_ALIASES = {
     "ACT/360": "ACT_360",

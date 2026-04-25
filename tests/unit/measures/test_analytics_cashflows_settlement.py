@@ -1,7 +1,12 @@
 from __future__ import annotations
 
-from fuggers_py._measures.cashflows import ExDividendRules, SettlementCalculator, SettlementRules, SettlementStatus
-from fuggers_py._measures.cashflows.settlement import settlement_status
+from fuggers_py.bonds.cashflows.settlement_analytics import (
+    ExDividendRules,
+    SettlementCalculator,
+    SettlementRules,
+    SettlementStatus,
+    settlement_status,
+)
 from fuggers_py._core import CalendarId
 from fuggers_py._core import Date
 

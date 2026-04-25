@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import inspect
 import sys
 from pathlib import Path
 
@@ -26,20 +24,8 @@ def pytest_configure(config: pytest.Config) -> None:
     )
     config.addinivalue_line(
         "markers",
-        "asyncio: run the marked test in an event loop via the local compatibility hook",
+        "asyncio: run the marked test in an event loop via pytest-asyncio",
     )
-
-
-def pytest_pyfunc_call(pyfuncitem: pytest.Function) -> bool | None:
-    if pyfuncitem.get_closest_marker("asyncio") is None and not inspect.iscoroutinefunction(pyfuncitem.obj):
-        return None
-    kwargs = {
-        name: pyfuncitem.funcargs[name]
-        for name in pyfuncitem._fixtureinfo.argnames
-        if name in pyfuncitem.funcargs
-    }
-    asyncio.run(pyfuncitem.obj(**kwargs))
-    return True
 
 
 @pytest.fixture()
@@ -47,7 +33,7 @@ def fixed_rate_2025_bond():
     from decimal import Decimal
 
     from fuggers_py import Currency, Date, Frequency
-    from fuggers_py._products.bonds.instruments import FixedBondBuilder
+    from fuggers_py.bonds.instruments import FixedBondBuilder
     from fuggers_py._core import YieldCalculationRules
 
     issue = Date.from_ymd(2015, 6, 15)

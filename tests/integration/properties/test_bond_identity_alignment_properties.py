@@ -6,10 +6,10 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py._core import Currency, Date, Frequency, InstrumentId
-from fuggers_py._products.bonds import CallableBondBuilder, FixedBond, FloatingRateNote, SinkingFundBond, TipsBond, ZeroCouponBond
-from fuggers_py._products.bonds.instruments import SinkingFundEntry, SinkingFundSchedule
-from fuggers_py._products.instruments import Instrument
-from fuggers_py._reference.bonds.types import RateIndex
+from fuggers_py.bonds import CallableBondBuilder, FixedBond, FloatingRateNote, SinkingFundBond, TipsBond, ZeroCouponBond
+from fuggers_py.bonds.instruments import SinkingFundEntry, SinkingFundSchedule
+from fuggers_py.rates.instruments import Instrument
+from fuggers_py.bonds.types import RateIndex
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py.inflation import USD_CPI_U_NSA
 

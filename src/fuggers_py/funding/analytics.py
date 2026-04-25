@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._core import DayCountConvention
+from fuggers_py._core import Date, DayCountConvention
 
 from .products import RepoTrade
 
@@ -112,8 +112,8 @@ def implied_repo_rate(
     spot_price: object,
     futures_price: object,
     conversion_factor: object,
-    start_date,
-    end_date,
+    start_date: Date,
+    end_date: Date,
     coupon_income: object = Decimal(0),
     accrued_on_purchase: object = Decimal(0),
     accrued_at_delivery: object = Decimal(0),

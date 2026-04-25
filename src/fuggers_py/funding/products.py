@@ -4,11 +4,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import TypeAlias, overload
 
-from fuggers_py._core import Currency, Date, DayCountConvention, InstrumentId
+from fuggers_py._core import Currency, Date, DayCount, DayCountConvention, InstrumentId
+
+DecimalInput: TypeAlias = Decimal | int | float | str
 
 
-def _to_decimal(value: object | None) -> Decimal | None:
+@overload
+def _to_decimal(value: None) -> None: ...
+
+
+@overload
+def _to_decimal(value: DecimalInput) -> Decimal: ...
+
+
+def _to_decimal(value: DecimalInput | None) -> Decimal | None:
     if value is None or isinstance(value, Decimal):
         return value
     return Decimal(str(value))
@@ -34,7 +45,7 @@ def _coerce_day_count(value: DayCountConvention | str) -> DayCountConvention:
     return DayCountConvention[normalized]
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, init=False)
 class RepoTrade:
     """Repurchase agreement trade expressed in cash and collateral terms."""
 
@@ -46,34 +57,54 @@ class RepoTrade:
     notional: Decimal | None = None
     cash_amount: Decimal | None = None
     currency: Currency = Currency.USD
-    day_count_convention: DayCountConvention | str = DayCountConvention.ACT_360
+    day_count_convention: DayCountConvention = DayCountConvention.ACT_360
     collateral_instrument_id: InstrumentId | None = None
 
-    def __post_init__(self) -> None:
-        object.__setattr__(self, "rate", _to_decimal(self.rate))
-        object.__setattr__(self, "collateral_price", _to_decimal(self.collateral_price))
-        if self.notional is not None:
-            object.__setattr__(self, "notional", _to_decimal(self.notional))
-        if self.cash_amount is not None:
-            object.__setattr__(self, "cash_amount", _to_decimal(self.cash_amount))
-        object.__setattr__(self, "haircut", _to_decimal(self.haircut))
-        if not isinstance(self.currency, Currency):
-            object.__setattr__(self, "currency", Currency.from_code(str(self.currency)))
-        object.__setattr__(self, "day_count_convention", _coerce_day_count(self.day_count_convention))
-        if self.collateral_instrument_id is not None:
-            object.__setattr__(self, "collateral_instrument_id", InstrumentId.parse(self.collateral_instrument_id))
-        if self.end_date <= self.start_date:
+    def __init__(
+        self,
+        start_date: Date,
+        end_date: Date,
+        rate: DecimalInput,
+        collateral_price: DecimalInput,
+        haircut: DecimalInput = Decimal(0),
+        notional: DecimalInput | None = None,
+        cash_amount: DecimalInput | None = None,
+        currency: Currency | str = Currency.USD,
+        day_count_convention: DayCountConvention | str = DayCountConvention.ACT_360,
+        collateral_instrument_id: InstrumentId | str | None = None,
+    ) -> None:
+        rate_value = _to_decimal(rate)
+        collateral_price_value = _to_decimal(collateral_price)
+        haircut_value = _to_decimal(haircut)
+        notional_value = _to_decimal(notional)
+        cash_amount_value = _to_decimal(cash_amount)
+        currency_value = currency if isinstance(currency, Currency) else Currency.from_code(str(currency))
+        day_count_convention_value = _coerce_day_count(day_count_convention)
+        collateral_instrument_id_value = None if collateral_instrument_id is None else InstrumentId.parse(collateral_instrument_id)
+
+        object.__setattr__(self, "start_date", start_date)
+        object.__setattr__(self, "end_date", end_date)
+        object.__setattr__(self, "rate", rate_value)
+        object.__setattr__(self, "collateral_price", collateral_price_value)
+        object.__setattr__(self, "haircut", haircut_value)
+        object.__setattr__(self, "notional", notional_value)
+        object.__setattr__(self, "cash_amount", cash_amount_value)
+        object.__setattr__(self, "currency", currency_value)
+        object.__setattr__(self, "day_count_convention", day_count_convention_value)
+        object.__setattr__(self, "collateral_instrument_id", collateral_instrument_id_value)
+
+        if end_date <= start_date:
             raise ValueError("RepoTrade requires end_date after start_date.")
-        if self.haircut < Decimal(0) or self.haircut >= Decimal(1):
+        if haircut_value < Decimal(0) or haircut_value >= Decimal(1):
             raise ValueError("haircut must lie in [0, 1).")
-        if self.notional is None and self.cash_amount is None:
+        if notional_value is None and cash_amount_value is None:
             raise ValueError("RepoTrade requires either notional or cash_amount.")
-        if self.notional is not None and self.notional <= Decimal(0):
+        if notional_value is not None and notional_value <= Decimal(0):
             raise ValueError("notional must be positive when provided.")
-        if self.cash_amount is not None and self.cash_amount <= Decimal(0):
+        if cash_amount_value is not None and cash_amount_value <= Decimal(0):
             raise ValueError("cash_amount must be positive when provided.")
 
-    def day_count(self):
+    def day_count(self) -> DayCount:
         return self.day_count_convention.to_day_count()
 
     def year_fraction(self) -> Decimal:
@@ -82,7 +113,10 @@ class RepoTrade:
     def collateral_market_value(self) -> Decimal:
         if self.notional is not None:
             return self.notional * self.collateral_price / Decimal(100)
-        return self.cash_amount / (Decimal(1) - self.haircut)
+        cash_amount = self.cash_amount
+        if cash_amount is None:
+            raise ValueError("RepoTrade requires either notional or cash_amount.")
+        return cash_amount / (Decimal(1) - self.haircut)
 
     def haircut_amount(self) -> Decimal:
         return self.collateral_market_value() * self.haircut

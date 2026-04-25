@@ -1,4 +1,4 @@
-"""Money-market yield helpers (`fuggers_py._measures.yields.money_market`).
+"""Money-market yield helpers (`fuggers_py.bonds._yields.money_market`).
 
 All public helpers return quoted percentage yields, not raw decimal rates.
 The formulas follow the standard 360-day money-market style conventions used
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 
 
 def _to_decimal(value: object) -> Decimal:

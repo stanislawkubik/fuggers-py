@@ -29,7 +29,7 @@ from fuggers_py._math.utils import (
 
 from ..conversion import ValueConverter
 from ..errors import InvalidCurveInput, TenorOutOfBounds
-from .base import CurveKernel, CurveKernelKind
+from .base import CurveKernel
 
 _CONTINUOUS: Final = Compounding.CONTINUOUS
 _ZERO_TOLERANCE: Final = 1e-12
@@ -103,7 +103,7 @@ def _normalize_discount_factor_nodes(
 class LinearZeroKernel(CurveKernel):
     """Curve kernel built from linear interpolation of zero-rate nodes."""
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.LINEAR_ZERO
+    kind: Final[str] = "linear_zero"
     __slots__ = ("_tenors", "_interpolator", "_allow_extrapolation")
 
     def __init__(self, tenors: ArrayLike, zero_rates: ArrayLike, *, allow_extrapolation: bool = False) -> None:
@@ -130,12 +130,15 @@ class LinearZeroKernel(CurveKernel):
         except MathError as exc:
             raise _curve_input_error(exc) from exc
 
+    def terminal_native_rate(self) -> float:
+        return self.rate_at(self.max_t())
+
 
 class LogLinearDiscountKernel(CurveKernel):
     """Curve kernel built from log-linear interpolation of discount factors."""
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.LOG_LINEAR_DISCOUNT
-    __slots__ = ("_tenors", "_interpolator", "_allow_extrapolation")
+    kind: Final[str] = "log_linear_discount"
+    __slots__ = ("_tenors", "_discount_factors", "_interpolator", "_allow_extrapolation")
 
     def __init__(
         self,
@@ -157,6 +160,7 @@ class LogLinearDiscountKernel(CurveKernel):
         except MathError as exc:
             raise _curve_input_error(exc) from exc
         self._tenors = normalized_tenors
+        self._discount_factors = normalized_discount_factors
         self._interpolator = interpolator
         self._allow_extrapolation = bool(allow_extrapolation)
 
@@ -179,11 +183,23 @@ class LogLinearDiscountKernel(CurveKernel):
         except MathError as exc:
             raise _curve_input_error(exc) from exc
 
+    def terminal_native_discount_factor_at(self, tenor: float) -> float:
+        return float(self._discount_factors[-1])
+
+    def terminal_forward_rate(self) -> float:
+        return ValueConverter.forward_rate_from_dfs(
+            float(self._discount_factors[-2]),
+            float(self._discount_factors[-1]),
+            float(self._tenors[-2]),
+            float(self._tenors[-1]),
+            _CONTINUOUS,
+        )
+
 
 class PiecewiseConstantZeroKernel(CurveKernel):
     """Curve kernel with left-constant zero rates between tenor knots."""
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.PIECEWISE_CONSTANT
+    kind: Final[str] = "piecewise_constant"
     __slots__ = ("_tenors", "_zero_rates", "_allow_extrapolation")
 
     def __init__(self, tenors: ArrayLike, zero_rates: ArrayLike, *, allow_extrapolation: bool = False) -> None:
@@ -202,11 +218,14 @@ class PiecewiseConstantZeroKernel(CurveKernel):
         index = bisect_segment(self._tenors, checked_tenor)
         return float(self._zero_rates[index])
 
+    def terminal_native_rate(self) -> float:
+        return float(self._zero_rates[-1])
+
 
 class PiecewiseFlatForwardKernel(CurveKernel):
     """Curve kernel with piecewise-constant instantaneous forward rates."""
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.PIECEWISE_FLAT_FORWARD
+    kind: Final[str] = "piecewise_flat_forward"
     __slots__ = ("_tenors", "_zero_rates", "_interpolator", "_allow_extrapolation")
 
     def __init__(self, tenors: ArrayLike, zero_rates: ArrayLike, *, allow_extrapolation: bool = False) -> None:
@@ -236,11 +255,17 @@ class PiecewiseFlatForwardKernel(CurveKernel):
         except MathError as exc:
             raise _curve_input_error(exc) from exc
 
+    def terminal_native_discount_factor_at(self, tenor: float) -> float:
+        return self.terminal_forward_discount_factor_at(tenor)
+
+    def terminal_forward_rate(self) -> float:
+        return float(self._interpolator.forward_rate(self.max_t()))
+
 
 class MonotoneConvexKernel(CurveKernel):
     """Curve kernel with a monotone-convex zero-rate shape."""
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.MONOTONE_CONVEX
+    kind: Final[str] = "monotone_convex"
     __slots__ = ("_tenors", "_zero_rates", "_interpolator", "_allow_extrapolation")
 
     def __init__(self, tenors: ArrayLike, zero_rates: ArrayLike, *, allow_extrapolation: bool = False) -> None:
@@ -269,6 +294,12 @@ class MonotoneConvexKernel(CurveKernel):
             return float(self._interpolator.interpolate(checked_tenor))
         except MathError as exc:
             raise _curve_input_error(exc) from exc
+
+    def terminal_native_rate(self) -> float:
+        return float(self._zero_rates[-1])
+
+    def terminal_forward_rate(self) -> float:
+        return float(self._interpolator.forward_rate(self.max_t()))
 
 
 __all__ = [

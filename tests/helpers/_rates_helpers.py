@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from fuggers_py._core import Compounding, Currency, Date, Tenor, Yield
-from fuggers_py._market.state import AnalyticsCurves
-from fuggers_py.curves import CurveSpec, CurveType, DiscountingCurve, ExtrapolationPolicy, RateSpace
+from fuggers_py._runtime.state import AnalyticsCurves
+from fuggers_py.curves import CurveSpec, DiscountingCurve
 from fuggers_py.curves.multicurve import RateIndex
 
 
@@ -17,17 +17,13 @@ class FlatYieldCurve(DiscountingCurve):
             reference_date=reference_date,
             day_count="ACT/365F",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
+            type="nominal",
             reference=None,
-            extrapolation_policy=ExtrapolationPolicy.HOLD_LAST_ZERO_RATE,
+            extrapolation_policy="hold_last_zero_rate",
         )
         super().__init__(spec)
         self._rate = rate
         self._max_t = 100.0
-
-    @property
-    def rate_space(self) -> RateSpace:
-        return RateSpace.ZERO
 
     def max_t(self) -> float:
         return self._max_t

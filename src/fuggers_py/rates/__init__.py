@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from fuggers_py._core import OptionType, PayReceive
-from fuggers_py._pricers.rates.futures import cheapest_to_deliver, conversion_factor, invoice_amount
-from fuggers_py._pricers.rates.options import BachelierPricer, Black76Pricer, HullWhiteOptionPricer
-from fuggers_py._pricers.rates.risk import key_rate_risk, swap_dv01
+from .futures import cheapest_to_deliver, conversion_factor, invoice_amount
+from .options import BachelierPricer, Black76Pricer, HullWhiteOptionPricer
+from .risk import key_rate_risk, swap_dv01
 
 from .indices import (
     ArrearConvention,
@@ -61,6 +60,7 @@ from .products import (
     Swaption,
 )
 from .quotes import BasisSwapQuote, BondFutureQuote, FxForwardQuote, SwapQuote
+from .reference_data import SwapReferenceData
 
 __all__ = [
     "AccrualPeriod",
@@ -107,10 +107,8 @@ __all__ = [
     "LookbackDays",
     "ObservationShiftType",
     "Ois",
-    "OptionType",
     "OvernightCompounding",
     "OvernightIndexedSwap",
-    "PayReceive",
     "PublicationTime",
     "SameCurrencyBasisSwap",
     "ScheduleDefinition",
@@ -118,6 +116,7 @@ __all__ = [
     "SwapPricer",
     "SwapPricingResult",
     "SwapQuote",
+    "SwapReferenceData",
     "Swaption",
     "cheapest_to_deliver",
     "conversion_factor",

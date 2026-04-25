@@ -9,7 +9,7 @@ import pytest
 
 from fuggers_py.credit import CdsPricer, CreditDefaultSwap, ProtectionSide
 from fuggers_py._core import Date
-from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._runtime.state import AnalyticsCurves
 
 from tests.helpers._rates_helpers import flat_curve
 

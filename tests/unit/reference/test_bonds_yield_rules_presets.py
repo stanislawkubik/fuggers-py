@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fuggers_py._reference.bonds.types import AccruedConvention, CompoundingKind, YieldConvention
+from fuggers_py.bonds.types import AccruedConvention, CompoundingKind, YieldConvention
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core.daycounts import DayCountConvention
 

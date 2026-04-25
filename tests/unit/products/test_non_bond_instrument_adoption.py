@@ -6,14 +6,14 @@ import pytest
 
 from fuggers_py._core import Currency, Date, Frequency, OptionType, PayReceive
 from fuggers_py.credit import CreditDefaultSwap
-from fuggers_py._products.instruments import (
+from fuggers_py.rates.instruments import (
     HasExpiry,
     HasOptionType,
     HasUnderlyingInstrument,
     Instrument,
 )
 from fuggers_py.inflation import StandardCouponInflationSwap, ZeroCouponInflationSwap
-from fuggers_py._products.rates import (
+from fuggers_py.rates import (
     BasisSwap,
     CapFloor,
     CrossCurrencyBasisSwap,
@@ -26,7 +26,7 @@ from fuggers_py._products.rates import (
     ScheduleDefinition,
     Swaption,
 )
-from fuggers_py._products.rates.options import CapFloorType, FuturesOption
+from fuggers_py.rates.options import CapFloorType, FuturesOption
 
 
 def _fixed_leg(
@@ -231,12 +231,12 @@ def _credit_default_swap() -> CreditDefaultSwap:
         ),
         pytest.param(
             _zero_coupon_inflation_swap,
-            "rates.swap.inflation.zero_coupon",
+            "inflation.swap.zero_coupon",
             id="ZeroCouponInflationSwap",
         ),
         pytest.param(
             _standard_coupon_inflation_swap,
-            "rates.swap.inflation.standard_coupon",
+            "inflation.swap.standard_coupon",
             id="StandardCouponInflationSwap",
         ),
         pytest.param(

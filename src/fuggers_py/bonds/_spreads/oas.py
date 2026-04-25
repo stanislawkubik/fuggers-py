@@ -13,11 +13,10 @@ from decimal import Decimal
 from fuggers_py.bonds.instruments import CallableBond
 from fuggers_py.bonds.options import BinomialTree, HullWhiteModel
 from fuggers_py._core.types import Date
-from ...curves.date_support import parallel_bumped_curve
 from fuggers_py._math import SolverConfig, brent, newton_raphson
 from fuggers_py._math.errors import ConvergenceFailed, DivisionByZero, InvalidBracket
 
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 
 
 DEFAULT_SOLVER_CONFIG = SolverConfig(tolerance=1e-10, max_iterations=200)
@@ -148,7 +147,7 @@ class OASCalculator:
         return sorted(dates)
 
     def _with_bumped_curve(self, bump: float) -> "OASCalculator":
-        bumped_curve = parallel_bumped_curve(self.model.term_structure, bump)
+        bumped_curve = self.model.term_structure.shifted(shift=bump)
         bumped_model = HullWhiteModel(
             mean_reversion=self.model.mean_reversion,
             volatility=self.model.volatility,

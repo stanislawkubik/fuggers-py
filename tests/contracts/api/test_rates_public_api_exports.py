@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import inspect
 from pathlib import Path
 
 import fuggers_py.rates as rates_pkg
@@ -103,3 +104,11 @@ def test_rates_fixing_symbols_are_owned_by_public_rates_module() -> None:
     assert IndexConventions.__module__ == "fuggers_py.rates.indices"
     assert IndexFixingStore.__module__ == "fuggers_py.rates.indices"
     assert OvernightCompounding.__module__ == "fuggers_py.rates.indices"
+
+
+def test_rates_exports_resolve_under_rates() -> None:
+    root = Path(rates_pkg.__file__).resolve().parent
+    for name in rates_pkg.__all__:
+        source = inspect.getsourcefile(getattr(rates_pkg, name))
+        assert source is not None
+        assert Path(source).resolve().is_relative_to(root), name

@@ -8,7 +8,7 @@ import pytest
 from fuggers_py._core import CalendarId, PayReceive
 from fuggers_py._core import Currency, Date, Frequency
 from fuggers_py._core.calendars import BusinessDayConvention
-from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._runtime.state import AnalyticsCurves
 from fuggers_py.inflation import USD_CPI_U_NSA
 from fuggers_py.inflation import InflationSwapPricer, StandardCouponInflationSwapPricingResult
 from fuggers_py.inflation import StandardCouponInflationSwap

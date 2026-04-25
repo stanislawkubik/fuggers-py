@@ -1,3 +1,0 @@
-as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
-2026-01-15,rates_future_chain,cbot.ty.futures,TYM6,10Y,USD,futures_price,109.85,percent_of_par,Jun 2026 10Y Treasury note future
-2026-01-15,rates_future_chain,cbot.ty.futures,TYU6,10Y,USD,futures_price,109.12,percent_of_par,Sep 2026 10Y Treasury note future

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from fuggers_py._core import Tenor
 from fuggers_py._core.types import Currency, Date
-from ...curves.date_support import STANDARD_KEY_RATE_TENORS
+from fuggers_py.curves import STANDARD_KEY_RATE_TENORS
 
 from .weighting import WeightingMethod
 

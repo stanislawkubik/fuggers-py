@@ -22,7 +22,7 @@ from fuggers_py._math.errors import MathError
 from fuggers_py._math.utils import assert_finite_array, assert_same_length, assert_strictly_increasing
 
 from ..errors import InvalidCurveInput, TenorOutOfBounds
-from .base import CurveKernel, CurveKernelKind
+from .base import CurveKernel
 
 
 def _curve_input_error(exc: Exception) -> InvalidCurveInput:
@@ -246,7 +246,7 @@ class _NaturalCubicSplineGeometry:
 class ExponentialSplineKernel(CurveKernel):
     """Zero-rate kernel built from exponential basis functions."""
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.EXPONENTIAL_SPLINE
+    kind: Final[str] = "exponential_spline"
     __slots__ = ("_coefficients", "_decay_factors", "_max_t", "_allow_extrapolation")
 
     def __init__(
@@ -278,6 +278,10 @@ class ExponentialSplineKernel(CurveKernel):
         basis_values = np.exp(-self._decay_factors * checked_tenor)
         return float(self._coefficients[0] + np.dot(self._coefficients[1:], basis_values))
 
+    def terminal_native_rate(self) -> float:
+        basis_values = np.exp(-self._decay_factors * self._max_t)
+        return float(self._coefficients[0] + np.dot(self._coefficients[1:], basis_values))
+
 
 class CubicSplineKernel(CurveKernel):
     """Natural cubic spline in zero-rate space on one fixed knot grid.
@@ -290,7 +294,7 @@ class CubicSplineKernel(CurveKernel):
     reused for evaluation.
     """
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.CUBIC_SPLINE
+    kind: Final[str] = "cubic_spline"
     __slots__ = ("_geometry", "_zero_rates", "_second_derivatives", "_allow_extrapolation")
 
     def __init__(
@@ -324,6 +328,9 @@ class CubicSplineKernel(CurveKernel):
                 second_derivatives=self._second_derivatives,
             )
         )
+
+    def terminal_native_rate(self) -> float:
+        return float(self._zero_rates[-1])
 
 
 __all__ = [

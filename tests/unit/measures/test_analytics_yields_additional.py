@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.errors import AnalyticsError
-from fuggers_py._measures.yields import (
+from fuggers_py.bonds import AnalyticsError
+from fuggers_py.bonds.yields import (
     RollForwardMethod,
     ShortDateCalculator,
     bond_equivalent_yield,
@@ -14,9 +14,9 @@ from fuggers_py._measures.yields import (
     money_market_yield_with_horizon,
     settlement_adjustment,
     simple_yield_f64,
+    YieldSolver,
 )
-from fuggers_py._measures.yields.solver import YieldSolver
-from fuggers_py._reference.bonds.types import YieldConvention
+from fuggers_py.bonds.types import YieldConvention
 
 
 class _BondWithMethods:

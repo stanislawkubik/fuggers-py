@@ -1,4 +1,4 @@
-"""YAS calculator (`fuggers_py._measures.yas.calculator`).
+"""YAS calculator (`fuggers_py.bonds._yas.calculator`).
 
 This calculator assembles display fields for the YAS screen. Yields are
 presented as quoted percentages, spreads as basis points, and settlement
@@ -14,7 +14,7 @@ from fuggers_py.bonds.traits import Bond
 from fuggers_py._core.types import Date, Price
 from fuggers_py.curves import DiscountingCurve
 
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 from ..pricing import BondPricer
 from ..risk import BondRiskCalculator
 from ..spreads import BenchmarkKind, BenchmarkSpec, GovernmentCurve, g_spread_with_benchmark_bps, z_spread

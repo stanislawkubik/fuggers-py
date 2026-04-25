@@ -5,6 +5,10 @@ import importlib
 import pytest
 
 
+MARKET_CURVES = "fuggers_py.market." + "curves"
+MARKET_VOL_SURFACES = "fuggers_py.market." + "vol_surfaces"
+
+
 @pytest.mark.parametrize(
     "module_name",
     [
@@ -13,8 +17,8 @@ import pytest
         "fuggers_py.market.state",
         "fuggers_py.market.sources",
         "fuggers_py.market.quotes",
-        "fuggers_py.market.curves",
-        "fuggers_py.market.vol_surfaces",
+        MARKET_CURVES,
+        MARKET_VOL_SURFACES,
         "fuggers_py.products",
         "fuggers_py.products.bonds",
         "fuggers_py.pricers",
@@ -35,8 +39,8 @@ import pytest
         "fuggers_py.derivatives",
         "fuggers_py.market.fixings",
         "fuggers_py.market.derivatives",
-        "fuggers_py.market.curves.fitted_bonds",
-        "fuggers_py.market.curves.inflation",
+        MARKET_CURVES + ".fitted_bonds",
+        MARKET_CURVES + ".inflation",
     ],
 )
 def test_non_target_public_modules_are_not_importable(module_name: str) -> None:

@@ -1,5 +1,9 @@
 # fuggers-py
 
+<p align="center">
+  <img src="docs/_static/fuggers-py-logo.png" alt="fuggers-py logo" width="560">
+</p>
+
 [![Docs](https://img.shields.io/readthedocs/fuggers-py?label=docs)](https://fuggers-py.readthedocs.io/en/latest/)
 
 `fuggers-py` is a fixed-income analytics library with domain-first public
@@ -12,8 +16,13 @@ Current feature readiness and the pre-`1.0` stability policy are documented in
 ## Status
 
 - `fuggers-py` is still pre-`1.0`.
-- Core bond, inflation, and analytics workflows are already substantial and well-tested.
-- Some newer or broader surfaces, especially volatility surfaces and parts of the runtime/integration layer, are still moving and may change before `1.x`.
+- The curve-fitting API is closest to the intended final shape. Use
+  `fuggers_py.curves` and `YieldCurve.fit(...)` for the current public curve
+  workflow.
+- The broader bond, rates, funding, credit, inflation, and portfolio surfaces
+  are substantial and tested, but they are still being simplified before `1.x`.
+- Volatility surfaces and parts of the runtime/integration layer are still
+  moving and may change before `1.x`.
 - Backwards compatibility is not promised yet. The plan is to formalize that policy starting with the first `1.x` release.
 
 ## Package layout
@@ -28,9 +37,8 @@ Current feature readiness and the pre-`1.0` stability policy are documented in
 - `fuggers_py.portfolio`: holdings, aggregation, attribution, liquidity, ETF, stress, results
 - Shared types such as `Date`, `Currency`, `Price`, `Yield`, `InstrumentId`, and `Tenor` come from the `fuggers_py` root
 
-Internal implementation roots such as `_core`, `_math`, `_market`, `_calc`,
-`_adapters`, `_products`, `_pricers`, `_measures`, and `_reference` are not
-public API.
+Internal implementation roots such as `_core`, `_math`, `_runtime`, and
+`_storage` are not public API.
 
 See [docs/SRC_STRUCTURE.md](docs/SRC_STRUCTURE.md) for the directory-by-directory structure under `src/fuggers_py/`.
 See [docs/MODULE_REFERENCE.md](docs/MODULE_REFERENCE.md) for the archived module-reference note from before the public API cutover.

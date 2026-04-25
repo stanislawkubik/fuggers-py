@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 
 from fuggers_py._core.types import Date
 from fuggers_py._core import CurveId, InstrumentId
-from fuggers_py._reference import BondReferenceData
+from fuggers_py.bonds.reference_data import BondReferenceData
 
 from .storage import (
     AuditEntry,
@@ -31,7 +31,7 @@ from .storage import (
 from .json_codec import JsonCodec
 
 if TYPE_CHECKING:
-    from fuggers_py._calc.config import EngineConfig
+    from fuggers_py._runtime.config import EngineConfig
 
 
 def _utc_now() -> str:

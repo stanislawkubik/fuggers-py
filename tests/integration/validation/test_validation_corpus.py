@@ -10,30 +10,29 @@ from typing import Any
 import numpy as np
 import pytest
 
-from fuggers_py._measures.pricing import BondPricer
-from fuggers_py._measures.spreads import DiscountMarginCalculator, OASCalculator
-from fuggers_py._products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
+from fuggers_py.bonds.analytics_pricing import BondPricer
+from fuggers_py.bonds.spreads import DiscountMarginCalculator, OASCalculator
+from fuggers_py.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
 from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, ObservationShiftType, OvernightCompounding
-from fuggers_py._products.bonds.instruments import CallableBondBuilder, CallType, FixedBond, FloatingRateNoteBuilder, ZeroCouponBond
-from fuggers_py._pricers.bonds.options import HullWhiteModel
-from fuggers_py._reference.bonds.types import CreditRating, PutType, RateIndex, RatingInfo, Sector, SectorInfo
+from fuggers_py.bonds.instruments import CallableBondBuilder, CallType, FixedBond, FloatingRateNoteBuilder, ZeroCouponBond
+from fuggers_py.bonds.options import HullWhiteModel
+from fuggers_py.bonds.types import CreditRating, PutType, RateIndex, RatingInfo, Sector, SectorInfo
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Compounding, Currency, Date, Frequency, Yield
-from fuggers_py._curves_impl import (
-    DiscountCurveBuilder,
-    ForwardCurve,
-    InterpolationMethod,
-    ValueConverter,
-)
-from fuggers_py._curves_impl.calibration import FitterConfig, GlobalFitter, ParametricModel
+from fuggers_py._runtime.snapshot import CurvePoint
+from fuggers_py.curves import CalibrationReport, CurveSpec, YieldCurve
+from fuggers_py.curves.conversion import ValueConverter
 from fuggers_py.portfolio import PortfolioAnalyzer, PortfolioPosition
 from fuggers_py.portfolio import AttributionInput, Classification, Holding, PortfolioBuilder, aggregated_attribution, benchmark_comparison
 from fuggers_py._core.ids import InstrumentId, PortfolioId
-from fuggers_py._calc.output import BondQuoteOutput
+from fuggers_py._runtime.output import BondQuoteOutput
 from fuggers_py.bonds.types import BondType, IssuerType
-from fuggers_py._reference.reference_data import BondReferenceData
+from fuggers_py.bonds.reference_data import BondReferenceData
+from fuggers_py.rates import SwapQuote
 
 from tests.helpers._paths import FIXTURES_ROOT
+from tests.helpers._public_curve_helpers import linear_zero_curve, log_linear_discount_curve
+from tests.helpers._rates_helpers import flat_curve
 
 from ._helpers import D, assert_decimal_close, parse_date
 
@@ -117,9 +116,7 @@ def _compute_fixed_rate_bullet(case: dict[str, Any]) -> dict[str, Decimal]:
 
 def _compute_zero_coupon(case: dict[str, Any]) -> dict[str, Decimal]:
     inputs = case["inputs"]
-    curve = DiscountCurveBuilder(reference_date=parse_date(inputs["reference_date"]))
-    for pillar in inputs["discount_curve_pillars"]:
-        curve = curve.add_pillar(float(pillar["tenor_years"]), D(pillar["discount_factor"]))
+    reference_date = parse_date(inputs["reference_date"])
     bond = ZeroCouponBond(
         _issue_date=parse_date(inputs["issue_date"]),
         _maturity_date=parse_date(inputs["maturity_date"]),
@@ -127,7 +124,20 @@ def _compute_zero_coupon(case: dict[str, Any]) -> dict[str, Decimal]:
         _notional=Decimal("100"),
         _rules=YieldCalculationRules.us_treasury(),
     )
-    price = BondPricer().price_from_curve(bond, curve.build(), parse_date(inputs["reference_date"]))
+    max_cashflow_tenor = max(
+        Decimal(reference_date.days_between(cashflow.date)) / Decimal(365)
+        for cashflow in bond.cash_flows()
+    )
+    curve = log_linear_discount_curve(
+        "corpus.zero-coupon",
+        reference_date,
+        tuple(
+            CurvePoint(D(pillar["tenor_years"]), D(pillar["discount_factor"]))
+            for pillar in inputs["discount_curve_pillars"]
+        ),
+        extend_last_discount_factor_to=max_cashflow_tenor,
+    )
+    price = BondPricer().price_from_curve(bond, curve, reference_date)
     return {"clean_price_from_curve": price.clean.as_percentage()}
 
 
@@ -171,13 +181,11 @@ def _compute_callable_oas(case: dict[str, Any]) -> dict[str, Decimal]:
         )
     callable_bond = builder.build()
 
-    curve = DiscountCurveBuilder(reference_date=parse_date(inputs["curve_reference_date"]))
-    for tenor in [0.0001, 0.01, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0]:
-        curve = curve.add_zero_rate(tenor, D(inputs["flat_zero_rate"]))
+    curve = flat_curve(parse_date(inputs["curve_reference_date"]), D(inputs["flat_zero_rate"]))
     model = HullWhiteModel(
         mean_reversion=D(inputs["mean_reversion"]),
         volatility=D(inputs["volatility"]),
-        term_structure=curve.with_extrapolation().build(),
+        term_structure=curve,
     )
     calculator = OASCalculator(model=model)
     settlement = parse_date(inputs["settlement_date"])
@@ -236,14 +244,8 @@ def _compute_floating_rate_discount_margin(case: dict[str, Any]) -> dict[str, De
         .with_rules(_yield_rules(inputs["convention"], frequency))
         .build()
     )
-    curve = DiscountCurveBuilder(reference_date=parse_date(inputs["discount_curve_reference_date"]))
-    for node in inputs["discount_curve_zero_rates"]:
-        curve = curve.add_zero_rate(float(node["tenor_years"]), D(node["zero_rate"]))
-    discount_curve = curve.build()
-    calculator = DiscountMarginCalculator(
-        ForwardCurve.from_months(discount_curve, int(inputs["forward_tenor_months"])),
-        discount_curve,
-    )
+    discount_curve = flat_curve(parse_date(inputs["discount_curve_reference_date"]), D(inputs["discount_curve_zero_rates"][0]["zero_rate"]))
+    calculator = DiscountMarginCalculator(discount_curve, discount_curve)
     settlement = parse_date(inputs["settlement_date"])
     dm = D(inputs["discount_margin_decimal"])
     return {
@@ -285,10 +287,15 @@ def _compute_frn_fixing_lookback_coupon(case: dict[str, Any]) -> dict[str, Decim
         .with_rules(_yield_rules(inputs["convention"], frequency))
         .build()
     )
-    curve = DiscountCurveBuilder(reference_date=parse_date(inputs["settlement_date"]))
-    for node in inputs["projection_curve_zero_rates"]:
-        curve = curve.add_zero_rate(float(node["tenor_years"]), D(node["zero_rate"]))
-    projection_curve = curve.build()
+    projection_curve = linear_zero_curve(
+        "corpus.projection",
+        parse_date(inputs["settlement_date"]),
+        tuple(
+            CurvePoint(D(node["tenor_years"]), D(node["zero_rate"]))
+            for node in inputs["projection_curve_zero_rates"]
+        ),
+        extrapolation_policy="hold_last_zero_rate",
+    )
     start = parse_date(inputs["period_start"])
     end = parse_date(inputs["period_end"])
     required = frn.required_fixing_dates(start, end, index_conventions=conventions)
@@ -308,25 +315,27 @@ def _compute_frn_fixing_lookback_coupon(case: dict[str, Any]) -> dict[str, Decim
 
 def _compute_curve_conversion(case: dict[str, Any]) -> dict[str, Decimal]:
     inputs = case["inputs"]
-    curve = DiscountCurveBuilder(reference_date=parse_date(inputs["reference_date"]))
-    for pillar in inputs["discount_curve_pillars"]:
-        curve = curve.add_pillar(float(pillar["tenor_years"]), D(pillar["discount_factor"]))
-    built_curve = curve.with_interpolation(InterpolationMethod[inputs["interpolation"]]).with_extrapolation().build()
+    built_curve = log_linear_discount_curve(
+        "corpus.conversion",
+        parse_date(inputs["reference_date"]),
+        tuple(
+            CurvePoint(D(pillar["tenor_years"]), D(pillar["discount_factor"]))
+            for pillar in inputs["discount_curve_pillars"]
+        ),
+    )
+    query_tenor = float(inputs["query_tenor_years"])
+    query_df = built_curve.discount_factor_at(query_tenor)
     return {
         "discount_factor_at_query_tenor": _decimal(
-            built_curve.discount_factor_at_tenor(float(inputs["query_tenor_years"]))
+            query_df
         ),
         "zero_rate_annual_at_query_tenor": _decimal(
-            built_curve.zero_rate_at_tenor(
-                float(inputs["query_tenor_years"]),
-                compounding=Compounding[inputs["convert_to"]],
-            )
+            ValueConverter.df_to_zero(query_df, query_tenor, Compounding[inputs["convert_to"]])
         ),
         "forward_rate_continuous": _decimal(
-            built_curve.forward_rate_at_tenors(
+            built_curve.forward_rate_between(
                 float(inputs["forward_start_years"]),
                 float(inputs["forward_end_years"]),
-                compounding=Compounding.CONTINUOUS,
             )
         ),
         "converted_rate": _decimal(
@@ -341,20 +350,48 @@ def _compute_curve_conversion(case: dict[str, Any]) -> dict[str, Decimal]:
 
 def _compute_curve_global_fit_nelson_siegel(case: dict[str, Any]) -> dict[str, Decimal]:
     inputs = case["inputs"]
-    tenors = np.array([float(value) for value in inputs["tenors"]], dtype=float)
-    true_parameters = np.array([float(value) for value in inputs["true_parameters"]], dtype=float)
-    observed = np.array([_ns_zero(tenor, *true_parameters) for tenor in tenors], dtype=float)
-    result = GlobalFitter(
-        parse_date(inputs["reference_date"]),
-        config=FitterConfig(model=ParametricModel.NELSON_SIEGEL),
-    ).fit_zero_rates(tenors, observed)
+    reference_date = parse_date(inputs["reference_date"])
+    true_parameters = tuple(float(value) for value in inputs["true_parameters"])
+
+    def _tenor_label(value: str) -> str:
+        years = float(value)
+        if years.is_integer():
+            return f"{int(years)}Y"
+        return f"{int(round(years * 12))}M"
+
+    quotes = tuple(
+        SwapQuote(
+            instrument_id=_tenor_label(tenor),
+            tenor=_tenor_label(tenor),
+            rate=_ns_zero(float(tenor), *true_parameters),
+            currency="USD",
+            as_of=reference_date,
+        )
+        for tenor in inputs["tenors"]
+    )
+    curve = YieldCurve.fit(
+        quotes,
+        spec=CurveSpec(
+            name="corpus.nelson-siegel",
+            reference_date=reference_date,
+            day_count="ACT/365F",
+            currency="USD",
+            type="nominal",
+            extrapolation_policy="error",
+        ),
+        kernel="nelson_siegel",
+        method="global_fit",
+        kernel_params={"initial_parameters": true_parameters, "max_t": float(inputs["tenors"][-1])},
+    )
+    report = curve.calibration_report
+    assert isinstance(report, CalibrationReport)
     return {
-        "beta0": _decimal(result.parameters[0]),
-        "beta1": _decimal(result.parameters[1]),
-        "beta2": _decimal(result.parameters[2]),
-        "tau": _decimal(result.parameters[3]),
-        "objective_value": _decimal(result.objective_value),
-        "zero_rate_4y": _decimal(result.curve.zero_rate_at_tenor(float(inputs["query_tenor_years"]))),
+        "beta0": _decimal(report.kernel_parameters[0]),
+        "beta1": _decimal(report.kernel_parameters[1]),
+        "beta2": _decimal(report.kernel_parameters[2]),
+        "tau": _decimal(report.kernel_parameters[3]),
+        "objective_value": _decimal(report.objective_value),
+        "zero_rate_4y": _decimal(curve.rate_at(float(inputs["query_tenor_years"]))),
     }
 
 
@@ -447,10 +484,14 @@ def _portfolio_from_holdings(reference_date: Date, holdings: list[dict[str, Any]
 def _compute_portfolio_benchmark_attribution(case: dict[str, Any]) -> dict[str, Decimal]:
     inputs = case["inputs"]
     reference_date = parse_date(inputs["reference_date"])
-    curve = DiscountCurveBuilder(reference_date=reference_date)
-    for node in inputs["curve_zero_rates"]:
-        curve = curve.add_zero_rate(float(node["tenor_years"]), D(node["zero_rate"]))
-    built_curve = curve.build()
+    built_curve = linear_zero_curve(
+        "corpus.portfolio",
+        reference_date,
+        tuple(
+            CurvePoint(D(node["tenor_years"]), D(node["zero_rate"]))
+            for node in inputs["curve_zero_rates"]
+        ),
+    )
     portfolio = _portfolio_from_holdings(reference_date, inputs["portfolio_holdings"])
     benchmark = _portfolio_from_holdings(reference_date, inputs["benchmark_holdings"])
     assumptions = AttributionInput(

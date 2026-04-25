@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import inspect
+from pathlib import Path
 
 import pytest
 
 from fuggers_py import Date
+import fuggers_py.portfolio as portfolio_pkg
 from fuggers_py.portfolio import (
     ActiveWeight,
     ActiveWeights,
@@ -72,6 +75,23 @@ from fuggers_py.portfolio import (
 )
 
 from tests.helpers._portfolio_helpers import make_benchmark, make_curve, make_portfolio
+
+
+def test_portfolio_exports_resolve_under_portfolio() -> None:
+    root = Path(portfolio_pkg.__file__).resolve().parent
+    source_less_constants = {"DEFAULT_BUCKETS"}
+
+    for name in portfolio_pkg.__all__:
+        try:
+            source = inspect.getsourcefile(getattr(portfolio_pkg, name))
+        except TypeError:
+            source = None
+
+        if source is None:
+            assert name in source_less_constants
+            continue
+
+        assert Path(source).resolve().is_relative_to(root), name
 
 
 def test_portfolio_root_imports_expose_typed_comparison_and_contribution_surface() -> None:

@@ -13,10 +13,10 @@ tenor domain. Discount factors are then derived from that fitted rate curve.
 
 from __future__ import annotations
 
+import math
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from enum import Enum, auto
 from types import MappingProxyType
 from typing import Any
 
@@ -26,6 +26,31 @@ from ..conversion import ValueConverter
 from ..errors import InvalidCurveInput
 
 _CONTINUOUS = Compounding.CONTINUOUS
+_KERNEL_KINDS = frozenset(
+    {
+        "linear_zero",
+        "log_linear_discount",
+        "piecewise_constant",
+        "piecewise_flat_forward",
+        "monotone_convex",
+        "cubic_spline",
+        "nelson_siegel",
+        "svensson",
+        "exponential_spline",
+    }
+)
+
+
+def normalize_kernel_kind(value: object) -> str:
+    """Return one supported kernel name."""
+
+    if not isinstance(value, str):
+        raise InvalidCurveInput("kind must be a kernel name string.")
+    normalized = value.strip().lower()
+    if normalized not in _KERNEL_KINDS:
+        allowed = ", ".join(sorted(_KERNEL_KINDS))
+        raise InvalidCurveInput(f"kind must be one of: {allowed}.")
+    return normalized
 
 
 def _freeze_parameter_value(value: Any) -> Any:
@@ -45,20 +70,6 @@ def _freeze_parameter_value(value: Any) -> Any:
     return value
 
 
-class CurveKernelKind(Enum):
-    """Internal family name for one mathematical curve representation."""
-
-    LINEAR_ZERO = auto()
-    LOG_LINEAR_DISCOUNT = auto()
-    PIECEWISE_CONSTANT = auto()
-    PIECEWISE_FLAT_FORWARD = auto()
-    MONOTONE_CONVEX = auto()
-    CUBIC_SPLINE = auto()
-    NELSON_SIEGEL = auto()
-    SVENSSON = auto()
-    EXPONENTIAL_SPLINE = auto()
-
-
 @dataclass(frozen=True, slots=True)
 class KernelSpec:
     """Immutable internal config for one curve-kernel family.
@@ -68,12 +79,11 @@ class KernelSpec:
     options. This is internal config only. It is not the realized kernel.
     """
 
-    kind: CurveKernelKind
+    kind: str
     parameters: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if not isinstance(self.kind, CurveKernelKind):
-            raise InvalidCurveInput("kind must be a CurveKernelKind.")
+        object.__setattr__(self, "kind", normalize_kernel_kind(self.kind))
         if not isinstance(self.parameters, Mapping):
             raise InvalidCurveInput("parameters must be a mapping.")
         frozen_parameters = {}
@@ -114,9 +124,44 @@ class CurveKernel(ABC):
             return 1.0
         return ValueConverter.zero_to_df(self.rate_at(checked_tenor), checked_tenor, _CONTINUOUS)
 
+    def _kernel_label(self) -> str:
+        kind = getattr(self, "kind", None)
+        if isinstance(kind, str):
+            return kind
+        return type(self).__name__
+
+    def terminal_zero_rate(self) -> float:
+        """Return the zero-rate view at the inclusive upper tenor bound."""
+
+        return float(self.rate_at(self.max_t()))
+
+    def terminal_native_rate(self) -> float:
+        """Return the kernel-native final rate when that rate is well defined."""
+
+        raise InvalidCurveInput(f"{self._kernel_label()} does not support hold_last_native_rate extrapolation.")
+
+    def terminal_native_discount_factor_at(self, tenor: float) -> float:
+        """Return the discount factor implied by holding the native final value."""
+
+        return ValueConverter.zero_to_df(self.terminal_native_rate(), float(tenor), _CONTINUOUS)
+
+    def terminal_forward_rate(self) -> float:
+        """Return the final forward rate when that rate is well defined."""
+
+        raise InvalidCurveInput(f"{self._kernel_label()} does not support hold_last_forward_rate extrapolation.")
+
+    def terminal_forward_discount_factor_at(self, tenor: float) -> float:
+        """Return the discount factor implied by holding the final forward rate."""
+
+        max_t = float(self.max_t())
+        if max_t <= 0.0:
+            raise InvalidCurveInput("hold_last_forward_rate requires max_t() > 0.")
+        final_discount_factor = float(self.discount_factor_at(max_t))
+        final_forward_rate = float(self.terminal_forward_rate())
+        return final_discount_factor * math.exp(-final_forward_rate * (float(tenor) - max_t))
+
 
 __all__ = [
     "CurveKernel",
-    "CurveKernelKind",
     "KernelSpec",
 ]

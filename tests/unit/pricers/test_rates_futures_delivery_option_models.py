@@ -5,14 +5,14 @@ from decimal import Decimal
 
 from fuggers_py._core import Date
 from fuggers_py._core import InstrumentId
-from fuggers_py._pricers.rates.futures import (
+from fuggers_py.rates.futures import (
     MultiFactorDeliveryOptionModel,
     MultiFactorScenario,
     NoDeliveryOptionModel,
     OneFactorDeliveryOptionModel,
     fair_futures_price,
 )
-from fuggers_py._products.rates.futures import (
+from fuggers_py.rates.futures import (
     DeliverableBasket,
     DeliverableBond,
     GovernmentBondFuture,

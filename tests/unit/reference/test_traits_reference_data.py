@@ -5,7 +5,7 @@ from decimal import Decimal
 from fuggers_py.bonds.types import BondType, IssuerType
 from fuggers_py._core import Currency, Date, Frequency
 from fuggers_py._core import InstrumentId
-from fuggers_py._reference import (
+from fuggers_py.bonds import (
     BondReferenceData,
     CallScheduleEntry,
     FloatingRateTerms,

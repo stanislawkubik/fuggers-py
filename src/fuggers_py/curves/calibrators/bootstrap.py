@@ -14,8 +14,7 @@ from fuggers_py._math.solvers.types import SolverConfig, SolverResult
 
 from ..conversion import ValueConverter
 from ..errors import CurveConstructionError, InvalidCurveInput
-from ..enums import ExtrapolationPolicy
-from ..kernels import CurveKernel, CurveKernelKind, KernelSpec
+from ..kernels.base import CurveKernel, KernelSpec
 from ..kernels.nodes import (
     LinearZeroKernel,
     LogLinearDiscountKernel,
@@ -35,12 +34,12 @@ from .base import CalibrationSpec, CurveCalibrator, _require_bootstrap_calibrati
 
 _CONTINUOUS = Compounding.CONTINUOUS
 _ZERO_NODE_KINDS = {
-    CurveKernelKind.LINEAR_ZERO,
-    CurveKernelKind.PIECEWISE_CONSTANT,
-    CurveKernelKind.PIECEWISE_FLAT_FORWARD,
-    CurveKernelKind.MONOTONE_CONVEX,
+    "linear_zero",
+    "piecewise_constant",
+    "piecewise_flat_forward",
+    "monotone_convex",
 }
-_DISCOUNT_NODE_KINDS = {CurveKernelKind.LOG_LINEAR_DISCOUNT}
+_DISCOUNT_NODE_KINDS = {"log_linear_discount"}
 
 
 class BootstrapSolverKind(Enum):
@@ -56,16 +55,16 @@ class _BootstrapNodeSpace(Enum):
 
 
 def _allow_extrapolation(spec: CurveSpec) -> bool:
-    return spec.extrapolation_policy is not ExtrapolationPolicy.ERROR
+    return spec.extrapolation_policy != "error"
 
 
-def _node_space_for_kind(kind: CurveKernelKind) -> _BootstrapNodeSpace:
+def _node_space_for_kind(kind: str) -> _BootstrapNodeSpace:
     if kind in _ZERO_NODE_KINDS:
         return _BootstrapNodeSpace.ZERO_RATE
     if kind in _DISCOUNT_NODE_KINDS:
         return _BootstrapNodeSpace.DISCOUNT_FACTOR
     raise CurveConstructionError(
-        f"bootstrap calibration does not support kernel kind {kind.name}.",
+        f"bootstrap calibration does not support kernel kind {kind}.",
     )
 
 
@@ -78,17 +77,17 @@ def _build_kernel(
 ) -> CurveKernel:
     allow_extrapolation = _allow_extrapolation(spec)
     kind = kernel_spec.kind
-    if kind is CurveKernelKind.LINEAR_ZERO:
+    if kind == "linear_zero":
         return LinearZeroKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
-    if kind is CurveKernelKind.LOG_LINEAR_DISCOUNT:
+    if kind == "log_linear_discount":
         return LogLinearDiscountKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
-    if kind is CurveKernelKind.PIECEWISE_CONSTANT:
+    if kind == "piecewise_constant":
         return PiecewiseConstantZeroKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
-    if kind is CurveKernelKind.PIECEWISE_FLAT_FORWARD:
+    if kind == "piecewise_flat_forward":
         return PiecewiseFlatForwardKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
-    if kind is CurveKernelKind.MONOTONE_CONVEX:
+    if kind == "monotone_convex":
         return MonotoneConvexKernel(tenors, node_values, allow_extrapolation=allow_extrapolation)
-    raise CurveConstructionError(f"bootstrap calibration does not support kernel kind {kind.name}.")
+    raise CurveConstructionError(f"bootstrap calibration does not support kernel kind {kind}.")
 
 
 def _solve_zero_rate_from_discount_factor(
@@ -273,9 +272,9 @@ class BootstrapCalibrator(CurveCalibrator):
     """Sequential exact-fit calibrator for the local node-based curve families.
 
     The constructor owns the route-level ``CalibrationSpec``. This calibrator
-    only accepts ``mode=BOOTSTRAP`` and ``objective=EXACT_FIT``. It does not
+    only accepts ``method="bootstrap"`` and ``objective="exact_fit"``. It does not
     accept regressors, it requires one strictly increasing tenor sequence, and
-    it does not support ``CUBIC_SPLINE``.
+    it does not support ``cubic_spline``.
     """
 
     def __init__(
@@ -405,7 +404,8 @@ class BootstrapCalibrator(CurveCalibrator):
 
         report = CalibrationReport(
             converged=True,
-            objective=calibration_spec.objective.name,
+            method=calibration_spec.method,
+            objective=calibration_spec.objective,
             iterations=total_iterations,
             max_abs_residual=max_abs_residual,
             points=points,

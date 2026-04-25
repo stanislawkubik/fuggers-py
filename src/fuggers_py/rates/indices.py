@@ -289,6 +289,11 @@ def _lookup_or_project_rate(
             reference_date = getattr(forward_curve, "reference_date")
             tenor = max(reference_date.days_between(segment_start), 0) / 365.0
             return _to_decimal(forward_curve.forward_rate_at(tenor))
+        if hasattr(forward_curve, "forward_rate_between") and hasattr(forward_curve, "reference_date"):
+            reference_date = getattr(forward_curve, "reference_date")
+            start_tenor = max(reference_date.days_between(segment_start), 0) / 365.0
+            end_tenor = max(reference_date.days_between(segment_end), 0) / 365.0
+            return _to_decimal(forward_curve.forward_rate_between(start_tenor, end_tenor))
 
     if fallback_rate is not None:
         return fallback_rate

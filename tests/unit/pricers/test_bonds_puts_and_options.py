@@ -4,12 +4,12 @@ from dataclasses import replace
 from decimal import Decimal
 
 from fuggers_py._core import OptionType
-from fuggers_py._products.bonds.instruments import CallableBondBuilder, FixedBond
-from fuggers_py._pricers.bonds.options import BondOption, ExerciseStyle, HullWhiteModel
-from fuggers_py._reference.bonds.types import PutType
+from fuggers_py.bonds.instruments import CallableBondBuilder, FixedBond
+from fuggers_py.bonds.options import BondOption, ExerciseStyle, HullWhiteModel
+from fuggers_py.bonds.types import PutType
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Date, Frequency
-from fuggers_py._curves_impl import DiscountCurveBuilder
+from tests.helpers._rates_helpers import flat_curve
 
 
 def _annual_rules() -> YieldCalculationRules:
@@ -28,12 +28,7 @@ def _base_bond() -> FixedBond:
 
 
 def _curve(ref: Date):
-    return (
-        DiscountCurveBuilder(reference_date=ref)
-        .add_zero_rate(1.0, Decimal("0.03"))
-        .add_zero_rate(10.0, Decimal("0.04"))
-        .build()
-    )
+    return flat_curve(ref, "0.035")
 
 
 def test_callable_bond_builder_supports_put_schedules_and_ytw() -> None:

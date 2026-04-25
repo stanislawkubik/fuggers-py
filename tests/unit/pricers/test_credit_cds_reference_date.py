@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py._core import Date
-from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._runtime.state import AnalyticsCurves
 from fuggers_py.credit import CdsPricer, CreditDefaultSwap
 
 from tests.helpers._rates_helpers import flat_curve

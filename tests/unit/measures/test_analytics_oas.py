@@ -4,11 +4,11 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.spreads import OASCalculator
-from fuggers_py._products.bonds.instruments import CallType, CallableBondBuilder, FixedBond
-from fuggers_py._pricers.bonds.options import HullWhiteModel
+from fuggers_py.bonds.spreads import OASCalculator
+from fuggers_py.bonds.instruments import CallType, CallableBondBuilder, FixedBond
+from fuggers_py.bonds.options import HullWhiteModel
 from fuggers_py._core import Date, Frequency
-from fuggers_py._curves_impl import DiscountCurveBuilder
+from tests.helpers._rates_helpers import flat_curve
 
 
 def _callable_setup():
@@ -26,12 +26,7 @@ def _callable_setup():
         .add_call(call_date=settlement.add_years(3), call_price=Decimal("100.5"), call_type=CallType.EUROPEAN)
         .build()
     )
-    curve = (
-        DiscountCurveBuilder(reference_date=settlement)
-        .add_zero_rate(1.0, Decimal("0.04"))
-        .add_zero_rate(10.0, Decimal("0.04"))
-        .build()
-    )
+    curve = flat_curve(settlement, "0.04")
     model = HullWhiteModel(mean_reversion=Decimal("0.03"), volatility=Decimal("0.01"), term_structure=curve)
     return settlement, callable_bond, OASCalculator(model=model)
 

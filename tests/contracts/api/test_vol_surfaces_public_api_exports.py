@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import inspect
 from pathlib import Path
 
 from fuggers_py import Date
@@ -9,6 +10,7 @@ from fuggers_py.vol_surfaces import (
     InMemoryVolatilitySource,
     VolPoint,
     VolQuoteType,
+    VolSurfaceSourceType,
     VolSurfaceType,
     VolatilitySource,
     VolatilitySurface,
@@ -20,6 +22,7 @@ def test_vol_surfaces_root_exports_the_current_public_surface() -> None:
         "InMemoryVolatilitySource",
         "VolPoint",
         "VolQuoteType",
+        "VolSurfaceSourceType",
         "VolSurfaceType",
         "VolatilitySource",
         "VolatilitySurface",
@@ -44,6 +47,14 @@ def test_vol_surfaces_root_is_a_small_direct_import_surface() -> None:
                 )
 
 
+def test_vol_surface_exports_resolve_under_vol_surfaces() -> None:
+    root = Path(vol_surfaces.__file__).resolve().parent
+    for name in vol_surfaces.__all__:
+        source = inspect.getsourcefile(getattr(vol_surfaces, name))
+        assert source is not None
+        assert Path(source).resolve().is_relative_to(root)
+
+
 def test_vol_surface_records_and_sources_are_usable_from_root_exports() -> None:
     point = VolPoint(
         expiry="2027-06",
@@ -57,6 +68,7 @@ def test_vol_surface_records_and_sources_are_usable_from_root_exports() -> None:
         surface_type=VolSurfaceType.SWAPTION,
         as_of=Date.from_ymd(2026, 4, 16),
         points=(point,),
+        source_type=VolSurfaceSourceType.MODEL,
     )
     source = InMemoryVolatilitySource([surface])
 
@@ -64,4 +76,5 @@ def test_vol_surface_records_and_sources_are_usable_from_root_exports() -> None:
     assert source.get_volatility_surface("usd-swaption-grid") is surface
     assert surface.points == (point,)
     assert surface.surface_type is VolSurfaceType.SWAPTION
+    assert surface.source_type is VolSurfaceSourceType.MODEL
     assert point.quote_type is VolQuoteType.NORMAL

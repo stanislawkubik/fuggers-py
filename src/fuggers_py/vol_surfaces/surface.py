@@ -6,14 +6,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
 from fuggers_py._core.ids import VolSurfaceId, YearMonth
 from fuggers_py._core.quote_support import _coerce_decimal_fields
 from fuggers_py._core.types import Date
-
-if TYPE_CHECKING:
-    from fuggers_py._runtime.quotes import SourceType
 
 
 class VolSurfaceType(str, Enum):
@@ -33,6 +30,28 @@ class VolQuoteType(str, Enum):
     NORMAL = "NORMAL"
     PRICE = "PRICE"
     SPREAD = "SPREAD"
+
+
+class VolSurfaceSourceType(str, Enum):
+    """Origin classification for a volatility surface."""
+
+    LIVE = "LIVE"
+    CLOSE = "CLOSE"
+    REFERENCE = "REFERENCE"
+    MODEL = "MODEL"
+    MANUAL = "MANUAL"
+
+
+if TYPE_CHECKING:
+    from fuggers_py._runtime.quotes import SourceType as _RuntimeSourceType
+
+    _VolSurfaceSourceInput: TypeAlias = VolSurfaceSourceType | _RuntimeSourceType | str
+else:
+    _VolSurfaceSourceInput: TypeAlias = VolSurfaceSourceType | str
+
+
+def _coerce_source_type(value: _VolSurfaceSourceInput) -> VolSurfaceSourceType:
+    return VolSurfaceSourceType(value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,7 +82,7 @@ class VolatilitySurface:
     timestamp: datetime | None = None
     points: tuple[VolPoint, ...] = ()
     source: str | None = None
-    source_type: SourceType | None = None
+    source_type: VolSurfaceSourceType | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "surface_id", VolSurfaceId.parse(self.surface_id))
@@ -74,11 +93,14 @@ class VolatilitySurface:
         )
         if self.source is not None:
             object.__setattr__(self, "source", self.source.strip())
+        if self.source_type is not None:
+            object.__setattr__(self, "source_type", _coerce_source_type(self.source_type))
 
 
 __all__ = [
     "VolPoint",
     "VolQuoteType",
+    "VolSurfaceSourceType",
     "VolSurfaceType",
     "VolatilitySurface",
 ]

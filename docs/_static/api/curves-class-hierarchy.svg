@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="340" viewBox="0 0 760 340" role="img" aria-labelledby="title desc">
+  <title id="title">Curve class hierarchy</title>
+  <desc id="desc">RatesTermStructure is the base class. DiscountingCurve inherits from it. YieldCurve inherits from DiscountingCurve.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #d8e1eb; stroke-width: 1.5; rx: 18; ry: 18; }
+      .box { stroke: #0f766e; stroke-width: 1.6; fill: #f0fdfa; rx: 12; ry: 12; }
+      .title { font: 700 24px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .label { font: 700 18px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .small { font: 400 13px Arial, Helvetica, sans-serif; fill: #475569; }
+      .center { text-anchor: middle; }
+      .line { stroke: #64748b; stroke-width: 2.2; fill: none; }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="760" height="340"/>
+  <rect class="panel" x="24" y="24" width="712" height="292"/>
+  <text x="380" y="68" class="title center">Curve class hierarchy</text>
+  <text x="380" y="92" class="small center">This is inheritance only. It is separate from fitted kernels.</text>
+
+  <rect x="250" y="116" width="260" height="52" class="box"/>
+  <text x="380" y="149" class="label center">RatesTermStructure</text>
+
+  <rect x="265" y="204" width="230" height="52" class="box"/>
+  <text x="380" y="237" class="label center">DiscountingCurve</text>
+
+  <rect x="292" y="270" width="176" height="42" class="box"/>
+  <text x="380" y="297" class="label center">YieldCurve</text>
+
+  <path d="M 380 168 L 380 204" class="line"/>
+  <path d="M 380 256 L 380 270" class="line"/>
+</svg>

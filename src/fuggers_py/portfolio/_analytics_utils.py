@@ -20,7 +20,6 @@ from fuggers_py.bonds import (
 )
 from fuggers_py._core.types import Date, Price
 from fuggers_py.curves import DiscountingCurve
-from ..curves.date_support import key_rate_bumped_curve
 
 from .types import AnalyticsConfig, CashPosition, Holding, PortfolioMetrics, Position, PositionAnalytics, WeightingMethod
 
@@ -160,7 +159,7 @@ def position_analytics(
     if curve is not None:
         base_dirty_unit = pricer.price_from_curve(bond, curve, settlement_date).dirty.as_percentage()
         for tenor in config.key_rate_tenors:
-            bumped_curve = key_rate_bumped_curve(curve, tenor_grid=config.key_rate_tenors, key_tenor=tenor, bump=1e-4)
+            bumped_curve = curve.bumped(tenor_grid=config.key_rate_tenors, bumps={tenor: 1e-4})
             bumped_price = pricer.price_from_curve(bond, bumped_curve, settlement_date).dirty.as_percentage()
             key_rate_profile[str(tenor)] = (bumped_price - (base_dirty_unit)) * position.quantity
 

@@ -5,9 +5,9 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py._core import Currency, Date, Frequency, PayReceive
-from fuggers_py._market.state import AnalyticsCurves
-from fuggers_py._pricers.rates import BasisSwapPricer
-from fuggers_py._products.rates import BasisSwap, FloatingLegSpec, ScheduleDefinition
+from fuggers_py._runtime.state import AnalyticsCurves
+from fuggers_py.rates import BasisSwapPricer
+from fuggers_py.rates import BasisSwap, FloatingLegSpec, ScheduleDefinition
 
 from tests.helpers._rates_helpers import flat_curve, multicurve_analytics_curves, rate_index
 

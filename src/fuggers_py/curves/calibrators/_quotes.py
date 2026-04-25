@@ -15,33 +15,15 @@ from decimal import Decimal
 
 from fuggers_py.bonds.quotes import BondQuote
 from fuggers_py.bonds.types import CompoundingKind
-from fuggers_py._core.daycounts import DayCountConvention
 from fuggers_py._core.types import Compounding, Date, Price
 from fuggers_py.funding.quotes import RepoQuote
 from fuggers_py.rates.quotes import SwapQuote
 
+from .._day_count import resolve_curve_day_count
 from ..errors import CurveConstructionError, InvalidCurveInput
 from ..kernels.base import CurveKernel
 from ..spec import CurveSpec
-from .base import BondFitTarget, CalibrationMode, CalibrationSpec
-
-_DAY_COUNT_ALIASES = {
-    "ACT/360": "ACT_360",
-    "ACT/365F": "ACT_365_FIXED",
-    "ACT/365FIXED": "ACT_365_FIXED",
-    "ACT/365L": "ACT_365_LEAP",
-    "ACT/365LEAP": "ACT_365_LEAP",
-    "ACT/ACT": "ACT_ACT_ISDA",
-    "ACT/ACTISDA": "ACT_ACT_ISDA",
-    "ACT/ACTICMA": "ACT_ACT_ICMA",
-    "ACT/ACTAFB": "ACT_ACT_AFB",
-    "30/360": "THIRTY_360_US",
-    "30/360US": "THIRTY_360_US",
-    "30E/360": "THIRTY_360_E",
-    "30/360E": "THIRTY_360_E",
-    "30E/360ISDA": "THIRTY_360_E_ISDA",
-    "30/360GERMAN": "THIRTY_360_GERMAN",
-}
+from .base import CalibrationSpec
 
 
 class QuoteValueKind(Enum):
@@ -71,7 +53,7 @@ class QuoteRow:
     """Single normalized quote row shared by bootstrap and global fit.
 
     ``regressor_values`` stores only the numeric values aligned to
-    ``CalibrationSpec.regressor_names``. The row does not store regressor
+    ``CalibrationSpec.regressors``. The row does not store regressor
     names, so the calibration spec stays the single source of regressor
     column order.
     """
@@ -116,6 +98,22 @@ def _require_positive_tenor_string(text: str, *, quote_name: str) -> float:
     return tenor.to_years_approx()
 
 
+def _validate_quote_curve_fields(quote: object, *, quote_name: str, spec: CurveSpec) -> None:
+    quote_as_of = getattr(quote, "as_of", None)
+    if quote_as_of is None:
+        raise InvalidCurveInput(f"{quote_name}.as_of is required for quote-driven curve fitting.")
+    if quote_as_of != spec.reference_date:
+        raise InvalidCurveInput(
+            f"{quote_name}.as_of must equal CurveSpec.reference_date for quote-driven curve fitting."
+        )
+
+    quote_currency = getattr(quote, "currency", None)
+    if quote_currency is not None and quote_currency != spec.currency:
+        raise InvalidCurveInput(
+            f"{quote_name}.currency must equal CurveSpec.currency for quote-driven curve fitting."
+        )
+
+
 def _tenor_from_dates(start: Date | None, end: Date | None, *, quote_name: str) -> float:
     if start is None or end is None:
         raise InvalidCurveInput(f"{quote_name} requires start_date and end_date, or one parseable term.")
@@ -126,15 +124,12 @@ def _tenor_from_dates(start: Date | None, end: Date | None, *, quote_name: str) 
 
 
 def _curve_day_count(spec: CurveSpec):
-    key = spec.day_count.strip().upper().replace(" ", "")
-    if key in DayCountConvention.__members__:
-        return DayCountConvention[key].to_day_count()
-    alias = _DAY_COUNT_ALIASES.get(key)
-    if alias is not None:
-        return DayCountConvention[alias].to_day_count()
-    raise InvalidCurveInput(
-        f"unsupported CurveSpec.day_count for quote-driven bond fitting: {spec.day_count}.",
-    )
+    try:
+        return resolve_curve_day_count(spec.day_count)
+    except ValueError as exc:
+        raise InvalidCurveInput(
+            f"unsupported CurveSpec.day_count for quote-driven bond fitting: {spec.day_count}.",
+        ) from exc
 
 
 def _bond_quote_compounding(quote: BondQuote) -> Compounding:
@@ -145,7 +140,7 @@ def _bond_quote_compounding(quote: BondQuote) -> Compounding:
         return Compounding.SIMPLE
     if method.kind not in {CompoundingKind.PERIODIC, CompoundingKind.ACTUAL_PERIOD}:
         raise InvalidCurveInput(
-            f"unsupported bond compounding kind {method.kind.name} for quote-driven curve fitting."
+            f"unsupported bond compounding kind {method.kind} for quote-driven curve fitting."
         )
     if method.frequency is None:
         raise InvalidCurveInput("periodic bond compounding requires frequency for quote-driven curve fitting.")
@@ -167,6 +162,8 @@ def _resolved_bond_settlement_date(quote: BondQuote) -> Date:
     try:
         return quote.resolved_settlement_date()
     except ValueError as exc:
+        if str(exc) == "BondQuote requires as_of.":
+            raise InvalidCurveInput("BondQuote.as_of is required for quote-driven curve fitting.") from exc
         raise InvalidCurveInput(str(exc)) from exc
 
 
@@ -206,19 +203,19 @@ def _aligned_bond_regressor_values(
     *,
     calibration_spec: CalibrationSpec,
 ) -> tuple[float, ...]:
-    """Return bond regressor values aligned to ``CalibrationSpec.regressor_names``."""
+    """Return bond regressor values aligned to ``CalibrationSpec.regressors``."""
 
-    if not calibration_spec.regressor_names:
+    if not calibration_spec.regressors:
         return ()
     regressors = quote.regressors
     if regressors is None:
-        return tuple(0.0 for _ in calibration_spec.regressor_names)
+        return tuple(0.0 for _ in calibration_spec.regressors)
     return tuple(
         _require_finite_numeric(
             regressors.get(name, 0.0),
             name=f"BondQuote.regressors[{name!r}]",
         )
-        for name in calibration_spec.regressor_names
+        for name in calibration_spec.regressors
     )
 
 
@@ -229,7 +226,7 @@ def _quote_row_regressor_values(
 ) -> tuple[float, ...]:
     if isinstance(quote, BondQuote):
         return _aligned_bond_regressor_values(quote, calibration_spec=calibration_spec)
-    return tuple(0.0 for _ in calibration_spec.regressor_names)
+    return tuple(0.0 for _ in calibration_spec.regressors)
 
 
 def _quote_row_weight(quote: object) -> float:
@@ -238,24 +235,28 @@ def _quote_row_weight(quote: object) -> float:
     return 1.0
 
 
-def _swap_quote_row(quote: SwapQuote, *, calibration_spec: CalibrationSpec) -> QuoteRow:
+def _swap_quote_row(quote: SwapQuote, *, spec: CurveSpec, calibration_spec: CalibrationSpec) -> QuoteRow:
+    _validate_quote_curve_fields(quote, quote_name="SwapQuote", spec=spec)
     if quote.tenor is None:
         raise InvalidCurveInput("SwapQuote requires tenor for quote-driven curve fitting.")
     value = quote.quoted_value()
     if value is None:
         raise InvalidCurveInput("SwapQuote requires a quoted rate for quote-driven curve fitting.")
+    # The current quote-driven route treats SwapQuote.rate as a zero-rate observation.
+    # It does not build or reprice fixed/floating swap cash flows.
     return QuoteRow(
         instrument_id=str(quote.instrument_id),
         tenor=_require_positive_tenor_string(quote.tenor, quote_name="SwapQuote"),
         value=_require_finite_numeric(value, name="SwapQuote rate"),
         value_kind=QuoteValueKind.ZERO_RATE,
-        observed_kind="SWAP_RATE",
+        observed_kind="SWAP_ZERO_RATE",
         regressor_values=_quote_row_regressor_values(quote, calibration_spec=calibration_spec),
         source_quote=quote,
     )
 
 
-def _repo_quote_row(quote: RepoQuote, *, calibration_spec: CalibrationSpec) -> QuoteRow:
+def _repo_quote_row(quote: RepoQuote, *, spec: CurveSpec, calibration_spec: CalibrationSpec) -> QuoteRow:
+    _validate_quote_curve_fields(quote, quote_name="RepoQuote", spec=spec)
     value = quote.quoted_value()
     if value is None:
         raise InvalidCurveInput("RepoQuote requires a quoted rate for quote-driven curve fitting.")
@@ -289,9 +290,10 @@ def _bond_quote_row(
     spec: CurveSpec,
     calibration_spec: CalibrationSpec,
 ) -> QuoteRow:
+    _validate_quote_curve_fields(quote, quote_name="BondQuote", spec=spec)
     settlement_date = _resolved_bond_settlement_date(quote)
     if settlement_date != spec.reference_date:
-        raise InvalidCurveInput("BondQuote as_of must equal CurveSpec.reference_date for quote-driven curve fitting.")
+        raise InvalidCurveInput("BondQuote.as_of must equal CurveSpec.reference_date for quote-driven curve fitting.")
 
     curve_day_count = _curve_day_count(spec)
     cash_flows = quote.instrument.cash_flows(settlement_date)
@@ -301,7 +303,7 @@ def _bond_quote_row(
     if tenor <= 0.0:
         raise InvalidCurveInput("BondQuote must imply a tenor > 0.")
 
-    if calibration_spec.mode is CalibrationMode.BOOTSTRAP:
+    if calibration_spec.method == "bootstrap":
         if quote.yield_to_maturity is not None:
             value = _require_finite_numeric(quote.yield_to_maturity, name="BondQuote yield_to_maturity")
         else:
@@ -314,13 +316,13 @@ def _bond_quote_row(
             )
         value_kind = QuoteValueKind.BOND_YTM
         observed_kind = "BOND_YTM"
-    elif calibration_spec.mode is CalibrationMode.GLOBAL_FIT:
+    elif calibration_spec.method == "global_fit":
         price_present = quote.clean_price is not None or quote.dirty_price is not None
-        if price_present and calibration_spec.bond_fit_target is BondFitTarget.CLEAN_PRICE:
+        if price_present and calibration_spec.bond_target == "clean_price":
             value = float(_bond_clean_price_from_quote(quote, settlement_date).as_percentage())
             value_kind = QuoteValueKind.BOND_CLEAN_PRICE
             observed_kind = "BOND_CLEAN_PRICE"
-        elif price_present and calibration_spec.bond_fit_target is BondFitTarget.DIRTY_PRICE:
+        elif price_present and calibration_spec.bond_target == "dirty_price":
             value = float(_bond_dirty_price_from_quote(quote, settlement_date).as_percentage())
             value_kind = QuoteValueKind.BOND_DIRTY_PRICE
             observed_kind = "BOND_DIRTY_PRICE"
@@ -334,11 +336,11 @@ def _bond_quote_row(
             )
         else:
             raise InvalidCurveInput(
-                "global-fit bond normalization requires calibration_spec.bond_fit_target to be DIRTY_PRICE or CLEAN_PRICE."
+                "global-fit bond normalization requires calibration_spec.bond_target to be 'dirty_price' or 'clean_price'."
             )
     else:
         raise InvalidCurveInput(
-            "quote normalization requires calibration_spec.mode to be CalibrationMode.BOOTSTRAP or CalibrationMode.GLOBAL_FIT."
+            "quote normalization requires calibration_spec.method to be 'bootstrap' or 'global_fit'."
         )
 
     return QuoteRow(
@@ -361,9 +363,9 @@ def _quote_row(
     calibration_spec: CalibrationSpec,
 ) -> QuoteRow:
     if isinstance(quote, SwapQuote):
-        return _swap_quote_row(quote, calibration_spec=calibration_spec)
+        return _swap_quote_row(quote, spec=spec, calibration_spec=calibration_spec)
     if isinstance(quote, RepoQuote):
-        return _repo_quote_row(quote, calibration_spec=calibration_spec)
+        return _repo_quote_row(quote, spec=spec, calibration_spec=calibration_spec)
     if type(quote).__name__ == "RawQuote":
         return _raw_quote_error(quote)
     if isinstance(quote, BondQuote):
@@ -378,9 +380,10 @@ def _quote_row(
 
 
 def _bond_dirty_price_from_curve(quote: BondQuote, *, kernel: CurveKernel, spec: CurveSpec) -> Price:
+    _validate_quote_curve_fields(quote, quote_name="BondQuote", spec=spec)
     settlement_date = _resolved_bond_settlement_date(quote)
     if settlement_date != spec.reference_date:
-        raise InvalidCurveInput("BondQuote as_of must equal CurveSpec.reference_date for quote-driven curve fitting.")
+        raise InvalidCurveInput("BondQuote.as_of must equal CurveSpec.reference_date for quote-driven curve fitting.")
 
     curve_day_count = _curve_day_count(spec)
     dirty_price = Decimal(0)

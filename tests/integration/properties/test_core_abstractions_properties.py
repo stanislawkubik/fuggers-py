@@ -15,7 +15,7 @@ from fuggers_py._runtime.quotes import (
     RepoQuote,
     SwapQuote,
 )
-from fuggers_py._market.state import QuoteSide
+from fuggers_py._runtime.state import QuoteSide
 
 SupportedInstrumentQuote = (
     RawQuote

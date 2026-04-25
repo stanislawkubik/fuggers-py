@@ -462,6 +462,13 @@ class FloatingRateNote(KindedInstrumentMixin, BondAnalytics, Bond):
             rate = getattr(forward_curve, "forward_rate_at")(tenor)
             return _to_decimal(rate, field_name="forward_rate_at")
 
+        if hasattr(forward_curve, "forward_rate_between") and hasattr(forward_curve, "reference_date"):
+            ref = getattr(forward_curve, "reference_date")
+            start_tenor = float(ref.days_between(start)) / 365.0
+            end_tenor = float(ref.days_between(end)) / 365.0
+            rate = getattr(forward_curve, "forward_rate_between")(start_tenor, end_tenor)
+            return _to_decimal(rate, field_name="forward_rate_between")
+
         raise InvalidBondSpec(
             reason="forward_curve must expose forward_rate(start, end) or forward_rate_at(t) with reference_date."
         )

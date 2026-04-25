@@ -5,8 +5,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from fuggers_py._core import Currency, Date
-from fuggers_py._calc.calc_graph import CalculationGraph, NodeId
-from fuggers_py._calc.market_data_listener import (
+from fuggers_py._runtime.calc_graph import CalculationGraph, NodeId
+from fuggers_py._runtime.market_data_listener import (
     FxRateUpdate,
     InflationFixingUpdate,
     MarketDataListener,
@@ -14,11 +14,11 @@ from fuggers_py._calc.market_data_listener import (
     QuoteUpdate,
     VolSurfaceUpdate,
 )
-from fuggers_py._calc.scheduler import NodeUpdate, ThrottleManager, UpdateSource
+from fuggers_py._runtime.scheduler import NodeUpdate, ThrottleManager, UpdateSource
 from fuggers_py._core import CurrencyPair, InstrumentId, VolSurfaceId, YearMonth
 from fuggers_py._runtime.quotes import RawQuote
-from fuggers_py._calc.pricing_specs import QuoteSide
-from fuggers_py._market.snapshot import FxRate, InflationFixing
+from fuggers_py._runtime.pricing_specs import QuoteSide
+from fuggers_py._runtime.snapshot import FxRate, InflationFixing
 from fuggers_py.vol_surfaces import VolSurfaceType, VolatilitySurface
 
 

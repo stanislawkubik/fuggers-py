@@ -39,7 +39,7 @@ def test_inward_layers_do_not_depend_on_calc() -> None:
     for package_name in INWARD_LAYERS:
         for path in _python_files(package_name):
             modules = _imported_modules(path)
-            if any(module == "fuggers_py._calc" or module.startswith("fuggers_py._calc.") for module in modules):
+            if any(module == "fuggers_py._runtime" or module.startswith("fuggers_py._runtime.") for module in modules):
                 offending.append(str(path.relative_to(ROOT)))
     assert offending == []
 
@@ -64,8 +64,8 @@ def test_reference_does_not_import_calc_or_portfolio() -> None:
     for path in _python_files("_reference"):
         modules = _imported_modules(path)
         if any(
-            module == "fuggers_py._calc"
-            or module.startswith("fuggers_py._calc.")
+            module == "fuggers_py._runtime"
+            or module.startswith("fuggers_py._runtime.")
             or module == "fuggers_py.portfolio"
             or module.startswith("fuggers_py.portfolio.")
             for module in modules

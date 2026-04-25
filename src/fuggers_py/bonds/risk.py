@@ -6,28 +6,18 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
-from math import ceil, exp, floor, isfinite, log
+from math import ceil, floor, isfinite, log
 from statistics import NormalDist, mean, stdev
 from typing import Protocol
 
 from fuggers_py._core import ActActIcma, Compounding, Date, Tenor, Yield
-from fuggers_py.curves import DiscountingCurve, RateSpace
+from fuggers_py.curves import DiscountingCurve, STANDARD_KEY_RATE_TENORS as _STANDARD_KEY_RATE_TENORS
 
+from .errors import AnalyticsError
 from .pricing import BondPricer
 
 DEFAULT_BUMP_SIZE = 1e-4
 SMALL_BUMP_SIZE = 1e-5
-STANDARD_KEY_RATE_TENORS: tuple[Tenor, ...] = (
-    Tenor.parse("6M"),
-    Tenor.parse("1Y"),
-    Tenor.parse("2Y"),
-    Tenor.parse("3Y"),
-    Tenor.parse("5Y"),
-    Tenor.parse("7Y"),
-    Tenor.parse("10Y"),
-    Tenor.parse("20Y"),
-    Tenor.parse("30Y"),
-)
 
 
 class _CashFlowLike(Protocol):
@@ -263,84 +253,6 @@ def _tenor_years(value: Tenor | float | int | Decimal) -> float:
     return float(value)
 
 
-class _ShiftedDiscountingCurve(DiscountingCurve):
-    __slots__ = ("_base_curve", "_shifted_zero_rate")
-
-    def __init__(self, base_curve: DiscountingCurve, shifted_zero_rate) -> None:
-        super().__init__(base_curve.spec)
-        self._base_curve = base_curve
-        self._shifted_zero_rate = shifted_zero_rate
-
-    @property
-    def rate_space(self) -> RateSpace:
-        return RateSpace.ZERO
-
-    def max_t(self) -> float:
-        return self._base_curve.max_t()
-
-    def rate_at(self, tenor: float) -> float:
-        checked_tenor = float(tenor)
-        if checked_tenor <= 0.0:
-            return 0.0
-        return self._base_curve.zero_rate_at(checked_tenor) + float(self._shifted_zero_rate(checked_tenor))
-
-    def discount_factor_at(self, tenor: float) -> float:
-        checked_tenor = float(tenor)
-        if checked_tenor <= 0.0:
-            return 1.0
-        shifted_zero_rate = self.rate_at(checked_tenor)
-        return exp(-shifted_zero_rate * checked_tenor)
-
-
-def _parallel_bumped_curve(curve: DiscountingCurve, bump: float) -> DiscountingCurve:
-    return _ShiftedDiscountingCurve(curve, lambda tenor: float(bump))
-
-
-def _key_rate_bumped_curve(
-    curve: DiscountingCurve,
-    *,
-    tenor_grid: Sequence[Tenor | float | int | Decimal],
-    key_tenor: Tenor | float | int | Decimal,
-    bump: float,
-) -> DiscountingCurve:
-    grid = sorted({_tenor_years(tenor) for tenor in tenor_grid})
-    if not grid:
-        raise ValueError("key_rate_bumped_curve requires a non-empty tenor grid.")
-
-    key_years = _tenor_years(key_tenor)
-    if key_years not in grid:
-        grid.append(key_years)
-        grid.sort()
-
-    key_index = grid.index(key_years)
-    left = None if key_index == 0 else grid[key_index - 1]
-    right = None if key_index == len(grid) - 1 else grid[key_index + 1]
-
-    def shift_at(tenor: float) -> float:
-        checked_tenor = float(tenor)
-        if left is None and right is None:
-            return float(bump)
-        if left is None:
-            if checked_tenor <= key_years:
-                return float(bump)
-            if checked_tenor >= right:
-                return 0.0
-            return float(bump) * (right - checked_tenor) / (right - key_years)
-        if right is None:
-            if checked_tenor >= key_years:
-                return float(bump)
-            if checked_tenor <= left:
-                return 0.0
-            return float(bump) * (checked_tenor - left) / (key_years - left)
-        if checked_tenor <= left or checked_tenor >= right:
-            return 0.0
-        if checked_tenor <= key_years:
-            return float(bump) * (checked_tenor - left) / (key_years - left)
-        return float(bump) * (right - checked_tenor) / (right - key_years)
-
-    return _ShiftedDiscountingCurve(curve, shift_at)
-
-
 @dataclass(frozen=True, slots=True)
 class BondRiskMetrics:
     modified_duration: Decimal
@@ -411,7 +323,31 @@ class DV01:
 
 def modified_duration(bond: _BondLike, ytm: Yield, settlement_date: Date) -> Decimal:
     components = _analytical_risk_components(bond, ytm, settlement_date)
-    return Decimal(str(components.modified_duration))
+    if components.dirty_price == 0.0:
+        return Decimal(0)
+
+    pricer = BondPricer()
+    rules = bond.rules()
+    yield_rate = _yield_to_engine_rate(ytm, rules=rules)
+    cashflows = bond.cash_flows()
+    price_up = float(
+        pricer.engine.dirty_price_from_yield(
+            cashflows,
+            yield_rate=yield_rate + DEFAULT_BUMP_SIZE,
+            settlement_date=settlement_date,
+            rules=rules,
+        )
+    )
+    price_down = float(
+        pricer.engine.dirty_price_from_yield(
+            cashflows,
+            yield_rate=yield_rate - DEFAULT_BUMP_SIZE,
+            settlement_date=settlement_date,
+            rules=rules,
+        )
+    )
+    first_derivative = (price_up - price_down) / (2.0 * DEFAULT_BUMP_SIZE)
+    return Decimal(str(-(first_derivative / components.dirty_price)))
 
 
 def macaulay_duration(bond: _BondLike, ytm: Yield, settlement_date: Date) -> Decimal:
@@ -582,7 +518,7 @@ class KeyRateDurationCalculator:
         settlement_date: Date,
         tenors: list[Tenor] | None = None,
     ) -> KeyRateDurations:
-        grid = tenors or list(STANDARD_KEY_RATE_TENORS)
+        grid = tenors or list(_STANDARD_KEY_RATE_TENORS)
         grid = sorted(set(grid), key=_tenor_years)
         if not grid:
             raise ValueError("Key-rate duration requires a non-empty tenor grid.")
@@ -594,8 +530,8 @@ class KeyRateDurationCalculator:
 
         items: list[KeyRateDuration] = []
         for tenor in grid:
-            curve_up = _key_rate_bumped_curve(curve, tenor_grid=grid, key_tenor=tenor, bump=self.bump)
-            curve_down = _key_rate_bumped_curve(curve, tenor_grid=grid, key_tenor=tenor, bump=-self.bump)
+            curve_up = curve.bumped(tenor_grid=grid, bumps={tenor: self.bump})
+            curve_down = curve.bumped(tenor_grid=grid, bumps={tenor: -self.bump})
             price_up = pricer.price_from_curve(bond, curve_up, settlement_date).dirty.as_percentage()
             price_down = pricer.price_from_curve(bond, curve_down, settlement_date).dirty.as_percentage()
             duration = (price_down - price_up) / (Decimal(2) * base_price * Decimal(str(self.bump)))
@@ -612,7 +548,7 @@ def key_rate_duration_at_tenor(
     bump: float = DEFAULT_BUMP_SIZE,
     tenor_grid: list[Tenor] | None = None,
 ) -> Decimal:
-    grid = list(tenor_grid) if tenor_grid is not None else list(STANDARD_KEY_RATE_TENORS)
+    grid = list(tenor_grid) if tenor_grid is not None else list(_STANDARD_KEY_RATE_TENORS)
     if tenor not in grid:
         grid = sorted(grid + [tenor], key=_tenor_years)
     result = KeyRateDurationCalculator(bump=bump).calculate(bond, curve, settlement_date, tenors=grid)
@@ -638,13 +574,13 @@ def spread_duration(
 
     spread_value = float(_to_decimal(spread or 0))
     pricer = BondPricer()
-    base_curve = _parallel_bumped_curve(curve, spread_value)
+    base_curve = curve.shifted(shift=spread_value)
     base_price = pricer.price_from_curve(bond, base_curve, settlement_date).dirty.as_percentage()
     if base_price == 0:
         return Decimal(0)
 
-    curve_up = _parallel_bumped_curve(curve, spread_value + bump)
-    curve_down = _parallel_bumped_curve(curve, spread_value - bump)
+    curve_up = curve.shifted(shift=spread_value + bump)
+    curve_down = curve.shifted(shift=spread_value - bump)
     price_up = pricer.price_from_curve(bond, curve_up, settlement_date).dirty.as_percentage()
     price_down = pricer.price_from_curve(bond, curve_down, settlement_date).dirty.as_percentage()
     return (price_down - price_up) / (Decimal(2) * base_price * Decimal(str(bump)))
@@ -747,7 +683,7 @@ class VaRResult:
 def _validate_confidence(confidence: float) -> float:
     level = float(confidence)
     if not 0.0 < level < 1.0:
-        raise ValueError("confidence must lie strictly between 0 and 1.")
+        raise AnalyticsError.invalid_input("confidence must lie strictly between 0 and 1.")
     return level
 
 
@@ -822,7 +758,6 @@ __all__ = [
     "PortfolioRisk",
     "Position",
     "SMALL_BUMP_SIZE",
-    "STANDARD_KEY_RATE_TENORS",
     "VaRMethod",
     "VaRResult",
     "aggregate_portfolio_risk",

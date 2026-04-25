@@ -7,10 +7,10 @@ import pytest
 
 from fuggers_py._core import Currency, Date, Frequency, InstrumentId
 from fuggers_py._runtime.quotes import BondQuote, InstrumentQuote, RawQuote, RepoQuote
-from fuggers_py._market.state import QuoteSide
-from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._runtime.state import QuoteSide
+from fuggers_py.bonds import FixedBondBuilder
 from fuggers_py.bonds.types import BondType, IssuerType
-from fuggers_py._products.instruments import (
+from fuggers_py.rates.instruments import (
     HasExpiry,
     HasOptionType,
     HasUnderlyingInstrument,
@@ -18,10 +18,12 @@ from fuggers_py._products.instruments import (
     KindedInstrumentMixin,
 )
 from fuggers_py._core import YieldCalculationRules
-from fuggers_py._reference import (
-    BondReferenceData,
+from fuggers_py._core import (
     ReferenceData,
     ResolvableReference,
+)
+from fuggers_py.bonds import (
+    BondReferenceData,
 )
 
 

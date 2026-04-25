@@ -5,15 +5,17 @@ from decimal import Decimal
 from fuggers_py.bonds.types import BondType, IssuerType
 from fuggers_py._core import Currency, Date, Frequency
 from fuggers_py._core import InstrumentId, YearMonth
-from fuggers_py._reference import (
+from fuggers_py.bonds import (
     BondReferenceData,
+)
+from fuggers_py.credit import CdsReferenceData
+from fuggers_py.funding import RepoReferenceData
+from fuggers_py.rates import SwapReferenceData
+from fuggers_py.rates.futures import (
     BondFutureContractReference,
     BondFutureReferenceData,
-    CdsReferenceData,
     DeliverableBondReference,
     FutureReferenceData,
-    RepoReferenceData,
-    SwapReferenceData,
 )
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import inspect
 from decimal import Decimal
 from pathlib import Path
 
@@ -9,6 +10,7 @@ import fuggers_py.rates as rates_pkg
 from fuggers_py.inflation import (
     InflationConvention,
     InflationError,
+    InflationInterpolation,
     InflationProjection,
     InflationSwapPricer,
     LinkerSwapParityCheck,
@@ -45,8 +47,11 @@ def test_inflation_root_is_a_small_direct_import_surface() -> None:
 
 def test_inflation_root_exports_the_full_inflation_surface() -> None:
     expected_key_exports = {
+        "InMemoryInflationFixingSource",
         "InflationConvention",
         "InflationError",
+        "InflationFixing",
+        "InflationInterpolation",
         "InflationProjection",
         "InflationSwapPricer",
         "LinkerSwapParityCheck",
@@ -94,10 +99,23 @@ def test_inflation_root_helpers_are_usable_from_first_layer_imports() -> None:
 
 
 def test_inflation_symbols_are_owned_by_public_inflation_modules() -> None:
-    assert InflationConvention.__module__ == "fuggers_py.inflation.reference"
-    assert USD_CPI_U_NSA.__class__.__module__ == "fuggers_py.inflation.reference"
+    assert InflationConvention.__module__ == "fuggers_py.inflation.conventions"
+    assert InflationInterpolation.__module__ == "fuggers_py.inflation.conventions"
+    assert USD_CPI_U_NSA.__class__.__module__ == "fuggers_py.inflation.conventions"
     assert reference_cpi.__module__ == "fuggers_py.inflation.reference"
     assert reference_index_ratio.__module__ == "fuggers_py.inflation.reference"
-    assert ZeroCouponInflationSwap.__module__ == "fuggers_py.inflation"
-    assert StandardCouponInflationSwap.__module__ == "fuggers_py.inflation"
-    assert InflationSwapPricer.__module__ == "fuggers_py.inflation"
+    assert ZeroCouponInflationSwap.__module__ == "fuggers_py.inflation.swaps"
+    assert StandardCouponInflationSwap.__module__ == "fuggers_py.inflation.swaps"
+    assert InflationSwapPricer.__module__ == "fuggers_py.inflation.pricing"
+
+
+def test_inflation_exports_resolve_under_inflation() -> None:
+    root = Path(inflation_pkg.__file__).resolve().parent
+    for name in inflation_pkg.__all__:
+        value = getattr(inflation_pkg, name)
+        try:
+            source = inspect.getsourcefile(value)
+        except TypeError:
+            source = inspect.getsourcefile(type(value))
+        assert source is not None
+        assert Path(source).resolve().is_relative_to(root), name

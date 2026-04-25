@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import inspect
 from pathlib import Path
 
 import fuggers_py.funding as funding_pkg
@@ -84,3 +85,15 @@ def test_funding_root_exports_current_first_layer_surface() -> None:
     assert implied_repo_rate_from_trade.__module__ == "fuggers_py.funding.analytics"
     assert RepoQuote.__module__ == "fuggers_py.funding.quotes"
     assert HaircutQuote.__module__ == "fuggers_py.funding.quotes"
+
+
+def test_funding_exports_resolve_under_funding() -> None:
+    root = Path(funding_pkg.__file__).resolve().parent
+    for name in funding_pkg.__all__:
+        value = getattr(funding_pkg, name)
+        try:
+            source = inspect.getsourcefile(value)
+        except TypeError:
+            source = inspect.getsourcefile(type(value))
+        assert source is not None
+        assert Path(source).resolve().is_relative_to(root), name

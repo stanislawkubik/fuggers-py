@@ -578,7 +578,7 @@
       },
       "expected": {
         "active_duration": "0.146685757086324091459375014",
-        "active_z_spread": "0.012735355464434825994885065393467754399595650739149",
+        "active_z_spread": "0.012735355464434834530898465728476129608975885245012",
         "active_total_return": "0.0054902256266278065238507567449677243950425443927873",
         "income_return": "0.024706867671691792294807370184254606365159128978225",
         "rate_return": "-0.006333490692499103425508381497",
@@ -592,7 +592,7 @@
         "rate_return": "1e-24",
         "spread_return": "1e-24"
       },
-      "notes": "This is intentionally Python-surface-aligned rather than a cosmetic Rust shim. It freezes a realistic benchmark/attribution workflow without requiring the portfolio layer to mirror upstream crate roots 1:1."
+      "notes": "This is intentionally Python-surface-aligned rather than a cosmetic Rust shim. It freezes a realistic benchmark/attribution workflow without requiring the portfolio layer to mirror upstream crate roots 1:1. The active Z-spread expected value matches the archived pre-move portfolio implementation."
     }
   ]
 }

@@ -7,10 +7,8 @@ ROOT = REPO_ROOT
 EXAMPLES = REPO_ROOT / "examples"
 
 EXPECTED_ROOT_CONTENTS = {
-    "01_public_curves_and_surfaces.ipynb",
-    "05_fitted_nominal_real_breakeven_minimal.ipynb",
+    "01_treasury_curve_fit.ipynb",
     "README.md",
-    "synthetic_data",
 }
 
 BANNED_PATTERNS = (
@@ -22,7 +20,10 @@ BANNED_PATTERNS = (
     "fuggers_py._measures.",
     "fuggers_py._reference.",
     "fuggers_py._calc.",
-    "fuggers_py._adapters.",
+    "fuggers_py._storage.",
+    "fuggers_py.curves.calibrators",
+    "fuggers_py.curves.date_support",
+    "fuggers_py.curves.kernels",
     "fuggers_py.fixings",
     "fuggers_py.derivatives",
     "from fuggers_py.core import",
@@ -30,6 +31,18 @@ BANNED_PATTERNS = (
     "fuggers_py.ext",
     "tests.",
     "sys.path.insert",
+)
+
+BANNED_README_TEXT = (
+    "01_public_curves_and_surfaces.ipynb",
+    "02_treasury_curve_fit.ipynb",
+    "05_fitted_nominal_real_breakeven_minimal.ipynb",
+    "synthetic_data",
+    "key_rate_bumped_curve",
+    "parallel_bumped_curve",
+    "fuggers_py.curves.calibrators",
+    "fuggers_py.curves.date_support",
+    "fuggers_py.curves.kernels",
 )
 
 LEGACY_DIRECTORIES = (
@@ -66,3 +79,11 @@ def test_notebooks_avoid_banned_patterns() -> None:
         source = notebook_path.read_text()
         for pattern in BANNED_PATTERNS:
             assert pattern not in source, f"{pattern!r} found in {notebook_path.name}"
+
+
+def test_examples_readme_mentions_only_the_current_example() -> None:
+    text = (EXAMPLES / "README.md").read_text(encoding="utf-8")
+
+    assert "01_treasury_curve_fit.ipynb" in text
+    for pattern in BANNED_README_TEXT:
+        assert pattern not in text

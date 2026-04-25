@@ -12,8 +12,8 @@ from fuggers_py._core.ids import InstrumentId
 from fuggers_py._core.types import Currency, Date
 from fuggers_py.credit.quotes import CdsQuote
 from fuggers_py.funding.quotes import HaircutQuote, RepoQuote
-from fuggers_py._market._shared import _coerce_decimal_fields
-from fuggers_py._market.state import QuoteSide
+from fuggers_py._runtime._shared import _coerce_decimal_fields
+from fuggers_py._runtime.state import QuoteSide
 from fuggers_py.rates.quotes import BasisSwapQuote, BondFutureQuote, FxForwardQuote, SwapQuote
 
 

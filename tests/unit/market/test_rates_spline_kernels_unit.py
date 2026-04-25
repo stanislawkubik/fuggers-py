@@ -5,18 +5,18 @@ from math import exp
 import pytest
 
 from fuggers_py._core.types import Currency, Date
-from fuggers_py.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
+from fuggers_py.curves import CurveSpec, YieldCurve
 from fuggers_py.curves.errors import InvalidCurveInput, TenorOutOfBounds
-from fuggers_py.curves.kernels import CubicSplineKernel, ExponentialSplineKernel
+from fuggers_py.curves.kernels.spline import CubicSplineKernel, ExponentialSplineKernel
 
 
-def _nominal_spec(*, extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR) -> CurveSpec:
+def _nominal_spec(*, extrapolation_policy: str = "error") -> CurveSpec:
     return CurveSpec(
         name="USD Nominal",
         reference_date=Date.parse("2026-04-09"),
         day_count="ACT_365_FIXED",
         currency=Currency.USD,
-        type=CurveType.NOMINAL,
+        type="nominal",
         extrapolation_policy=extrapolation_policy,
     )
 
@@ -93,6 +93,64 @@ def test_substep_d7_spline_kernels_support_extrapolation_when_enabled() -> None:
     assert exponential_kernel.rate_at(15.0) == pytest.approx(
         0.032 - 0.008 * exp(-0.40 * 15.0) + 0.004 * exp(-1.20 * 15.0)
     )
+
+
+def test_substep_d7_error_policy_rejects_out_of_range_spline_curve_even_if_kernel_allows_it() -> None:
+    curve = YieldCurve(
+        spec=_nominal_spec(extrapolation_policy="error"),
+        kernel=ExponentialSplineKernel(
+            coefficients=[0.032, -0.008, 0.004],
+            decay_factors=[0.40, 1.20],
+            max_t=10.0,
+            allow_extrapolation=True,
+        ),
+    )
+
+    with pytest.raises(TenorOutOfBounds):
+        curve.rate_at(15.0)
+
+
+def test_substep_d7_hold_last_zero_rate_uses_final_cubic_spline_zero_rate() -> None:
+    curve = YieldCurve(
+        spec=_nominal_spec(extrapolation_policy="hold_last_zero_rate"),
+        kernel=CubicSplineKernel(
+            knot_tenors=[2.0, 4.0, 6.0],
+            zero_rates=[0.02, 0.025, 0.03],
+            allow_extrapolation=True,
+        ),
+    )
+
+    assert curve.rate_at(8.0) == pytest.approx(0.03)
+    assert curve.discount_factor_at(8.0) == pytest.approx(exp(-0.03 * 8.0))
+
+
+def test_substep_d7_hold_last_native_rate_uses_exponential_spline_final_zero_rate() -> None:
+    expected_final_zero = 0.032 - 0.008 * exp(-0.40 * 10.0) + 0.004 * exp(-1.20 * 10.0)
+    curve = YieldCurve(
+        spec=_nominal_spec(extrapolation_policy="hold_last_native_rate"),
+        kernel=ExponentialSplineKernel(
+            coefficients=[0.032, -0.008, 0.004],
+            decay_factors=[0.40, 1.20],
+            max_t=10.0,
+            allow_extrapolation=True,
+        ),
+    )
+
+    assert curve.rate_at(15.0) == pytest.approx(expected_final_zero)
+
+
+def test_substep_d7_hold_last_forward_rate_rejects_spline_kernel() -> None:
+    curve = YieldCurve(
+        spec=_nominal_spec(extrapolation_policy="hold_last_forward_rate"),
+        kernel=CubicSplineKernel(
+            knot_tenors=[2.0, 4.0, 6.0],
+            zero_rates=[0.02, 0.025, 0.03],
+            allow_extrapolation=True,
+        ),
+    )
+
+    with pytest.raises(InvalidCurveInput, match="hold_last_forward_rate"):
+        curve.rate_at(8.0)
 
 
 def test_substep_d7_spline_kernels_reject_extrapolation_when_disabled() -> None:

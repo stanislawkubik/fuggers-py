@@ -7,17 +7,16 @@ from decimal import Decimal
 import pytest
 from hypothesis import HealthCheck, given, settings, strategies as st
 
-from fuggers_py._measures.functions import (
+from fuggers_py.bonds.analytics import (
     clean_price_from_yield,
     effective_convexity,
     effective_duration,
     yield_to_maturity,
 )
-from fuggers_py._products.bonds.instruments import FixedBond
-from fuggers_py._pricers.bonds import BondPricer as BondsBondPricer
+from fuggers_py.bonds.instruments import FixedBond
+from fuggers_py.bonds import BondPricer as BondsBondPricer
 from fuggers_py._core import Compounding, Currency, Date, Frequency, Yield
-from fuggers_py._curves_impl import DiscountCurveBuilder
-from fuggers_py._curves_impl.discrete import InterpolationMethod
+from fuggers_py._runtime.snapshot import CurvePoint
 from fuggers_py._math import BisectionSolver, BrentSolver, HybridSolver, SolverConfig
 from fuggers_py.portfolio import (
     Portfolio,
@@ -31,6 +30,7 @@ from fuggers_py.portfolio.analytics import PortfolioAnalytics
 from fuggers_py.portfolio.bucketing import maturity_bucket_metrics
 
 from tests.helpers._portfolio_helpers import annual_rules, make_benchmark, make_curve, make_portfolio
+from tests.helpers._public_curve_helpers import linear_zero_curve, log_linear_discount_curve
 
 
 PROPERTY_SETTINGS = settings(
@@ -184,12 +184,16 @@ def test_effective_duration_and_convexity_match_finite_differences(years: int, c
 @given(shape=rate_shape)
 def test_discount_factors_are_monotone_for_positive_zero_curves(shape: tuple[int, int, int, int]) -> None:
     ref = Date.from_ymd(2024, 1, 1)
-    builder = DiscountCurveBuilder(reference_date=ref)
-    for tenor, zero_rate in zip(_TENORS, _monotone_zero_rates(shape), strict=True):
-        builder.add_zero_rate(tenor, zero_rate)
-    curve = builder.build()
+    curve = linear_zero_curve(
+        "property.zero",
+        ref,
+        tuple(
+            CurvePoint(Decimal(str(tenor)), zero_rate)
+            for tenor, zero_rate in zip(_TENORS, _monotone_zero_rates(shape), strict=True)
+        ),
+    )
 
-    dfs = [curve.discount_factor_at_tenor(tenor) for tenor in _GRID]
+    dfs = [curve.discount_factor_at(tenor) for tenor in _GRID]
     assert all(df > 0.0 for df in dfs)
     assert all(left >= right for left, right in zip(dfs, dfs[1:], strict=False))
 
@@ -198,13 +202,17 @@ def test_discount_factors_are_monotone_for_positive_zero_curves(shape: tuple[int
 @given(shape=rate_shape)
 def test_log_linear_discount_interpolation_keeps_positive_forwards(shape: tuple[int, int, int, int]) -> None:
     ref = Date.from_ymd(2024, 1, 1)
-    builder = DiscountCurveBuilder(reference_date=ref).with_interpolation(InterpolationMethod.LOG_LINEAR)
-    for tenor, zero_rate in zip(_TENORS, _monotone_zero_rates(shape), strict=True):
-        builder.add_pillar(tenor, math.exp(-float(zero_rate) * tenor))
-    curve = builder.build()
+    curve = log_linear_discount_curve(
+        "property.discount",
+        ref,
+        tuple(
+            CurvePoint(Decimal(str(tenor)), Decimal(str(math.exp(-float(zero_rate) * tenor))))
+            for tenor, zero_rate in zip(_TENORS, _monotone_zero_rates(shape), strict=True)
+        ),
+    )
 
     forwards = [
-        curve.forward_rate_at_tenors(left, right, compounding=Compounding.CONTINUOUS)
+        curve.forward_rate_between(left, right)
         for left, right in zip(_GRID[:-1], _GRID[1:], strict=True)
     ]
     assert all(forward >= -1e-12 for forward in forwards)

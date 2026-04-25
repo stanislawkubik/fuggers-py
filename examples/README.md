@@ -1,6 +1,6 @@
 # Examples
 
-This folder is a small map of the example notebooks.
+This folder holds the current example notebook.
 
 These examples are small public-surface walkthroughs. They show the current
 first-layer import story. For the broader readiness note, see
@@ -10,19 +10,13 @@ Current public imports for fitted market objects start at the first layer:
 
 ```python
 from fuggers_py.curves import YieldCurve
-from fuggers_py.vol_surfaces import VolatilitySurface
 ```
 
 Current public examples:
 
-- `01_public_curves_and_surfaces.ipynb`
-  Small working example for `fuggers_py.curves` and
-  `fuggers_py.vol_surfaces`.
-- `05_fitted_nominal_real_breakeven_minimal.ipynb`
-  Archived placeholder for the older fitted-bond notebook family while that
-  surface is still being rewritten.
+- `01_treasury_curve_fit.ipynb`
+  Synthetic Treasury curve fit. It starts with default `YieldCurve.fit(...)`,
+  then compares an advanced cubic-spline fit with two quote regressors,
+  diagnostics, date-based curve queries, and curve bumps.
 
-Older workflow notebooks that still depend on the older repo shape were moved
-to `artifacts/legacy_examples/`.
-
-`synthetic_data/` holds the small input files used by the notebooks.
+The notebook is self-contained and does not read files from `examples/`.

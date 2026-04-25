@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320" role="img" aria-labelledby="title desc">
+  <title id="title">Curve move methods</title>
+  <desc id="desc">The shifted and bumped methods take a base DiscountingCurve and movement inputs, then return a new DiscountingCurve wrapper without refitting quotes.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #d8e1eb; stroke-width: 1.5; rx: 18; ry: 18; }
+      .box { stroke-width: 1.6; rx: 12; ry: 12; }
+      .curve { stroke: #0f766e; fill: #f0fdfa; }
+      .input { stroke: #c2410c; fill: #fff7ed; }
+      .helper { stroke: #65a30d; fill: #f7fee7; }
+      .title { font: 700 24px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .label { font: 700 18px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .small { font: 400 13px Arial, Helvetica, sans-serif; fill: #475569; }
+      .center { text-anchor: middle; }
+      .line { stroke: #334155; stroke-width: 2.3; fill: none; marker-end: url(#arrow); }
+      .soft-line { stroke: #64748b; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="760" height="320"/>
+  <rect class="panel" x="24" y="24" width="712" height="272"/>
+  <text x="380" y="68" class="title center">Curve move methods</text>
+  <text x="380" y="92" class="small center">The methods wrap an existing curve. They do not refit quotes.</text>
+
+  <rect x="82" y="128" width="180" height="62" class="box curve"/>
+  <text x="172" y="155" class="label center">base curve</text>
+  <text x="172" y="177" class="small center">DiscountingCurve</text>
+
+  <rect x="305" y="128" width="150" height="62" class="box input"/>
+  <text x="380" y="155" class="label center">move rule</text>
+  <text x="380" y="177" class="small center">shifted or bumped</text>
+
+  <rect x="520" y="128" width="150" height="62" class="box helper"/>
+  <text x="595" y="155" class="label center">wrapper</text>
+  <text x="595" y="177" class="small center">shifted zero rates</text>
+
+  <rect x="270" y="230" width="220" height="46" class="box curve"/>
+  <text x="380" y="259" class="label center">DiscountingCurve</text>
+
+  <path d="M 262 159 L 305 159" class="soft-line"/>
+  <path d="M 455 159 L 520 159" class="soft-line"/>
+  <path d="M 595 190 C 595 230 510 253 490 253" class="line"/>
+  <path d="M 172 190 C 172 230 250 253 270 253" class="line"/>
+</svg>

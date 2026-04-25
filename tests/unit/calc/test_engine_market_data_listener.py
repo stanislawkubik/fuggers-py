@@ -6,12 +6,12 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py._core import Currency, Date
-from fuggers_py._calc.calc_graph import CalculationGraph, NodeId
-from fuggers_py._calc.market_data_listener import IndexFixingUpdate, MarketDataListener, QuoteUpdate
-from fuggers_py._calc import QuoteSide
+from fuggers_py._runtime.calc_graph import CalculationGraph, NodeId
+from fuggers_py._runtime.market_data_listener import IndexFixingUpdate, MarketDataListener, QuoteUpdate
+from fuggers_py._runtime import QuoteSide
 from fuggers_py._core import InstrumentId
 from fuggers_py._runtime.quotes import RawQuote
-from fuggers_py._market.snapshot import IndexFixing
+from fuggers_py._runtime.snapshot import IndexFixing
 
 
 @pytest.mark.asyncio

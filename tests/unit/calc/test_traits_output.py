@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py._core import Date
-from fuggers_py._calc import BondQuoteOutput
+from fuggers_py._runtime import BondQuoteOutput
 from fuggers_py._core import InstrumentId
 
 

@@ -170,7 +170,7 @@ Document exceptions that matter to users of the API:
 - invalid conventions or unsupported aliases
 - missing market inputs
 - out-of-range interpolation when extrapolation is disallowed
-- scheduling or routing failures in calc-layer code
+- scheduling or routing failures in runtime code
 
 Do not list every generic exception path.
 

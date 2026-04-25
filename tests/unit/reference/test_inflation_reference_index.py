@@ -6,8 +6,8 @@ import pytest
 
 from fuggers_py._core import Date
 from fuggers_py._core import YearMonth
-from fuggers_py._market.snapshot import InflationFixing, MarketDataSnapshot
-from fuggers_py._market.sources import InMemoryInflationFixingSource, MarketDataProvider
+from fuggers_py._runtime.snapshot import InflationFixing, MarketDataSnapshot
+from fuggers_py._runtime.sources import InMemoryInflationFixingSource, MarketDataProvider
 from fuggers_py.inflation import (
     MissingInflationFixing,
     USD_CPI_U_NSA,

@@ -8,7 +8,26 @@ from dataclasses import dataclass
 from fuggers_py._core.types import Currency, Date
 
 from .errors import InvalidCurveInput
-from .enums import CurveType, ExtrapolationPolicy
+
+_CURVE_TYPES = frozenset(
+    {
+        "nominal",
+        "real",
+        "overnight_discount",
+        "projection",
+        "breakeven",
+        "par",
+        "basis",
+    }
+)
+_EXTRAPOLATION_POLICIES = frozenset(
+    {
+        "error",
+        "hold_last_native_rate",
+        "hold_last_zero_rate",
+        "hold_last_forward_rate",
+    }
+)
 
 
 def _normalize_name(value: str, *, field_name: str) -> str:
@@ -36,6 +55,16 @@ def _normalize_currency(value: Currency | str) -> Currency:
     raise InvalidCurveInput("currency must be a Currency or ISO currency code string.")
 
 
+def _normalize_choice(value: object, *, field_name: str, allowed: frozenset[str]) -> str:
+    if not isinstance(value, str):
+        raise InvalidCurveInput(f"{field_name} must be a string.")
+    normalized = value.strip().lower()
+    if normalized not in allowed:
+        allowed_text = ", ".join(sorted(allowed))
+        raise InvalidCurveInput(f"{field_name} must be one of: {allowed_text}.")
+    return normalized
+
+
 @dataclass(frozen=True, slots=True)
 class CurveSpec:
     """Immutable business identity for one public rates curve snapshot."""
@@ -44,19 +73,25 @@ class CurveSpec:
     reference_date: Date | dt.date
     day_count: str
     currency: Currency | str
-    type: CurveType
+    type: str = "nominal"
     reference: str | None = None
-    extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR
+    extrapolation_policy: str = "error"
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "name", _normalize_name(self.name, field_name="name"))
         object.__setattr__(self, "reference_date", _normalize_reference_date(self.reference_date))
         object.__setattr__(self, "day_count", _normalize_name(self.day_count, field_name="day_count").upper())
         object.__setattr__(self, "currency", _normalize_currency(self.currency))
-        if not isinstance(self.type, CurveType):
-            raise InvalidCurveInput("type must be a CurveType.")
-        if not isinstance(self.extrapolation_policy, ExtrapolationPolicy):
-            raise InvalidCurveInput("extrapolation_policy must be an ExtrapolationPolicy.")
+        object.__setattr__(self, "type", _normalize_choice(self.type, field_name="type", allowed=_CURVE_TYPES))
+        object.__setattr__(
+            self,
+            "extrapolation_policy",
+            _normalize_choice(
+                self.extrapolation_policy,
+                field_name="extrapolation_policy",
+                allowed=_EXTRAPOLATION_POLICIES,
+            ),
+        )
         if self.reference is not None:
             normalized_reference = self.reference.strip()
             object.__setattr__(self, "reference", normalized_reference or None)

@@ -1,4 +1,4 @@
-"""Settlement invoice (`fuggers_py._measures.yas.invoice`).
+"""Settlement invoice (`fuggers_py.bonds._yas.invoice`).
 
 Clean price and accrued interest are expressed in percent-of-par terms.
 Principal, accrued amount, and settlement amount are currency cash amounts.

@@ -1,4 +1,4 @@
-"""Current-yield helpers (`fuggers_py._measures.yields.current`).
+"""Current-yield helpers (`fuggers_py.bonds._yields.current`).
 
 Unsuffixed helpers return raw decimal current yields. Use the explicit
 ``*_pct`` wrappers for quoted percentage display values.
@@ -20,7 +20,7 @@ from fuggers_py.bonds._yields.bond import (
     current_yield_simple as _current_yield_simple,
     current_yield_simple_pct as _current_yield_simple_pct,
 )
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 
 
 def _raise_invalid_input(exc: BondPricingError) -> NoReturn:

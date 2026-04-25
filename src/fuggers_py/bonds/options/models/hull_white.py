@@ -10,7 +10,6 @@ from fuggers_py._core.types import Date
 from ....curves.date_support import (
     curve_reference_date,
     discount_factor_at_date,
-    forward_rate_between_dates,
     zero_rate_at_date,
 )
 from fuggers_py.curves import DiscountingCurve
@@ -42,7 +41,10 @@ class HullWhiteModel:
 
     def base_forward_rate(self, start: Date, end: Date) -> float:
         """Return the continuously compounded forward rate between dates."""
-        return float(forward_rate_between_dates(self.term_structure, start, end))
+        df_start = float(discount_factor_at_date(self.term_structure, start))
+        df_end = float(discount_factor_at_date(self.term_structure, end))
+        dt = max(float(start.days_between(end)) / 365.0, 1e-12)
+        return log(df_start / df_end) / dt
 
     def short_rate(self, date: Date) -> float:
         """Return the model short rate at ``date`` from the term structure."""

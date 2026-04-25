@@ -12,10 +12,11 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from fuggers_py._core import YieldCalculationRules
-from fuggers_py.bonds.errors import BondPricingError
+from fuggers_py.bonds.errors import AnalyticsError, BondPricingError
 from fuggers_py.bonds.traits import Bond
 from fuggers_py.bonds.types import CompoundingKind, CompoundingMethod
 from fuggers_py._core.types import Compounding, Currency, Date, Price, Yield
+from fuggers_py.curves.date_support import discount_factor_at_date
 from ._pricing_yield_engine import StandardYieldEngine, YieldEngineResult
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -273,6 +274,34 @@ class BondPricer:
     """
 
     engine: StandardYieldEngine = StandardYieldEngine()
+
+    def price_from_curve(self, bond: Bond, curve, settlement_date: Date) -> PriceResult:
+        """Price a bond from a discounting curve using settlement-relative discounting."""
+
+        if settlement_date > bond.maturity_date():
+            raise AnalyticsError.invalid_settlement("Settlement date is after maturity.")
+
+        cashflows = [cf for cf in bond.cash_flows() if cf.date > settlement_date]
+        if not cashflows:
+            raise AnalyticsError.pricing_failed("No future cashflows found for curve pricing.")
+
+        df_settle = discount_factor_at_date(curve, settlement_date)
+        if df_settle == 0:
+            raise AnalyticsError.pricing_failed("Discount factor at settlement is zero.")
+
+        dirty = Decimal(0)
+        for cashflow in cashflows:
+            df = discount_factor_at_date(curve, cashflow.date)
+            dirty += cashflow.factored_amount() * df / df_settle
+
+        accrued = bond.accrued_interest(settlement_date)
+        clean = dirty - accrued
+        ccy = bond.currency()
+        return PriceResult(
+            dirty=Price.new(dirty, ccy),
+            clean=Price.new(clean, ccy),
+            accrued=accrued,
+        )
 
     def price_from_yield(
         self,

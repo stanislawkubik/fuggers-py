@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ast
-import json
 import re
 from pathlib import Path
 from typing import Final
@@ -10,7 +9,20 @@ from tests.helpers._paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 PACKAGE_ROOT = REPO_ROOT / "src" / "fuggers_py"
-STRUCTURE_MANIFEST_PATH = ROOT / "refactor" / "PUBLIC_API_STRUCTURE_MANIFEST.json"
+EXPECTED_TOP_LEVEL_DIRS = {
+    "_core",
+    "_math",
+    "_runtime",
+    "_storage",
+    "bonds",
+    "credit",
+    "curves",
+    "funding",
+    "inflation",
+    "portfolio",
+    "rates",
+    "vol_surfaces",
+}
 REMOVED_TOP_LEVEL_DIRS = (
     "adapters",
     "calc",
@@ -21,6 +33,15 @@ REMOVED_TOP_LEVEL_DIRS = (
     "pricers",
     "products",
     "reference",
+)
+REMOVED_INTERNAL_BUCKETS = (
+    "_products",
+    "_pricers",
+    "_measures",
+    "_reference",
+    "_market",
+    "_calc",
+    "_adapters",
 )
 REMOVED_NAMESPACE_ROOTS = (
     "analytics",
@@ -52,18 +73,8 @@ DIRECT_IMPORT_SURFACES: Final = (
     ("fuggers_py.funding", PACKAGE_ROOT / "funding" / "__init__.py"),
     ("fuggers_py.curves", PACKAGE_ROOT / "curves" / "__init__.py"),
     ("fuggers_py.vol_surfaces", PACKAGE_ROOT / "vol_surfaces" / "__init__.py"),
+    ("fuggers_py.portfolio", PACKAGE_ROOT / "portfolio" / "__init__.py"),
 )
-
-
-def _load_structure_manifest() -> dict[str, object]:
-    return json.loads(STRUCTURE_MANIFEST_PATH.read_text(encoding="utf-8"))
-
-
-def _manifest_top_level_dirs() -> set[str]:
-    payload = _load_structure_manifest()
-    top_level_packages = payload["top_level_packages"]
-    assert isinstance(top_level_packages, dict)
-    return set(top_level_packages)
 
 
 def _canonical_public_python_files() -> list[tuple[str, Path]]:
@@ -136,11 +147,12 @@ def test_top_level_package_tree_matches_final_policy() -> None:
         for path in PACKAGE_ROOT.iterdir()
         if path.is_dir() and path.name != "__pycache__"
     }
-    assert actual == _manifest_top_level_dirs()
+    assert actual == EXPECTED_TOP_LEVEL_DIRS
 
 
 def test_removed_root_directories_do_not_exist() -> None:
     assert all(not (PACKAGE_ROOT / root_name).exists() for root_name in REMOVED_TOP_LEVEL_DIRS)
+    assert all(not (PACKAGE_ROOT / bucket_name).exists() for bucket_name in REMOVED_INTERNAL_BUCKETS)
     assert not (PACKAGE_ROOT / "_compat.py").exists()
 
 

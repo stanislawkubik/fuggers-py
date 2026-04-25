@@ -1,7 +1,0 @@
-key,value
-government_curve,usd.gov.nominal
-discount_curve,usd.ois.discount
-real_curve,usd.tips.real
-inflation_curve,usd.cpi.zc
-funding_curve,usd.repo.gc
-cash_bond_benchmark_tenor,5Y

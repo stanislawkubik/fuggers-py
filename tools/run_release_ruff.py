@@ -6,16 +6,23 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = [
-    "src/fuggers_py/core",
-    "src/fuggers_py/market/curves/conversion.py",
-    "src/fuggers_py/market/curves/value_type.py",
-    "src/fuggers_py/market/curves/term_structure.py",
-    "src/fuggers_py/market/curves/wrappers/credit_curve.py",
-    "src/fuggers_py/market/curves/wrappers/rate_curve.py",
-    "src/fuggers_py/measures/cashflows/irregular.py",
-    "src/fuggers_py/measures/yields/street.py",
-    "src/fuggers_py/measures/yields/solver.py",
-    "src/fuggers_py/portfolio/risk/__init__.py",
+    "src/fuggers_py/_core/ids.py",
+    "src/fuggers_py/_math/numerical.py",
+    "src/fuggers_py/bonds/cashflows/irregular.py",
+    "src/fuggers_py/bonds/_yields/solver.py",
+    "src/fuggers_py/bonds/_yields/street.py",
+    "src/fuggers_py/credit/analytics.py",
+    "src/fuggers_py/credit/pricing.py",
+    "src/fuggers_py/credit/risk.py",
+    "src/fuggers_py/curves/conversion.py",
+    "src/fuggers_py/curves/date_support.py",
+    "src/fuggers_py/curves/spec.py",
+    "src/fuggers_py/funding/analytics.py",
+    "src/fuggers_py/funding/products.py",
+    "src/fuggers_py/inflation/analytics.py",
+    "src/fuggers_py/inflation/conventions.py",
+    "src/fuggers_py/inflation/pricing.py",
+    "src/fuggers_py/rates/futures/reference.py",
     "typecheck/public_api.py",
 ]
 RUFF_RULES = "E4,E7,E9,F,I,UP"

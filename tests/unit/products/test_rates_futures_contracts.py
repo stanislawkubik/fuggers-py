@@ -4,18 +4,18 @@ from decimal import Decimal
 
 from fuggers_py._core import Currency, Date
 from fuggers_py._core import InstrumentId, YearMonth
-from fuggers_py._reference import (
+from fuggers_py.rates.futures import (
     BondFutureContractReference,
     BondFutureReferenceData,
     DeliverableBondReference,
 )
-from fuggers_py._pricers.rates.futures import (
+from fuggers_py.rates.futures import (
     invoice_amount,
     invoice_breakdown,
     invoice_clean_price,
     invoice_price,
 )
-from fuggers_py._products.rates.futures import (
+from fuggers_py.rates.futures import (
     DeliverableBasket,
     DeliverableBond,
     GovernmentBondFuture,

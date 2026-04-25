@@ -1,20 +1,38 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, assert_type, cast
+from typing import assert_type
 
-from fuggers_py.adapters import (
+from fuggers_py import (
+    BusinessDayConvention,
+    CalendarId,
+    Compounding,
+    Currency,
+    Date,
+    Frequency,
+    Tenor,
+    YearMonth,
+    YieldCalculationRules,
+)
+from fuggers_py._core import FuggersError
+from fuggers_py._math import BisectionSolver, MathResult, RootFinder
+from fuggers_py._runtime import PricingEngineBuilder, ReactiveEngineBuilder
+from fuggers_py._storage import (
+    InMemoryPortfolioStore,
     PortfolioFilter,
     PortfolioStore,
     StoredPortfolio,
     StoredPosition,
 )
-from fuggers_py.adapters.storage import PortfolioFilter as AdapterPortfolioFilter
-from fuggers_py.adapters.storage import StoredPortfolio as AdapterStoredPortfolio
-from fuggers_py.adapters.storage import StoredPosition as AdapterStoredPosition
-from fuggers_py.calc import ReactiveEngineBuilder
-from fuggers_py.core import FuggersError
-from fuggers_py.market.curves import Compounding
-from fuggers_py.math import BisectionSolver, MathResult, RootFinder
+from fuggers_py.bonds import BondPricer, BondQuote, FixedBondBuilder, TipsBond
+from fuggers_py.credit import Cds, CdsPricer, CdsQuote
+from fuggers_py.curves import CurveSpec, YieldCurve
+from fuggers_py.funding import HaircutQuote, RepoQuote, RepoTrade
+from fuggers_py.inflation import (
+    USD_CPI_U_NSA,
+    InflationConvention,
+    InflationInterpolation,
+    TreasuryAuctionedTipsRow,
+)
 from fuggers_py.portfolio import (
     ActiveWeights,
     AggregatedAttribution,
@@ -48,19 +66,42 @@ from fuggers_py.portfolio import (
     SpreadContributions,
     StressSummary,
 )
-from fuggers_py.reference import Tenor
+from fuggers_py.rates import FixedFloatSwap, SwapPricer, SwapQuote
+from fuggers_py.vol_surfaces import (
+    InMemoryVolatilitySource,
+    VolatilitySurface,
+    VolPoint,
+    VolQuoteType,
+    VolSurfaceSourceType,
+    VolSurfaceType,
+)
 
-if TYPE_CHECKING:
-    from fuggers_py.adapters.storage import (
-        PortfolioFilter as PortfolioFilterType,
-    )
-    from fuggers_py.adapters.storage import PortfolioStore as PortfolioStoreType
-    from fuggers_py.adapters.storage import StoredPortfolio as StoredPortfolioType
-    from fuggers_py.adapters.storage import StoredPosition as StoredPositionType
-    from fuggers_py.calc.builder import (
-        ReactiveEngineBuilder as ReactiveEngineBuilderType,
-    )
-    from fuggers_py.reference.bonds.types import Tenor as TenorType
+root_date_type = Date
+assert_type(root_date_type, type[Date])
+
+root_currency_type = Currency
+assert_type(root_currency_type, type[Currency])
+
+root_frequency_type = Frequency
+assert_type(root_frequency_type, type[Frequency])
+
+root_compounding_type = Compounding
+assert_type(root_compounding_type, type[Compounding])
+
+root_tenor_type = Tenor
+assert_type(root_tenor_type, type[Tenor])
+
+root_year_month_type = YearMonth
+assert_type(root_year_month_type, type[YearMonth])
+
+root_calendar_id_type = CalendarId
+assert_type(root_calendar_id_type, type[CalendarId])
+
+root_business_day_convention_type = BusinessDayConvention
+assert_type(root_business_day_convention_type, type[BusinessDayConvention])
+
+root_yield_rules_type = YieldCalculationRules
+assert_type(root_yield_rules_type, type[YieldCalculationRules])
 
 core_error = FuggersError("boom")
 assert_type(core_error, FuggersError)
@@ -72,8 +113,94 @@ root_finder: RootFinder = solver
 math_result = root_finder.find_root(lambda x: x * x - 2.0, 1.0, 2.0)
 assert_type(math_result, MathResult)
 
-builder = cast("type[ReactiveEngineBuilderType]", ReactiveEngineBuilder).new()
-assert_type(builder, ReactiveEngineBuilderType)
+runtime_builder = ReactiveEngineBuilder.new()
+assert_type(runtime_builder, PricingEngineBuilder)
+
+stored_position_type = StoredPosition
+assert_type(stored_position_type, type[StoredPosition])
+
+stored_portfolio_type = StoredPortfolio
+assert_type(stored_portfolio_type, type[StoredPortfolio])
+
+portfolio_filter_type = PortfolioFilter
+assert_type(portfolio_filter_type, type[PortfolioFilter])
+
+portfolio_store_type = PortfolioStore
+assert_type(portfolio_store_type, type[PortfolioStore])
+
+in_memory_portfolio_store_type = InMemoryPortfolioStore
+assert_type(in_memory_portfolio_store_type, type[InMemoryPortfolioStore])
+
+curve_spec_type = CurveSpec
+assert_type(curve_spec_type, type[CurveSpec])
+
+yield_curve_type = YieldCurve
+assert_type(yield_curve_type, type[YieldCurve])
+
+fixed_bond_builder_type = FixedBondBuilder
+assert_type(fixed_bond_builder_type, type[FixedBondBuilder])
+
+bond_pricer_type = BondPricer
+assert_type(bond_pricer_type, type[BondPricer])
+
+bond_quote_type = BondQuote
+assert_type(bond_quote_type, type[BondQuote])
+
+tips_bond_type = TipsBond
+assert_type(tips_bond_type, type[TipsBond])
+
+swap_quote_type = SwapQuote
+assert_type(swap_quote_type, type[SwapQuote])
+
+fixed_float_swap_type = FixedFloatSwap
+assert_type(fixed_float_swap_type, type[FixedFloatSwap])
+
+swap_pricer_type = SwapPricer
+assert_type(swap_pricer_type, type[SwapPricer])
+
+inflation_convention_type = InflationConvention
+assert_type(inflation_convention_type, type[InflationConvention])
+
+inflation_interpolation_type: type[InflationInterpolation] = InflationInterpolation
+
+usd_cpi_convention = USD_CPI_U_NSA
+assert_type(usd_cpi_convention, InflationConvention)
+
+tips_row_type = TreasuryAuctionedTipsRow
+assert_type(tips_row_type, type[TreasuryAuctionedTipsRow])
+
+cds_type = Cds
+assert_type(cds_type, type[Cds])
+
+cds_pricer_type = CdsPricer
+assert_type(cds_pricer_type, type[CdsPricer])
+
+cds_quote_type = CdsQuote
+assert_type(cds_quote_type, type[CdsQuote])
+
+repo_trade_type = RepoTrade
+assert_type(repo_trade_type, type[RepoTrade])
+
+repo_quote_type = RepoQuote
+assert_type(repo_quote_type, type[RepoQuote])
+
+haircut_quote_type = HaircutQuote
+assert_type(haircut_quote_type, type[HaircutQuote])
+
+vol_point_type = VolPoint
+assert_type(vol_point_type, type[VolPoint])
+
+vol_quote_type: type[VolQuoteType] = VolQuoteType
+
+vol_surface_source_type: type[VolSurfaceSourceType] = VolSurfaceSourceType
+
+vol_surface_type: type[VolSurfaceType] = VolSurfaceType
+
+volatility_surface_type = VolatilitySurface
+assert_type(volatility_surface_type, type[VolatilitySurface])
+
+in_memory_volatility_source_type = InMemoryVolatilitySource
+assert_type(in_memory_volatility_source_type, type[InMemoryVolatilitySource])
 
 portfolio_type = Portfolio
 assert_type(portfolio_type, type[Portfolio])
@@ -158,33 +285,6 @@ assert_type(spread_contributions_type, type[SpreadContributions])
 
 distribution_yield_type = DistributionYield
 assert_type(distribution_yield_type, type[DistributionYield])
-
-curve_compounding_type = Compounding
-assert_type(curve_compounding_type, type[Compounding])
-
-traits_tenor_type = cast("type[TenorType]", Tenor)
-assert_type(traits_tenor_type, type[TenorType])
-
-stored_position_type = cast("type[StoredPositionType]", StoredPosition)
-assert_type(stored_position_type, type[StoredPositionType])
-
-stored_portfolio_type = cast("type[StoredPortfolioType]", StoredPortfolio)
-assert_type(stored_portfolio_type, type[StoredPortfolioType])
-
-portfolio_filter_type = cast("type[PortfolioFilterType]", PortfolioFilter)
-assert_type(portfolio_filter_type, type[PortfolioFilterType])
-
-portfolio_store_type = cast("type[PortfolioStoreType]", PortfolioStore)
-assert_type(portfolio_store_type, type[PortfolioStoreType])
-
-adapter_stored_position_type = AdapterStoredPosition
-assert_type(adapter_stored_position_type, type[AdapterStoredPosition])
-
-adapter_stored_portfolio_type = AdapterStoredPortfolio
-assert_type(adapter_stored_portfolio_type, type[AdapterStoredPortfolio])
-
-adapter_portfolio_filter_type = AdapterPortfolioFilter
-assert_type(adapter_portfolio_filter_type, type[AdapterPortfolioFilter])
 
 etf_pricer_type = EtfPricer
 assert_type(etf_pricer_type, type[EtfPricer])

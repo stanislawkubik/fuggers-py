@@ -18,7 +18,7 @@ from fuggers_py._core.daycounts import (
     Thirty360German,
     Thirty360US,
 )
-from fuggers_py._curves_impl.conversion import ValueConverter
+from fuggers_py.curves.conversion import ValueConverter
 from fuggers_py.portfolio import Portfolio
 from fuggers_py.portfolio.analytics import PortfolioAnalytics
 from fuggers_py.portfolio.contribution import (

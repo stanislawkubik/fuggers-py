@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import inspect
 from pathlib import Path
 
 import fuggers_py.credit as credit_pkg
@@ -19,8 +20,10 @@ from fuggers_py.credit import (
     adjusted_cds_spread,
     bond_cds_basis,
     bond_cds_basis_breakdown,
+    cds_cs01,
     cds_adjusted_risk_free_rate,
     proxy_risk_free_breakdown,
+    risky_pv01,
 )
 
 
@@ -56,7 +59,9 @@ def test_credit_root_exports_current_first_layer_surface() -> None:
         "RiskFreeProxyBreakdown",
         "adjusted_cds_spread",
         "bond_cds_basis",
+        "cds_cs01",
         "proxy_risk_free_breakdown",
+        "risky_pv01",
     }
 
     assert expected_key_exports <= set(credit_pkg.__all__)
@@ -75,12 +80,28 @@ def test_credit_root_exports_current_first_layer_surface() -> None:
     assert credit_pkg.bond_cds_basis is bond_cds_basis
     assert credit_pkg.bond_cds_basis_breakdown is bond_cds_basis_breakdown
     assert credit_pkg.cds_adjusted_risk_free_rate is cds_adjusted_risk_free_rate
+    assert credit_pkg.cds_cs01 is cds_cs01
     assert credit_pkg.proxy_risk_free_breakdown is proxy_risk_free_breakdown
-    assert Cds.__module__ == "fuggers_py.credit.products"
-    assert CreditDefaultSwap.__module__ == "fuggers_py.credit.products"
+    assert credit_pkg.risky_pv01 is risky_pv01
+    assert Cds.__module__ == "fuggers_py.credit.instruments"
+    assert CreditDefaultSwap.__module__ == "fuggers_py.credit.instruments"
     assert CdsPricer.__module__ == "fuggers_py.credit.pricing"
     assert CdsPricingResult.__module__ == "fuggers_py.credit.pricing"
     assert AdjustedCdsBreakdown.__module__ == "fuggers_py.credit.analytics"
     assert BondCdsBasisBreakdown.__module__ == "fuggers_py.credit.analytics"
     assert RiskFreeProxyBreakdown.__module__ == "fuggers_py.credit.analytics"
     assert CdsQuote.__module__ == "fuggers_py.credit.quotes"
+    assert cds_cs01.__module__ == "fuggers_py.credit.risk"
+    assert risky_pv01.__module__ == "fuggers_py.credit.risk"
+
+
+def test_credit_exports_resolve_under_credit() -> None:
+    root = Path(credit_pkg.__file__).resolve().parent
+    for name in credit_pkg.__all__:
+        value = getattr(credit_pkg, name)
+        try:
+            source = inspect.getsourcefile(value)
+        except TypeError:
+            source = inspect.getsourcefile(type(value))
+        assert source is not None
+        assert Path(source).resolve().is_relative_to(root), name

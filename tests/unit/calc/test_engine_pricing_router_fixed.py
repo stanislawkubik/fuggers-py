@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._calc import BondQuoteOutput
+from fuggers_py._runtime import BondQuoteOutput
 
 from tests.helpers._engine_scenarios import FIXED_ID, SETTLEMENT, fixed_curves, pricing_specs, router, scenario_a_instrument
 

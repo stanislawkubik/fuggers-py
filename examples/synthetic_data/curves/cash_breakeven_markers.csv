@@ -1,5 +1,0 @@
-as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
-2026-01-15,cash_breakeven_markers,usd.cpi.cash_breakeven,USD_BEI_2Y,2Y,USD,breakeven_rate,0.0212,decimal,2Y TIPS cash breakeven marker
-2026-01-15,cash_breakeven_markers,usd.cpi.cash_breakeven,USD_BEI_5Y,5Y,USD,breakeven_rate,0.0218,decimal,5Y TIPS cash breakeven marker
-2026-01-15,cash_breakeven_markers,usd.cpi.cash_breakeven,USD_BEI_10Y,10Y,USD,breakeven_rate,0.0220,decimal,10Y TIPS cash breakeven marker
-2026-01-15,cash_breakeven_markers,usd.cpi.cash_breakeven,USD_BEI_30Y,30Y,USD,breakeven_rate,0.0216,decimal,30Y TIPS cash breakeven marker

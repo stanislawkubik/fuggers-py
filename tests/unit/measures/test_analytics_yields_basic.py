@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.errors import AnalyticsError
-from fuggers_py._measures.yields import (
+from fuggers_py.bonds import AnalyticsError
+from fuggers_py.bonds.yields import (
     ShortDateCalculator,
     current_yield,
     current_yield_from_amount,

@@ -4,15 +4,17 @@ from __future__ import annotations
 
 import math
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from decimal import Decimal
 from math import log
 
+from fuggers_py._core import Tenor
 from fuggers_py._core.types import Date
 
-from .calibrators.base import CalibrationMode, CalibrationSpec
+from .calibrators.base import CalibrationSpec
 from .errors import CurveConstructionError, InvalidCurveInput, TenorOutOfBounds
-from .enums import ExtrapolationPolicy, RateSpace
-from .kernels import CurveKernel, KernelSpec
+from .kernels import KernelSpec
+from .kernels.base import CurveKernel
 from .reports import CalibrationReport
 from .spec import CurveSpec
 
@@ -20,8 +22,8 @@ from .spec import CurveSpec
 class RatesTermStructure(ABC):
     """Public root for rate term structures.
 
-    Every public rates curve carries one immutable :class:`CurveSpec`, exposes
-    one rate-space meaning, and declares a finite tenor domain.
+    Every public rates curve carries one immutable :class:`CurveSpec` and
+    declares a finite tenor domain.
     """
 
     __slots__ = ("_spec",)
@@ -43,18 +45,13 @@ class RatesTermStructure(ABC):
 
         return self._spec.reference_date
 
-    @property
-    @abstractmethod
-    def rate_space(self) -> RateSpace:
-        """Return the meaning of ``rate_at(tenor)``."""
-
     @abstractmethod
     def max_t(self) -> float:
         """Return the inclusive upper tenor bound in years."""
 
     @abstractmethod
     def rate_at(self, tenor: float) -> float:
-        """Return the rate at tenor ``tenor`` in years, expressed in ``rate_space``."""
+        """Return the rate at tenor ``tenor`` in years."""
 
     def _validated_max_t(self) -> float:
         max_t = float(self.max_t())
@@ -69,7 +66,7 @@ class RatesTermStructure(ABC):
         if tenor < 0.0:
             raise InvalidCurveInput("t must be >= 0.")
         max_t = self._validated_max_t()
-        if tenor > max_t and self.spec.extrapolation_policy is ExtrapolationPolicy.ERROR:
+        if tenor > max_t and self.spec.extrapolation_policy == "error":
             raise TenorOutOfBounds(t=tenor, min=0.0, max=max_t)
 
     def validate_rate(self, tenor: float) -> float:
@@ -123,6 +120,25 @@ class DiscountingCurve(RatesTermStructure, ABC):
             raise InvalidCurveInput("discount_factor_at(...) must be finite and > 0.")
         return log(discount_factor_start / discount_factor_end) / (end - start)
 
+    def shifted(self, *, shift: float) -> "DiscountingCurve":
+        """Return this curve with all zero rates shifted by one amount."""
+
+        from .movements import _shifted_curve
+
+        return _shifted_curve(self, shift=shift)
+
+    def bumped(
+        self,
+        *,
+        bumps: Mapping[Tenor | float | int | Decimal, float],
+        tenor_grid: Sequence[Tenor | float | int | Decimal] | None = None,
+    ) -> "DiscountingCurve":
+        """Return this curve with one or more tenor-specific zero-rate bumps."""
+
+        from .movements import _bumped_curve
+
+        return _bumped_curve(self, bumps=bumps, tenor_grid=tenor_grid)
+
 
 class YieldCurve(DiscountingCurve):
     """Concrete public discounting curve backed by one internal kernel.
@@ -160,34 +176,43 @@ class YieldCurve(DiscountingCurve):
         quotes: Sequence[object],
         *,
         spec: CurveSpec,
-        kernel_spec: KernelSpec,
-        calibration_spec: CalibrationSpec,
+        kernel: str | KernelSpec = "linear_zero",
+        method: str | CalibrationSpec = "bootstrap",
+        bond_target: str = "dirty_price",
+        regressors: Sequence[str] = (),
+        kernel_params: Mapping[str, object] | None = None,
     ) -> "YieldCurve":
-        """Build one public yield curve from quotes and one calibration spec.
-
-        The caller chooses the internal curve family through ``KernelSpec`` and
-        chooses the fitting route through ``CalibrationSpec``. The fit path now
-        dispatches only by ``calibration_spec.mode``.
-        """
+        """Build one public yield curve from quotes and simple fit settings."""
 
         if not isinstance(spec, CurveSpec):
             raise InvalidCurveInput("spec must be a CurveSpec.")
-        if not isinstance(kernel_spec, KernelSpec):
-            raise InvalidCurveInput("kernel_spec must be a KernelSpec.")
-        if not isinstance(calibration_spec, CalibrationSpec):
-            raise InvalidCurveInput("calibration_spec must be a CalibrationSpec.")
+        if isinstance(kernel, KernelSpec):
+            if kernel_params is not None:
+                raise InvalidCurveInput("kernel_params cannot be used when kernel is a KernelSpec.")
+            kernel_spec = kernel
+        else:
+            kernel_spec = KernelSpec(kind=kernel, parameters=kernel_params or {})
 
-        if calibration_spec.mode is CalibrationMode.BOOTSTRAP:
+        if isinstance(method, CalibrationSpec):
+            calibration_spec = method
+        else:
+            calibration_spec = CalibrationSpec(
+                method=method,
+                bond_target=bond_target,
+                regressors=tuple(regressors),
+            )
+
+        if calibration_spec.method == "bootstrap":
             from .calibrators.bootstrap import BootstrapCalibrator
 
             calibrator = BootstrapCalibrator(calibration_spec=calibration_spec)
-        elif calibration_spec.mode is CalibrationMode.GLOBAL_FIT:
+        elif calibration_spec.method == "global_fit":
             from .calibrators.global_fit import GlobalFitCalibrator
 
             calibrator = GlobalFitCalibrator(calibration_spec=calibration_spec)
         else:
             raise CurveConstructionError(
-                f"no quote-driven fitting path exists for calibration mode {calibration_spec.mode.name}."
+                f"no quote-driven fitting path exists for calibration method {calibration_spec.method}."
             )
 
         kernel, report = calibrator.fit(
@@ -197,16 +222,6 @@ class YieldCurve(DiscountingCurve):
         )
         return cls(spec=spec, kernel=kernel, calibration_report=report)
 
-    @property
-    def rate_space(self) -> RateSpace:
-        """Return the public rate-space view of the yield curve.
-
-        In the simplified ontology, every public ``YieldCurve`` exposes a
-        zero-rate view even if the internal kernel stores its math differently.
-        """
-
-        return RateSpace.ZERO
-
     def max_t(self) -> float:
         """Return the inclusive upper tenor bound delegated from the kernel."""
 
@@ -215,6 +230,55 @@ class YieldCurve(DiscountingCurve):
             raise InvalidCurveInput("kernel.max_t() must return a finite value >= 0.")
         return max_t
 
+    def _is_above_max_t(self, tenor: float) -> bool:
+        return float(tenor) > self.max_t()
+
+    @staticmethod
+    def _finite_rate(value: float, *, message: str) -> float:
+        rate = float(value)
+        if not math.isfinite(rate):
+            raise InvalidCurveInput(message)
+        return rate
+
+    @staticmethod
+    def _positive_discount_factor(value: float, *, message: str) -> float:
+        discount_factor = float(value)
+        if not math.isfinite(discount_factor) or discount_factor <= 0.0:
+            raise InvalidCurveInput(message)
+        return discount_factor
+
+    def _terminal_zero_rate(self) -> float:
+        return self._finite_rate(
+            self._kernel.terminal_zero_rate(),
+            message="kernel.terminal_zero_rate() must be finite.",
+        )
+
+    def _extrapolated_discount_factor_at(self, tenor: float) -> float:
+        policy = self.spec.extrapolation_policy
+        checked_tenor = float(tenor)
+        if policy == "hold_last_zero_rate":
+            discount_factor = math.exp(-self._terminal_zero_rate() * checked_tenor)
+        elif policy == "hold_last_native_rate":
+            discount_factor = self._kernel.terminal_native_discount_factor_at(checked_tenor)
+        elif policy == "hold_last_forward_rate":
+            discount_factor = self._kernel.terminal_forward_discount_factor_at(checked_tenor)
+        else:
+            raise TenorOutOfBounds(t=checked_tenor, min=0.0, max=self.max_t())
+        return self._positive_discount_factor(
+            discount_factor,
+            message=f"kernel {policy} discount factor must be finite and > 0.",
+        )
+
+    def _extrapolated_rate_at(self, tenor: float) -> float:
+        checked_tenor = float(tenor)
+        if self.spec.extrapolation_policy == "hold_last_zero_rate":
+            return self._terminal_zero_rate()
+        discount_factor = self._extrapolated_discount_factor_at(checked_tenor)
+        return self._finite_rate(
+            -log(discount_factor) / checked_tenor,
+            message="extrapolated zero rate must be finite.",
+        )
+
     def rate_at(self, tenor: float) -> float:
         """Return the public zero-rate view implied by the kernel."""
 
@@ -222,6 +286,8 @@ class YieldCurve(DiscountingCurve):
         if not math.isfinite(checked_tenor) or checked_tenor <= 0.0:
             raise InvalidCurveInput("tenor must be finite and > 0.")
         self._check_t(checked_tenor)
+        if self._is_above_max_t(checked_tenor):
+            return self._extrapolated_rate_at(checked_tenor)
         rate = float(self._kernel.rate_at(checked_tenor))
         if not math.isfinite(rate):
             raise InvalidCurveInput("kernel.rate_at(tenor) must be finite.")
@@ -232,6 +298,8 @@ class YieldCurve(DiscountingCurve):
 
         checked_tenor = float(tenor)
         self._check_t(checked_tenor)
+        if self._is_above_max_t(checked_tenor):
+            return self._extrapolated_discount_factor_at(checked_tenor)
         discount_factor = float(self._kernel.discount_factor_at(checked_tenor))
         if not math.isfinite(discount_factor) or discount_factor <= 0.0:
             raise InvalidCurveInput("kernel.discount_factor_at(tenor) must be finite and > 0.")
@@ -244,13 +312,8 @@ class YieldCurve(DiscountingCurve):
         return self._calibration_report
 
 
-class RelativeRateCurve(RatesTermStructure):
-    """Public root for rate curves that are not standalone discounting curves."""
-
-
 __all__ = [
     "DiscountingCurve",
     "RatesTermStructure",
-    "RelativeRateCurve",
     "YieldCurve",
 ]

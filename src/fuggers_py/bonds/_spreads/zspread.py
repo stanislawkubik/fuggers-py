@@ -17,7 +17,7 @@ from ...curves.date_support import discount_factor_at_date
 from fuggers_py._math import SolverConfig, brent, newton_raphson
 from fuggers_py._math.errors import ConvergenceFailed, DivisionByZero, InvalidBracket
 
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 
 
 def _to_float(value: object) -> float:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fuggers_py._calc.calc_graph import CalculationGraph, NodeId, ShardConfig
+from fuggers_py._runtime.calc_graph import CalculationGraph, NodeId, ShardConfig
 
 
 def test_calc_graph_dependency_propagation_and_revision_tracking() -> None:

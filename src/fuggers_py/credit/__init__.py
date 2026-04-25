@@ -14,8 +14,10 @@ from .analytics import (
     proxy_risk_free_breakdown,
 )
 from .pricing import CdsPricer, CdsPricingResult
-from .products import Cds, CdsPremiumPeriod, CreditDefaultSwap, ProtectionSide
 from .quotes import CdsQuote
+from .reference_data import CdsReferenceData
+from .instruments import Cds, CdsPremiumPeriod, CreditDefaultSwap, ProtectionSide
+from .risk import cds_cs01, cs01, risky_pv01
 
 __all__ = [
     "AdjustedCdsBreakdown",
@@ -25,6 +27,7 @@ __all__ = [
     "CdsPricer",
     "CdsPricingResult",
     "CdsQuote",
+    "CdsReferenceData",
     "CreditDefaultSwap",
     "ProtectionSide",
     "RiskFreeProxyBreakdown",
@@ -33,5 +36,8 @@ __all__ = [
     "bond_cds_basis",
     "bond_cds_basis_breakdown",
     "cds_adjusted_risk_free_rate",
+    "cds_cs01",
+    "cs01",
     "proxy_risk_free_breakdown",
+    "risky_pv01",
 ]

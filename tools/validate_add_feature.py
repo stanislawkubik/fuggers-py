@@ -43,7 +43,7 @@ REQUIRED_REVIEW_SECTIONS = (
     "## Verdict",
 )
 WORKFLOW_REQUIRED_PREFIXES = (
-    "src/fuggers_py/calc/",
+    "src/fuggers_py/_runtime/",
     "src/fuggers_py/portfolio/",
 )
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -885,8 +885,8 @@ def main(argv: list[str] | None = None) -> int:
     clear_parser = subparsers.add_parser("clear", help="Clear the current add-feature workflow state.")
     clear_parser.add_argument("--slug", default=None, help="Optional feature slug safeguard.")
 
-    subparsers.add_parser("user-prompt-hook", help="Hook entrypoint used by Codex UserPromptSubmit hooks.")
-    subparsers.add_parser("stop-hook", help="Hook entrypoint used by Codex Stop hooks.")
+    subparsers.add_parser("user-prompt-hook", help="Prompt hook entrypoint.")
+    subparsers.add_parser("stop-hook", help="Stop hook entrypoint.")
 
     args = parser.parse_args(argv)
 

@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._calc import PricingInput, PricingRouter
+from fuggers_py._runtime import PricingInput, PricingRouter
 
 from tests.helpers._engine_scenarios import FIXED_ID, SETTLEMENT, fixed_curves, pricing_specs, scenario_a_instrument
 

@@ -107,6 +107,12 @@ def _current_environment_versions() -> dict[str, str]:
     return json.loads(completed.stdout.strip())
 
 
+def test_packaging_smoke_imports_script_runs() -> None:
+    completed = _run(sys.executable, "tools/packaging/smoke_imports.py", cwd=ROOT)
+
+    assert completed.stdout.strip()
+
+
 @pytest.fixture(scope="module")
 def built_distributions(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path | str]:
     if not (ROOT / ".git").exists():

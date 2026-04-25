@@ -88,6 +88,7 @@ tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+(?:(?:a|b|rc)\\d+)?)$"
 version_file = "src/fuggers_py/_version.py"
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 markers = [
@@ -106,20 +107,20 @@ select = ["E9", "F63", "F7", "F82"]
 [tool.mypy]
 files = [
     "typecheck/public_api.py",
-    "src/fuggers_py/core",
-    "src/fuggers_py/math/numerical.py",
-    "src/fuggers_py/market/curves/conversion.py",
-    "src/fuggers_py/market/curves/value_type.py",
-    "src/fuggers_py/market/curves/term_structure.py",
-    "src/fuggers_py/market/curves/wrappers/credit_curve.py",
-    "src/fuggers_py/market/curves/wrappers/rate_curve.py",
-    "src/fuggers_py/measures/cashflows/irregular.py",
-    "src/fuggers_py/measures/cashflows/settlement.py",
-    "src/fuggers_py/measures/spreads/government_curve.py",
-    "src/fuggers_py/measures/yas/invoice.py",
-    "src/fuggers_py/measures/yields",
-    "src/fuggers_py/products/bonds/traits/bond.py",
-    "src/fuggers_py/products/bonds/instruments/callable.py",
+    "src/fuggers_py/_core/ids.py",
+    "src/fuggers_py/_math/numerical.py",
+    "src/fuggers_py/bonds/cashflows/irregular.py",
+    "src/fuggers_py/bonds/_yields/solver.py",
+    "src/fuggers_py/bonds/_yields/street.py",
+    "src/fuggers_py/credit/analytics.py",
+    "src/fuggers_py/credit/risk.py",
+    "src/fuggers_py/curves/conversion.py",
+    "src/fuggers_py/curves/spec.py",
+    "src/fuggers_py/funding/analytics.py",
+    "src/fuggers_py/funding/products.py",
+    "src/fuggers_py/inflation/analytics.py",
+    "src/fuggers_py/inflation/conventions.py",
+    "src/fuggers_py/rates/futures/reference.py",
     "src/fuggers_py/portfolio/risk/__init__.py",
 ]
 mypy_path = "src"
@@ -141,16 +142,14 @@ precision = 2
 [tool.fuggers_source_coverage]
 source = ["src/fuggers_py"]
 measured_packages = [
-    "adapters",
-    "calc",
-    "core",
-    "market",
-    "math",
-    "measures",
+    "bonds",
+    "credit",
+    "curves",
+    "funding",
+    "inflation",
     "portfolio",
-    "pricers",
-    "products",
-    "reference",
+    "rates",
+    "vol_surfaces",
 ]
 overall_min = 85.0
 package_min = 80.0

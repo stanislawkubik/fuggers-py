@@ -1,4 +1,4 @@
-"""Short-dated yield helpers (`fuggers_py._measures.yields.short_date`).
+"""Short-dated yield helpers (`fuggers_py.bonds._yields.short_date`).
 
 The thresholds are expressed in year fractions and are inclusive at the
 boundary values.

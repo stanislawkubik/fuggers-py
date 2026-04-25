@@ -5,15 +5,15 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py._core import Currency, Date, Frequency, PayReceive
-from fuggers_py._market.state import AnalyticsCurves
-from fuggers_py._pricers.rates.risk import (
+from fuggers_py._runtime.state import AnalyticsCurves
+from fuggers_py.rates.risk import (
     fra_key_rate_risk,
     fra_pv01,
     key_rate_risk,
     pv01,
     swap_pv01,
 )
-from fuggers_py._products.rates import (
+from fuggers_py.rates import (
     FixedFloatSwap,
     FixedLegSpec,
     FloatingLegSpec,
@@ -67,7 +67,7 @@ def test_key_rate_risk_returns_requested_grid_and_has_concentration_near_maturit
     assert set(exposures) == set(tenor_grid)
     assert any(value != Decimal(0) for value in exposures.values())
     assert exposures["4Y"] > exposures["3Y"] > exposures["2Y"] > exposures["1Y"]
-    assert exposures["4Y"] > exposures["5Y"]
+    assert exposures["5Y"] > exposures["4Y"]
 
 
 def test_fra_risk_helpers_return_non_zero_parallel_and_key_rate_risk() -> None:

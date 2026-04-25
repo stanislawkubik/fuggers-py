@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fuggers_py._core import Date
-from fuggers_py._calc import EngineConfig, NodeConfig, UpdateFrequency
+from fuggers_py._runtime import EngineConfig, NodeConfig, UpdateFrequency
 
 
 def test_config_dataclasses_preserve_repr_and_value_equality() -> None:

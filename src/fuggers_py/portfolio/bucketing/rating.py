@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from fuggers_py.bonds import CreditRating
-
 from ..portfolio import Portfolio
 from ..results import RatingDistribution
-from ..types import Position
+from ..types import CreditRating, Position
 
 
 def bucket_by_rating(portfolio: Portfolio) -> RatingDistribution:

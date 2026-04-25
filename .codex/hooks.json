@@ -5,16 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/env python3 \"$(git rev-parse --show-toplevel)/tools/validate_add_feature.py\" user-prompt-hook",
-            "timeout": 15
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/usr/bin/env python3 \"$(git rev-parse --show-toplevel)/tools/validate_public_api_refactor.py\" user-prompt-hook",
+            "command": "/usr/bin/env python3 \"$(git rev-parse --show-toplevel)/tools/repo_hooks.py\" user-prompt-hook",
             "timeout": 15
           }
         ]
@@ -25,18 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/env python3 \"$(git rev-parse --show-toplevel)/tools/validate_add_feature.py\" stop-hook",
-            "statusMessage": "Checking add-feature workflow",
-            "timeout": 30
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/usr/bin/env python3 \"$(git rev-parse --show-toplevel)/tools/validate_public_api_refactor.py\" stop-hook",
-            "statusMessage": "Checking public API refactor workflow",
+            "command": "/usr/bin/env python3 \"$(git rev-parse --show-toplevel)/tools/repo_hooks.py\" stop-hook",
+            "statusMessage": "Checking repo gates",
             "timeout": 30
           }
         ]

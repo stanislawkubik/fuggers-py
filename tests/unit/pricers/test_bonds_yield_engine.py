@@ -4,9 +4,9 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._products.bonds.instruments import FixedBondBuilder
-from fuggers_py._pricers.bonds import BondPricer
-from fuggers_py._reference.bonds.types import YieldConvention
+from fuggers_py.bonds.instruments import FixedBondBuilder
+from fuggers_py.bonds import BondPricer
+from fuggers_py.bonds.types import YieldConvention
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Compounding, Date, Frequency, Yield
 

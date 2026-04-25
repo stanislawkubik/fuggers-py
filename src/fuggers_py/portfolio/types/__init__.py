@@ -11,7 +11,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from fuggers_py.bonds import CreditRating, RatingInfo, Sector, SectorInfo, Seniority, SeniorityInfo
 from fuggers_py._core.types import Currency
 
 from .cash import CashPosition
@@ -19,6 +18,9 @@ from .classification import Classification
 from .config import AnalyticsConfig
 from .holding import Holding, HoldingAnalytics, HoldingBuilder, Position, PositionAnalytics
 from .maturity import MaturityBucket
+from .rating import CreditRating, RatingInfo
+from .sector import Sector, SectorInfo
+from .seniority import Seniority, SeniorityInfo
 from .weighting import WeightingMethod
 
 

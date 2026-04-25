@@ -11,31 +11,14 @@ import fuggers_py.curves.calibrators as calibrators_module
 import fuggers_py.curves.calibrators.global_fit as global_fit_module
 
 from fuggers_py._core.types import Currency, Date, Frequency
-from fuggers_py.curves import (
-    CurveSpec,
-    CurveType,
-    DiscountingCurve,
-    ExtrapolationPolicy,
-    RateSpace,
-    RatesTermStructure,
-    RelativeRateCurve,
-    YieldCurve,
-)
+from fuggers_py.curves import CurveSpec, DiscountingCurve, RatesTermStructure, YieldCurve
 from fuggers_py.curves.errors import CurveConstructionError, InvalidCurveInput, TenorOutOfBounds
-from fuggers_py.curves.calibrators import (
-    BondFitTarget,
-    CalibrationMode,
-    CalibrationObjective,
-    CalibrationSpec,
-)
-from fuggers_py.curves.kernels import (
-    CurveKernel,
-    CurveKernelKind,
-    KernelSpec,
-)
+from fuggers_py.curves.calibrators import CalibrationSpec
+from fuggers_py.curves.kernels import KernelSpec
+from fuggers_py.curves.kernels.base import CurveKernel
 from fuggers_py.curves.reports import CalibrationReport
 from fuggers_py._runtime.quotes import BondQuote, SwapQuote
-from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py.bonds import FixedBondBuilder
 from fuggers_py._core import YieldCalculationRules
 
 
@@ -50,10 +33,6 @@ class _FlatZeroCurve(RatesTermStructure):
         super().__init__(spec)
         self._rate = rate
         self._max_t = max_t
-
-    @property
-    def rate_space(self) -> RateSpace:
-        return RateSpace.ZERO
 
     def max_t(self) -> float:
         return self._max_t
@@ -74,33 +53,33 @@ class _FlatKernel(CurveKernel):
         return self._zero_rate
 
 
-def _curve_spec(*, extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR) -> CurveSpec:
+def _curve_spec(*, extrapolation_policy: str = "error") -> CurveSpec:
     return CurveSpec(
         name="USD Nominal",
         reference_date=Date.parse("2026-04-09"),
         day_count="ACT_365_FIXED",
         currency=Currency.USD,
-        type=CurveType.NOMINAL,
+        type="nominal",
         extrapolation_policy=extrapolation_policy,
     )
 
 
 def _bootstrap_calibration_spec() -> CalibrationSpec:
     return CalibrationSpec(
-        mode=CalibrationMode.BOOTSTRAP,
-        objective=CalibrationObjective.EXACT_FIT,
+        method="bootstrap",
+        objective="exact_fit",
     )
 
 
 def _global_fit_calibration_spec(
     *,
-    objective: CalibrationObjective = CalibrationObjective.WEIGHTED_L2,
-    bond_fit_target: BondFitTarget = BondFitTarget.DIRTY_PRICE,
+    objective: str = "weighted_l2",
+    bond_target: str = "dirty_price",
 ) -> CalibrationSpec:
     return CalibrationSpec(
-        mode=CalibrationMode.GLOBAL_FIT,
+        method="global_fit",
         objective=objective,
-        bond_fit_target=bond_fit_target,
+        bond_target=bond_target,
     )
 
 
@@ -169,7 +148,7 @@ def test_curve_spec_normalizes_native_fields() -> None:
         reference_date=Date.parse("2026-04-09"),
         day_count=" act_365_fixed ",
         currency="usd",
-        type=CurveType.NOMINAL,
+        type="nominal",
         reference=" USD-SOFR ",
     )
 
@@ -186,12 +165,11 @@ def test_validate_rate_returns_value_on_domain() -> None:
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
+            type="nominal",
         )
     )
 
     assert curve.reference_date == Date.parse("2026-04-09")
-    assert curve.rate_space is RateSpace.ZERO
     assert curve.validate_rate(2.0) == pytest.approx(0.03)
 
 
@@ -202,7 +180,7 @@ def test_validate_rate_rejects_negative_t() -> None:
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
+            type="nominal",
         )
     )
 
@@ -217,8 +195,8 @@ def test_validate_rate_rejects_t_beyond_domain_when_extrapolation_forbidden() ->
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
-            extrapolation_policy=ExtrapolationPolicy.ERROR,
+            type="nominal",
+            extrapolation_policy="error",
         ),
         max_t=3.0,
     )
@@ -234,8 +212,8 @@ def test_validate_rate_allows_t_beyond_domain_when_policy_is_not_error() -> None
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
-            extrapolation_policy=ExtrapolationPolicy.HOLD_LAST_NATIVE_RATE,
+            type="nominal",
+            extrapolation_policy="hold_last_native_rate",
         ),
         max_t=3.0,
     )
@@ -250,7 +228,7 @@ def test_validate_rate_rejects_non_finite_values() -> None:
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
+            type="nominal",
         ),
         rate=math.inf,
     )
@@ -262,7 +240,6 @@ def test_validate_rate_rejects_non_finite_values() -> None:
 def test_step3_public_split_is_exported() -> None:
     assert issubclass(DiscountingCurve, RatesTermStructure)
     assert issubclass(YieldCurve, DiscountingCurve)
-    assert issubclass(RelativeRateCurve, RatesTermStructure)
 
 
 def test_substep_d3_yield_curve_is_concrete_over_one_kernel() -> None:
@@ -273,13 +250,12 @@ def test_substep_d3_yield_curve_is_concrete_over_one_kernel() -> None:
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
+            type="nominal",
         ),
         kernel=_FlatKernel(zero_rate=0.04, max_t=10.0),
         calibration_report=report,
     )
 
-    assert curve.rate_space is RateSpace.ZERO
     assert curve.max_t() == pytest.approx(10.0)
     assert curve.calibration_report is report
     assert curve.rate_at(5.0) == pytest.approx(0.04)
@@ -295,7 +271,7 @@ def test_substep_d3_yield_curve_zero_view_requires_positive_tenor() -> None:
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
+            type="nominal",
         ),
         kernel=_FlatKernel(),
     )
@@ -312,7 +288,7 @@ def test_substep_d3_yield_curve_rejects_invalid_kernel() -> None:
                 reference_date=Date.parse("2026-04-09"),
                 day_count="ACT_365_FIXED",
                 currency=Currency.USD,
-                type=CurveType.NOMINAL,
+                type="nominal",
             ),
             kernel=object(),  # type: ignore[arg-type]
         )
@@ -326,7 +302,7 @@ def test_substep_d3_yield_curve_rejects_invalid_report() -> None:
                 reference_date=Date.parse("2026-04-09"),
                 day_count="ACT_365_FIXED",
                 currency=Currency.USD,
-                type=CurveType.NOMINAL,
+                type="nominal",
             ),
             kernel=_FlatKernel(),
             calibration_report=object(),  # type: ignore[arg-type]
@@ -339,12 +315,10 @@ def test_substep_d8_yield_curve_fit_builds_global_fit_cubic_spline_curve_from_on
             _swap_quote(tenor, zero_rate)
             for tenor, zero_rate in (("1Y", 0.025), ("2Y", 0.03), ("5Y", 0.035))
         ],
-        spec=_curve_spec(extrapolation_policy=ExtrapolationPolicy.HOLD_LAST_ZERO_RATE),
-        kernel_spec=KernelSpec(
-            kind=CurveKernelKind.CUBIC_SPLINE,
-            parameters={"knots": [1.0, 2.0, 5.0]},
-        ),
-        calibration_spec=_global_fit_calibration_spec(),
+        spec=_curve_spec(extrapolation_policy="hold_last_zero_rate"),
+        kernel="cubic_spline",
+        method="global_fit",
+        kernel_params={"knots": [1.0, 2.0, 5.0]},
     )
 
     assert isinstance(curve, YieldCurve)
@@ -364,8 +338,8 @@ def test_substep_d8_yield_curve_fit_builds_parametric_curve_from_same_public_ent
             for tenor in tenors
         ],
         spec=_curve_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
-        calibration_spec=_global_fit_calibration_spec(),
+        kernel="nelson_siegel",
+        method="global_fit",
     )
 
     assert isinstance(curve, YieldCurve)
@@ -374,24 +348,24 @@ def test_substep_d8_yield_curve_fit_builds_parametric_curve_from_same_public_ent
     assert curve.calibration_report.converged is True
 
 
-def test_substep_d8_yield_curve_fit_dispatches_only_by_calibration_spec_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_substep_d8_yield_curve_fit_dispatches_only_by_method(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[tuple[str, str]] = []
 
     class _BootstrapSpy:
         def __init__(self, *, calibration_spec: CalibrationSpec) -> None:
-            calls.append(("init", calibration_spec.mode.name))
+            calls.append(("init", calibration_spec.method))
 
         def fit(self, quotes, *, spec, kernel_spec):
-            calls.append(("fit", kernel_spec.kind.name))
-            return _FlatKernel(zero_rate=0.031, max_t=10.0), CalibrationReport(objective="EXACT_FIT")
+            calls.append(("fit", kernel_spec.kind))
+            return _FlatKernel(zero_rate=0.031, max_t=10.0), CalibrationReport(objective="exact_fit")
 
     class _GlobalFitSpy:
         def __init__(self, *, calibration_spec: CalibrationSpec) -> None:
-            calls.append(("init", calibration_spec.mode.name))
+            calls.append(("init", calibration_spec.method))
 
         def fit(self, quotes, *, spec, kernel_spec):
-            calls.append(("fit", kernel_spec.kind.name))
-            return _FlatKernel(zero_rate=0.032, max_t=10.0), CalibrationReport(objective="WEIGHTED_L2")
+            calls.append(("fit", kernel_spec.kind))
+            return _FlatKernel(zero_rate=0.032, max_t=10.0), CalibrationReport(objective="weighted_l2")
 
     monkeypatch.setattr(bootstrap_module, "BootstrapCalibrator", _BootstrapSpy)
     monkeypatch.setattr(global_fit_module, "GlobalFitCalibrator", _GlobalFitSpy)
@@ -399,26 +373,26 @@ def test_substep_d8_yield_curve_fit_dispatches_only_by_calibration_spec_mode(mon
     bootstrap_curve = YieldCurve.fit(
         quotes=[_swap_quote("1Y", 0.03)],
         spec=_curve_spec(),
-        kernel_spec=KernelSpec(
-            kind=CurveKernelKind.CUBIC_SPLINE,
+        kernel=KernelSpec(
+            kind="cubic_spline",
             parameters={"knots": (1.0, 2.0, 5.0)},
         ),
-        calibration_spec=_bootstrap_calibration_spec(),
+        method=_bootstrap_calibration_spec(),
     )
     global_fit_curve = YieldCurve.fit(
         quotes=[_swap_quote("1Y", 0.03)],
         spec=_curve_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.LINEAR_ZERO),
-        calibration_spec=_global_fit_calibration_spec(),
+        kernel=KernelSpec(kind="linear_zero"),
+        method=_global_fit_calibration_spec(),
     )
 
     assert bootstrap_curve.rate_at(1.0) == pytest.approx(0.031)
     assert global_fit_curve.rate_at(1.0) == pytest.approx(0.032)
     assert calls == [
-        ("init", CalibrationMode.BOOTSTRAP.name),
-        ("fit", CurveKernelKind.CUBIC_SPLINE.name),
-        ("init", CalibrationMode.GLOBAL_FIT.name),
-        ("fit", CurveKernelKind.LINEAR_ZERO.name),
+        ("init", "bootstrap"),
+        ("fit", "cubic_spline"),
+        ("init", "global_fit"),
+        ("fit", "linear_zero"),
     ]
 
 
@@ -452,8 +426,8 @@ def test_substep_d8_yield_curve_fit_accepts_bond_quotes_from_same_public_entry_p
             for instrument_id, maturity_years, coupon_rate in bond_specs
         ],
         spec=_curve_spec(),
-        kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
-        calibration_spec=_global_fit_calibration_spec(),
+        kernel="nelson_siegel",
+        method="global_fit",
     )
 
     assert isinstance(curve, YieldCurve)
@@ -478,11 +452,9 @@ def test_substep_d8_yield_curve_fit_builds_exponential_spline_curve_from_same_pu
             for tenor in tenors
         ],
         spec=_curve_spec(),
-        kernel_spec=KernelSpec(
-            kind=CurveKernelKind.EXPONENTIAL_SPLINE,
-            parameters={"decay_factors": decay_factors},
-        ),
-        calibration_spec=_global_fit_calibration_spec(),
+        kernel="exponential_spline",
+        method="global_fit",
+        kernel_params={"decay_factors": decay_factors},
     )
 
     assert isinstance(curve, YieldCurve)
@@ -495,51 +467,44 @@ def test_substep_d8_yield_curve_fit_builds_exponential_spline_curve_from_same_pu
 
 
 def test_substep_d8_yield_curve_fit_validates_construction_inputs() -> None:
-    with pytest.raises(InvalidCurveInput, match="kernel_spec must be a KernelSpec"):
+    with pytest.raises(InvalidCurveInput, match="kind must be a kernel name string"):
         YieldCurve.fit(
             quotes=[],
             spec=_curve_spec(),
-            kernel_spec=object(),  # type: ignore[arg-type]
-            calibration_spec=_bootstrap_calibration_spec(),
+            kernel=object(),  # type: ignore[arg-type]
+            method=_bootstrap_calibration_spec(),
         )
 
-    with pytest.raises(InvalidCurveInput, match="calibration_spec must be a CalibrationSpec"):
+    with pytest.raises(InvalidCurveInput, match="CalibrationSpec.method must be a string"):
         YieldCurve.fit(
             quotes=[],
             spec=_curve_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.LINEAR_ZERO),
-            calibration_spec=object(),  # type: ignore[arg-type]
-        )
-
-    with pytest.raises(TypeError, match="calibration_spec"):
-        YieldCurve.fit(
-            quotes=[],
-            spec=_curve_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.LINEAR_ZERO),
+            kernel=KernelSpec(kind="linear_zero"),
+            method=object(),  # type: ignore[arg-type]
         )
 
     with pytest.raises(
-        ValueError,
-        match="GlobalFitCalibrator does not support CalibrationObjective.EXACT_FIT",
+        InvalidCurveInput,
+        match="CalibrationSpec.method='global_fit' requires objective='weighted_l2'",
     ):
         YieldCurve.fit(
             quotes=[_swap_quote("1Y", 0.03), _swap_quote("2Y", 0.031), _swap_quote("5Y", 0.033), _swap_quote("10Y", 0.034)],
             spec=_curve_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.NELSON_SIEGEL),
-            calibration_spec=_global_fit_calibration_spec(objective=CalibrationObjective.EXACT_FIT),
+            kernel=KernelSpec(kind="nelson_siegel"),
+            method=_global_fit_calibration_spec(objective="exact_fit"),
         )
 
     with pytest.raises(
-        ValueError,
-        match="BootstrapCalibrator requires calibration_spec.objective == CalibrationObjective.EXACT_FIT",
+        InvalidCurveInput,
+        match="CalibrationSpec.method='bootstrap' requires objective='exact_fit'",
     ):
         YieldCurve.fit(
             quotes=[_swap_quote("1Y", 0.03)],
             spec=_curve_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.LINEAR_ZERO),
-            calibration_spec=CalibrationSpec(
-                mode=CalibrationMode.BOOTSTRAP,
-                objective=CalibrationObjective.WEIGHTED_L2,
+            kernel=KernelSpec(kind="linear_zero"),
+            method=CalibrationSpec(
+                method="bootstrap",
+                objective="weighted_l2",
             ),
         )
 
@@ -547,32 +512,32 @@ def test_substep_d8_yield_curve_fit_validates_construction_inputs() -> None:
         YieldCurve.fit(
             quotes=[_swap_quote("1Y", 0.03)],
             spec=_curve_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.EXPONENTIAL_SPLINE),
-            calibration_spec=_global_fit_calibration_spec(),
+            kernel=KernelSpec(kind="exponential_spline"),
+            method=_global_fit_calibration_spec(),
         )
 
     with pytest.raises(InvalidCurveInput, match="requires kernel_spec.parameters\\['knots'\\]"):
         YieldCurve.fit(
             quotes=[_swap_quote("1Y", 0.03), _swap_quote("2Y", 0.031)],
             spec=_curve_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.CUBIC_SPLINE),
-            calibration_spec=_global_fit_calibration_spec(),
+            kernel=KernelSpec(kind="cubic_spline"),
+            method=_global_fit_calibration_spec(),
         )
 
-    with pytest.raises(CurveConstructionError, match="global-fit calibration does not support kernel kind LINEAR_ZERO"):
+    with pytest.raises(CurveConstructionError, match="global-fit calibration does not support kernel kind linear_zero"):
         YieldCurve.fit(
             quotes=[_swap_quote("1Y", 0.03)],
             spec=_curve_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.LINEAR_ZERO),
-            calibration_spec=_global_fit_calibration_spec(),
+            kernel=KernelSpec(kind="linear_zero"),
+            method=_global_fit_calibration_spec(),
         )
 
-    with pytest.raises(CurveConstructionError, match="bootstrap calibration does not support kernel kind CUBIC_SPLINE"):
+    with pytest.raises(CurveConstructionError, match="bootstrap calibration does not support kernel kind cubic_spline"):
         YieldCurve.fit(
             quotes=[_swap_quote("1Y", 0.03), _swap_quote("2Y", 0.031)],
             spec=_curve_spec(),
-            kernel_spec=KernelSpec(kind=CurveKernelKind.CUBIC_SPLINE),
-            calibration_spec=_bootstrap_calibration_spec(),
+            kernel=KernelSpec(kind="cubic_spline"),
+            method=_bootstrap_calibration_spec(),
         )
 
 
@@ -593,7 +558,7 @@ def test_substep_d3_yield_curve_rejects_invalid_discount_factor_inputs() -> None
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
+            type="nominal",
         ),
         kernel=_BrokenKernel(),
     )
@@ -609,7 +574,7 @@ def test_discounting_curve_rejects_invalid_forward_interval() -> None:
             reference_date=Date.parse("2026-04-09"),
             day_count="ACT_365_FIXED",
             currency=Currency.USD,
-            type=CurveType.NOMINAL,
+            type="nominal",
         ),
         kernel=_FlatKernel(),
     )
@@ -618,14 +583,14 @@ def test_discounting_curve_rejects_invalid_forward_interval() -> None:
         curve.forward_rate_between(2.0, 2.0)
 
 
-def test_substep_d2_kernel_family_enum_is_available() -> None:
-    assert CurveKernelKind.LINEAR_ZERO.name == "LINEAR_ZERO"
-    assert CurveKernelKind.CUBIC_SPLINE.name == "CUBIC_SPLINE"
+def test_substep_d2_kernel_names_are_plain_strings() -> None:
+    assert KernelSpec(kind="linear_zero").kind == "linear_zero"
+    assert KernelSpec(kind="cubic_spline").kind == "cubic_spline"
 
 
 def test_substep_d2_kernel_spec_freezes_parameters() -> None:
     spec = KernelSpec(
-        kind=CurveKernelKind.CUBIC_SPLINE,
+        kind="cubic_spline",
         parameters={
             "knots": [1.0, 2.0, 5.0],
             "solver": {"name": "ols"},
@@ -640,14 +605,14 @@ def test_substep_d2_kernel_spec_freezes_parameters() -> None:
 
 
 def test_substep_d2_kernel_spec_rejects_invalid_kind() -> None:
-    with pytest.raises(InvalidCurveInput, match="CurveKernelKind"):
-        KernelSpec(kind="LINEAR_ZERO")  # type: ignore[arg-type]
+    with pytest.raises(InvalidCurveInput, match="kind must be one of"):
+        KernelSpec(kind="not_a_kernel")
 
 
 def test_substep_d2_kernel_spec_rejects_non_string_parameter_keys() -> None:
     with pytest.raises(InvalidCurveInput, match="keys must be strings"):
         KernelSpec(
-            kind=CurveKernelKind.LINEAR_ZERO,
+            kind="linear_zero",
             parameters={1: "bad-key"},  # type: ignore[dict-item]
         )
 

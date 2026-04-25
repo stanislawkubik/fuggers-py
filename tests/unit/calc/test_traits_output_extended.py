@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from fuggers_py._core import Date
-from fuggers_py._calc import (
+from fuggers_py._runtime import (
     AnalyticsOutput,
     BasisSwapQuoteOutput,
     CdsQuoteOutput,

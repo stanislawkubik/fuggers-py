@@ -287,3 +287,6 @@ class ValueConverter:
         sp = _require_probability(survival_prob, name="survival_prob")
         rec = _require_probability(recovery_rate, name="recovery_rate")
         return discount_factor * float(sp + (1.0 - sp) * rec)
+
+
+__all__ = ["ValueConverter"]

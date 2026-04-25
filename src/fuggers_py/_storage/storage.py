@@ -14,13 +14,13 @@ from typing import TYPE_CHECKING, Generic, Protocol, TypeVar, runtime_checkable
 
 from fuggers_py._core.types import Currency, Date
 from fuggers_py._core.ids import CurveId, InstrumentId, PortfolioId
-from fuggers_py._calc.pricing_specs import PricingSpec
-from fuggers_py._market.snapshot import CurvePoint
-from fuggers_py._market.state import QuoteSide
-from fuggers_py._reference.reference_data import BondReferenceData
+from fuggers_py._runtime.pricing_specs import PricingSpec
+from fuggers_py._runtime.snapshot import CurvePoint
+from fuggers_py._runtime.state import QuoteSide
+from fuggers_py.bonds.reference_data import BondReferenceData
 
 if TYPE_CHECKING:
-    from fuggers_py._calc.config import EngineConfig
+    from fuggers_py._runtime.config import EngineConfig
 
 
 T = TypeVar("T")

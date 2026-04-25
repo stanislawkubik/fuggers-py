@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._measures.spreads import DiscountMarginCalculator, OASCalculator
-from fuggers_py._pricers.bonds.options import HullWhiteModel
+from fuggers_py.bonds.spreads import DiscountMarginCalculator, OASCalculator
+from fuggers_py.bonds.options import HullWhiteModel
 from fuggers_py._core import Date
 from fuggers_py.portfolio import (
     Holding,

@@ -5,8 +5,8 @@ from decimal import Decimal
 from fuggers_py.bonds.types import BondType, IssuerType
 from fuggers_py._core import Currency, Date, Frequency
 from fuggers_py._core import EtfId, InstrumentId
-from fuggers_py._market.snapshot import EtfHolding
-from fuggers_py._reference import (
+from fuggers_py._runtime.snapshot import EtfHolding
+from fuggers_py.bonds import (
     BondReferenceData,
     BondReferenceSource,
     EtfHoldingsSource,

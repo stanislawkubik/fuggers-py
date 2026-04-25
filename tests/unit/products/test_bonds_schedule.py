@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from fuggers_py._products.bonds.cashflows import Schedule, ScheduleConfig
-from fuggers_py._reference.bonds.types import StubPeriodRules
+from fuggers_py.bonds.cashflows import Schedule, ScheduleConfig
+from fuggers_py.bonds.types import StubPeriodRules
 from fuggers_py._core import CalendarId
 from fuggers_py._core.types import Date, Frequency
 

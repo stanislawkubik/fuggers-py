@@ -1,4 +1,4 @@
-"""Simple yield helpers (`fuggers_py._measures.yields.simple`).
+"""Simple yield helpers (`fuggers_py.bonds._yields.simple`).
 
 The public helpers return quoted percentage simple yields. Inputs are treated
 as cash coupon amounts and clean prices per 100 face.
@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 
 
 def _to_decimal(value: object) -> Decimal:

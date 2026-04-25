@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.functions import (
+from fuggers_py.bonds.analytics import (
     clean_price_from_yield,
     convexity,
     dv01,
@@ -15,7 +15,7 @@ from fuggers_py._measures.functions import (
     yield_to_maturity,
     yield_to_maturity_with_convention,
 )
-from fuggers_py._reference.bonds.types import YieldConvention
+from fuggers_py.bonds.types import YieldConvention
 from fuggers_py._core import Date, Price
 
 

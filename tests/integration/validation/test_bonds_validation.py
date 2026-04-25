@@ -5,18 +5,19 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.functions import convexity, macaulay_duration, modified_duration, yield_to_maturity
-from fuggers_py._measures.spreads import DiscountMarginCalculator, OASCalculator, ParParAssetSwap, ProceedsAssetSwap
-from fuggers_py._products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
+from fuggers_py.bonds.analytics import convexity, macaulay_duration, modified_duration, yield_to_maturity
+from fuggers_py.bonds.spreads import DiscountMarginCalculator, OASCalculator, ParParAssetSwap, ProceedsAssetSwap
+from fuggers_py.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
 from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, ObservationShiftType, OvernightCompounding
-from fuggers_py._products.bonds.instruments import CallableBondBuilder, FixedBond, FixedBondBuilder, FloatingRateNoteBuilder
-from fuggers_py._pricers.bonds.options import HullWhiteModel
-from fuggers_py._reference.bonds.types import CompoundingMethod, RateIndex, StubPeriodRules
+from fuggers_py.bonds.instruments import CallableBondBuilder, FixedBond, FixedBondBuilder, FloatingRateNoteBuilder
+from fuggers_py.bonds.options import HullWhiteModel
+from fuggers_py.bonds.types import CompoundingMethod, RateIndex, StubPeriodRules
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Compounding, Currency, Date, Frequency, Price, Yield
-from fuggers_py._curves_impl import DiscountCurveBuilder
+from fuggers_py._runtime.snapshot import CurvePoint
 
 from tests.helpers._engine_scenarios import FIXED_ID, SETTLEMENT, fixed_curves, frn_curves, pricing_specs, router, scenario_a_instrument, scenario_b_instrument, scenario_c_fixing_source, scenario_c_instrument
+from tests.helpers._public_curve_helpers import date_forward_curve, linear_zero_curve
 
 from ._helpers import (
     D,
@@ -159,12 +160,13 @@ def test_floating_rate_discount_margin_fixture_covers_lookback_and_lockout_behav
         .with_current_reference_rate(D(fixture["current_reference_rate"]))
         .build()
     )
-    projection_curve = (
-        DiscountCurveBuilder(reference_date=parse_date(fixture["settlement_date"]))
-        .add_zero_rate(0.25, D(fixture["projection_curve"]["0.25"]))
-        .add_zero_rate(1.0, D(fixture["projection_curve"]["1.0"]))
-        .add_zero_rate(2.0, D(fixture["projection_curve"]["2.0"]))
-        .build()
+    projection_curve = date_forward_curve(
+        linear_zero_curve(
+            "validation.frn.projection",
+            parse_date(fixture["settlement_date"]),
+            tuple(CurvePoint(D(tenor), D(rate)) for tenor, rate in fixture["projection_curve"].items()),
+            curve_type="overnight_discount",
+        )
     )
     start_date = parse_date(fixture["expected_first_period_start"])
     end_date = parse_date(fixture["expected_first_period_end"])

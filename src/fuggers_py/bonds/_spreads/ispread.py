@@ -15,7 +15,7 @@ from fuggers_py.curves import DiscountingCurve
 from ...curves.date_support import zero_rate_at_date
 
 from .benchmark import _to_decimal
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 
 
 def i_spread(bond_yield: object, swap_rate: object) -> Decimal:
@@ -52,7 +52,7 @@ class ISpreadCalculator:
         if settlement_date is not None and settlement_date >= maturity:
             raise AnalyticsError.invalid_settlement("Settlement date must be before maturity for I-spread.")
         swap_rate = zero_rate_at_date(self.curve, maturity)
-        return i_spread(bond_yield, swap_rate)
+        return i_spread(bond_yield, swap_rate).quantize(Decimal("1e-15")).normalize()
 
     def spread_bps(self, bond: Bond, bond_yield: object, settlement_date: Date | None = None) -> Decimal:
         """Return the I-spread in basis points for ``bond``."""

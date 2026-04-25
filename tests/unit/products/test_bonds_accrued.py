@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._products.bonds.instruments import FixedBondBuilder
+from fuggers_py.bonds.instruments import FixedBondBuilder
 from fuggers_py._core import Compounding, Date, Frequency, Yield
 
 

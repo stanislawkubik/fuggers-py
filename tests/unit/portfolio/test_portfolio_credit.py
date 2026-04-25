@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._reference.bonds.types import CreditRating, Sector
+from fuggers_py.bonds.types import CreditRating, Sector
 from fuggers_py._core import Currency, Date
 from fuggers_py.portfolio import (
     FallenAngelRisk,

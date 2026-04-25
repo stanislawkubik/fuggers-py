@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime
 
-from fuggers_py._calc import CronScheduler, NodeId, UpdateSource
+from fuggers_py._runtime import CronScheduler, NodeId, UpdateSource
 
 
 async def _main() -> None:

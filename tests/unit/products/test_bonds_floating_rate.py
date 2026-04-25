@@ -7,13 +7,13 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.bonds.types import BondType
-from fuggers_py._reference.bonds.errors import InvalidBondSpec
+from fuggers_py.bonds.errors import InvalidBondSpec
 from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
-from fuggers_py._products.bonds.instruments import FloatingRateNoteBuilder
-from fuggers_py._reference.bonds.types import RateIndex, SOFRConvention
+from fuggers_py.bonds.instruments import FloatingRateNoteBuilder
+from fuggers_py.bonds.types import RateIndex, SOFRConvention
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Currency, Date, Frequency
-from fuggers_py._curves_impl import DiscountCurveBuilder
+from tests.helpers._rates_helpers import flat_curve
 
 
 def _quarterly_treasury_rules() -> YieldCalculationRules:
@@ -21,13 +21,7 @@ def _quarterly_treasury_rules() -> YieldCalculationRules:
 
 
 def _projection_curve(ref: Date, *, shift: Decimal = Decimal(0)):
-    return (
-        DiscountCurveBuilder(reference_date=ref)
-        .add_zero_rate(0.25, Decimal("0.05") + shift)
-        .add_zero_rate(1.0, Decimal("0.0525") + shift)
-        .add_zero_rate(2.0, Decimal("0.055") + shift)
-        .build()
-    )
+    return flat_curve(ref, Decimal("0.0525") + shift)
 
 
 @dataclass(frozen=True, slots=True)

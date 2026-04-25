@@ -5,13 +5,13 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.errors import AnalyticsError
-from fuggers_py._measures.spreads import DiscountMarginCalculator, simple_margin, z_discount_margin
-from fuggers_py._products.bonds.instruments import FloatingRateNoteBuilder
-from fuggers_py._reference.bonds.types import RateIndex
+from fuggers_py.bonds import AnalyticsError
+from fuggers_py.bonds.spreads import DiscountMarginCalculator, simple_margin, z_discount_margin
+from fuggers_py.bonds.instruments import FloatingRateNoteBuilder
+from fuggers_py.bonds.types import RateIndex
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Date, Frequency
-from fuggers_py._curves_impl import DiscountCurveBuilder, ForwardCurve
+from tests.helpers._rates_helpers import flat_curve
 
 
 def _quarterly_rules() -> YieldCalculationRules:
@@ -19,13 +19,8 @@ def _quarterly_rules() -> YieldCalculationRules:
 
 
 def _curves(ref: Date):
-    discount_curve = (
-        DiscountCurveBuilder(reference_date=ref)
-        .add_zero_rate(0.25, Decimal("0.03"))
-        .add_zero_rate(5.0, Decimal("0.03"))
-        .build()
-    )
-    forward_curve = ForwardCurve.from_months(discount_curve, 3)
+    discount_curve = flat_curve(ref, "0.03")
+    forward_curve = discount_curve
     return forward_curve, discount_curve
 
 

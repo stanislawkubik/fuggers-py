@@ -4,21 +4,16 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.pricing import BondPricer
-from fuggers_py._measures.risk import BondRiskCalculator
-from fuggers_py._products.bonds.instruments import FixedBond, ZeroCouponBond
+from fuggers_py.bonds.analytics_pricing import BondPricer
+from fuggers_py.bonds.risk import BondRiskCalculator
+from fuggers_py.bonds.instruments import FixedBond, ZeroCouponBond
 from fuggers_py._core import Date, Frequency
-from fuggers_py._curves_impl import DiscountCurveBuilder
 from fuggers_py.portfolio import Bucketing, Portfolio, PortfolioAnalytics, Position, Stress
+from tests.helpers._rates_helpers import flat_curve
 
 
 def _curve(ref: Date):
-    return (
-        DiscountCurveBuilder(reference_date=ref)
-        .add_zero_rate(1.0, Decimal("0.03"))
-        .add_zero_rate(10.0, Decimal("0.04"))
-        .build()
-    )
+    return flat_curve(ref, "0.035")
 
 
 def _portfolio(ref: Date) -> Portfolio:

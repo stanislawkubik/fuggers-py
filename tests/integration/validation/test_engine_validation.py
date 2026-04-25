@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py._core import Currency, Date
-from fuggers_py._calc import (
+from fuggers_py._runtime import (
     EodScheduler,
     IntervalScheduler,
     NodeId,
@@ -14,15 +14,14 @@ from fuggers_py._calc import (
     PricingInput,
     QuoteUpdate,
 )
-from fuggers_py._calc import QuoteSide
+from fuggers_py._runtime import QuoteSide
 from fuggers_py._core import InstrumentId
-from fuggers_py._curves_impl import CurveType
 from fuggers_py._runtime.quotes import RawQuote
-from fuggers_py._market.snapshot import CurvePoint
-from fuggers_py._market.state import AnalyticsCurves
-from fuggers_py._market.sources import MarketDataProvider
+from fuggers_py._runtime.snapshot import CurvePoint
+from fuggers_py._runtime.state import AnalyticsCurves
+from fuggers_py._runtime.sources import MarketDataProvider
 from fuggers_py.bonds.types import BondType, IssuerType
-from fuggers_py._reference import BondReferenceData, ReferenceDataProvider
+from fuggers_py.bonds import BondReferenceData, ReferenceDataProvider
 from tests.helpers._public_curve_helpers import linear_zero_curve
 
 from ._helpers import D, assert_decimal_close, load_fixture
@@ -88,7 +87,7 @@ async def test_reactive_engine_reference_flow_matches_fixture() -> None:
                 CurvePoint(D(point["tenor"]), D(point["rate"]))
                 for point in fixture["curve_points"]
             ],
-            curve_type=CurveType.OVERNIGHT_DISCOUNT,
+            curve_type="overnight_discount",
         )
     )
     reactive.register_pricing_node(

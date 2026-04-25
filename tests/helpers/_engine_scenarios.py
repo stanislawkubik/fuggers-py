@@ -4,21 +4,19 @@ from dataclasses import replace
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from fuggers_py.bonds.types import BondType, IssuerType
+from fuggers_py.bonds import BondType, IssuerType, RateIndex
 from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
-from fuggers_py.curves.multicurve import RateIndex
-from fuggers_py._products.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
+from fuggers_py.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Currency, Date, Frequency
 from fuggers_py.portfolio import PortfolioPosition
-from fuggers_py._calc import PricingSpec, QuoteSide
+from fuggers_py._runtime import PricingSpec, QuoteSide
 from fuggers_py._core import CurveId, InstrumentId
 from fuggers_py._runtime.quotes import RawQuote
-from fuggers_py._market.snapshot import CurveInputs, CurvePoint, EtfHolding, IndexFixing, MarketDataSnapshot
-from fuggers_py._market.state import AnalyticsCurves
-from fuggers_py._market.sources import InMemoryFixingSource
-from fuggers_py.curves import CurveType
-from fuggers_py._reference import (
+from fuggers_py._runtime.snapshot import CurveInputs, CurvePoint, EtfHolding, IndexFixing, MarketDataSnapshot
+from fuggers_py._runtime.state import AnalyticsCurves
+from fuggers_py._runtime.sources import InMemoryFixingSource
+from fuggers_py.bonds import (
     BondReferenceData,
     CallScheduleEntry,
     FloatingRateTerms,
@@ -26,7 +24,7 @@ from fuggers_py._reference import (
 from tests.helpers._public_curve_helpers import linear_zero_curve
 
 if TYPE_CHECKING:
-    from fuggers_py._calc.pricing_router import PricingRouter
+    from fuggers_py._runtime.pricing_router import PricingRouter
 
 
 SETTLEMENT = Date.from_ymd(2026, 1, 15)
@@ -92,11 +90,11 @@ def scenario_curves() -> dict[str, object]:
     frn_points = scenario_c_curve_points()
 
     return {
-        DISCOUNT_ID.as_str(): linear_zero_curve(DISCOUNT_ID, SETTLEMENT, discount_points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
-        GOVERNMENT_ID.as_str(): linear_zero_curve(GOVERNMENT_ID, SETTLEMENT, government_points, curve_type=CurveType.NOMINAL),
-        BENCHMARK_ID.as_str(): linear_zero_curve(BENCHMARK_ID, SETTLEMENT, benchmark_points, curve_type=CurveType.NOMINAL),
-        "frn.discount": linear_zero_curve("frn.discount", SETTLEMENT, frn_points, curve_type=CurveType.OVERNIGHT_DISCOUNT),
-        FORWARD_ID.as_str(): linear_zero_curve(FORWARD_ID, SETTLEMENT, frn_points, curve_type=CurveType.PROJECTION),
+        DISCOUNT_ID.as_str(): linear_zero_curve(DISCOUNT_ID, SETTLEMENT, discount_points, curve_type="overnight_discount"),
+        GOVERNMENT_ID.as_str(): linear_zero_curve(GOVERNMENT_ID, SETTLEMENT, government_points, curve_type="nominal"),
+        BENCHMARK_ID.as_str(): linear_zero_curve(BENCHMARK_ID, SETTLEMENT, benchmark_points, curve_type="nominal"),
+        "frn.discount": linear_zero_curve("frn.discount", SETTLEMENT, frn_points, curve_type="overnight_discount"),
+        FORWARD_ID.as_str(): linear_zero_curve(FORWARD_ID, SETTLEMENT, frn_points, curve_type="projection"),
     }
 
 
@@ -268,7 +266,7 @@ def portfolio_positions() -> list[PortfolioPosition]:
 
 
 def router() -> PricingRouter:
-    from fuggers_py._calc.pricing_router import PricingRouter
+    from fuggers_py._runtime.pricing_router import PricingRouter
 
     return PricingRouter()
 

@@ -15,7 +15,7 @@ from fuggers_py._math.errors import InvalidInput
 from fuggers_py._math.interpolation.parametric import NelsonSiegel, Svensson
 
 from ..errors import InvalidCurveInput, TenorOutOfBounds
-from .base import CurveKernel, CurveKernelKind
+from .base import CurveKernel
 
 
 def _require_finite(value: float, *, name: str) -> float:
@@ -49,7 +49,7 @@ def _validate_query_t(tenor: float, *, max_t: float, allow_extrapolation: bool) 
 class NelsonSiegelKernel(CurveKernel):
     """Nelson-Siegel zero-rate kernel on a finite tenor domain."""
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.NELSON_SIEGEL
+    kind: Final[str] = "nelson_siegel"
     __slots__ = ("_model", "_max_t", "_allow_extrapolation")
 
     def __init__(
@@ -85,11 +85,17 @@ class NelsonSiegelKernel(CurveKernel):
         except InvalidInput as exc:
             raise InvalidCurveInput(str(exc)) from exc
 
+    def terminal_native_rate(self) -> float:
+        try:
+            return float(self._model.interpolate(self._max_t))
+        except InvalidInput as exc:
+            raise InvalidCurveInput(str(exc)) from exc
+
 
 class SvenssonKernel(CurveKernel):
     """Svensson zero-rate kernel on a finite tenor domain."""
 
-    kind: Final[CurveKernelKind] = CurveKernelKind.SVENSSON
+    kind: Final[str] = "svensson"
     __slots__ = ("_model", "_max_t", "_allow_extrapolation")
 
     def __init__(
@@ -126,6 +132,12 @@ class SvenssonKernel(CurveKernel):
         )
         try:
             return float(self._model.interpolate(checked_tenor))
+        except InvalidInput as exc:
+            raise InvalidCurveInput(str(exc)) from exc
+
+    def terminal_native_rate(self) -> float:
+        try:
+            return float(self._model.interpolate(self._max_t))
         except InvalidInput as exc:
             raise InvalidCurveInput(str(exc)) from exc
 

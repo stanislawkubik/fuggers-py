@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._measures.rv import (
+from fuggers_py.bonds.rv import (
     CommonCurrencyFloatingBondView,
     decompose_asw_basis_cds_links,
     usd_sofr_adjusted_rv_from_links,

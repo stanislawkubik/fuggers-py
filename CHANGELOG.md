@@ -2,14 +2,72 @@
 
 ## Unreleased
 
+### Breaking
+
+- completed the public API refactor so the user-facing import story is now the
+  eight first-layer packages: `curves`, `vol_surfaces`, `bonds`, `rates`,
+  `inflation`, `credit`, `funding`, and `portfolio`
+- removed the previous public compatibility roots for market, product, pricer,
+  measure, reference, runtime-engine, adapter, core, and math access; shared
+  types now come from the `fuggers_py` root, domain objects come from their
+  domain package, and numerical/runtime/storage internals stay private
+- deleted the old transition ownership buckets from `src/fuggers_py`, leaving
+  only the final public packages plus the allowed internal roots `_core`,
+  `_math`, `_runtime`, and `_storage`
+
 ### Changed
 
-- refactored the fitted-bond workflow around instrument-bound `BondQuote` inputs, so bond quotes now carry a concrete bond instrument, derive `instrument_id` and `currency` from that instrument, and use `as_of` as the single pricing date
-- renamed the public fitted-bond optimizer from `FittedBondCurveFitter` to `BondCurveFitter`, removed the separate `bonds=` lookup from `fit(...)`, and made the pricing adapters and fair-value helpers read the bond directly from `quote.instrument`
-- added a market-level calibrated `YieldCurve` base plus a concrete nominal `BondCurve`, so the simple bond path is now `BondQuote[instrument] -> BondCurve(quotes, ...)` and the curve object itself owns the runtime term structure, fitted parameters, diagnostics, and point-by-point bond report
-- simplified the generic market quote layer by removing `side`, `timestamp`, and settlement-date-style fields from quote records, changing raw quote storage to one canonical quote per instrument with side views derived on demand
-- widened the fitted-bond spline model inputs so knot tenors, initial zero rates, and exponential decay factors accept simple numeric values and normalize them internally to `Decimal`
-- refreshed the market API docs, module reference, notebook example, and regression coverage so the current nominal-bond and TIPS fitting surfaces are documented against the new quote model
+- documented the pre-publish state: `fuggers_py.curves` and
+  `YieldCurve.fit(...)` are the closest pieces to the intended `1.x` shape,
+  while the other domain packages remain pre-lock and will be hardened toward
+  the same standard before the compatibility promise
+- rewrote the public package docs around the final first-layer API, with each
+  domain page documenting ownership, import style, boundaries, and the main
+  exported groups
+- moved bond instruments, bond reference data, pricing, risk, spreads, yields,
+  relative value, and YAS-style analytics behind `fuggers_py.bonds`
+- moved swaps, FRAs, bond futures, rates options, rate quotes, index
+  conventions, fixing stores, and rates risk behind `fuggers_py.rates`
+- moved CPI conventions, CPI history, reference CPI helpers, inflation swaps,
+  inflation pricing, Treasury TIPS import helpers, and inflation analytics
+  behind `fuggers_py.inflation`
+- moved CDS instruments, CDS reference data, CDS quotes, CDS pricing, CDS risk,
+  and bond-CDS basis analytics behind `fuggers_py.credit`
+- moved repo trades, repo reference data, repo quotes, haircut quotes, implied
+  repo, carry, all-in financing cost, haircut, and specialness helpers behind
+  `fuggers_py.funding`
+- moved portfolio holdings, portfolio containers, analytics, benchmark
+  comparison, contribution, bucketing, ETF workflows, liquidity, and stress
+  helpers behind `fuggers_py.portfolio`
+- kept the curve root focused on `CurveSpec`, `YieldCurve`, curve base types,
+  one shared fit report, and `STANDARD_KEY_RATE_TENORS`; curve movement now
+  lives on `DiscountingCurve.shifted(...)` and `DiscountingCurve.bumped(...)`,
+  while advanced kernel and calibration specs live in curve submodules only
+- kept volatility surface records, volatility points, and surface sources under
+  `fuggers_py.vol_surfaces`
+- updated mypy, source coverage, release Ruff, packaging smoke, architecture
+  contracts, docs contracts, and hook/tooling contracts to enforce the final
+  package layout
+- removed the temporary public API refactor tooling after replacing it with the
+  permanent first-layer API contracts, docs checks, and validation gates
+- made `YieldCurve.fit(...)` the public entry point for quote-driven curve
+  fitting, with callers passing quotes, a `CurveSpec`, and simple `kernel` and
+  `method` strings for the common path
+- added typed fitting for `SwapQuote`, `BondQuote`, and `RepoQuote` inputs, so
+  the fitter reads swap rates, bond prices or yields, and repo rates from the
+  quote type itself
+- kept `BondQuote` bound to one concrete bond instrument; the quote exposes the
+  bond `instrument_id`, derives currency from the bond unless the same currency
+  is supplied, and uses `as_of` as the fit date
+- kept public ownership in the first-layer packages: `BondQuote` under
+  `fuggers_py.bonds`, `SwapQuote` under `fuggers_py.rates`, `RepoQuote` under
+  `fuggers_py.funding`, and curve fitting under `fuggers_py.curves`
+- refreshed the curve, bond, rates, funding, API index, source-structure, and
+  validation docs plus contract and regression coverage for the final
+  quote-driven API
+- trimmed the Treasury curve-fitting example so it focuses on curve recovery,
+  curve moves, and regressor checks instead of a separate front-end diagnostic
+  section
 
 ## 0.2.3
 

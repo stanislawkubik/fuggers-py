@@ -3,13 +3,12 @@ from __future__ import annotations
 from dataclasses import replace
 from decimal import Decimal
 
-from fuggers_py.curves import CurveType
-from fuggers_py._products.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
+from fuggers_py.bonds.instruments import CallableBondBuilder, FixedBond, FloatingRateNoteBuilder
 from fuggers_py.rates import BondIndex, IndexConventions, IndexFixingStore, OvernightCompounding
-from fuggers_py._reference.bonds.types import CreditRating, RatingInfo, RateIndex, Sector, SectorInfo
+from fuggers_py.bonds.types import CreditRating, RatingInfo, RateIndex, Sector, SectorInfo
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Currency, Date, Frequency
-from fuggers_py._market.snapshot import CurvePoint
+from fuggers_py._runtime.snapshot import CurvePoint
 from fuggers_py.portfolio import Classification, Holding, Portfolio, PortfolioBuilder
 from tests.helpers._public_curve_helpers import linear_zero_curve
 
@@ -24,7 +23,7 @@ def make_curve(ref: Date, *, shift: Decimal = Decimal(0)):
             CurvePoint(Decimal("5.0"), Decimal("0.0350") + shift),
             CurvePoint(Decimal("10.0"), Decimal("0.04") + shift),
         ),
-        curve_type=CurveType.OVERNIGHT_DISCOUNT,
+        curve_type="overnight_discount",
     )
 
 

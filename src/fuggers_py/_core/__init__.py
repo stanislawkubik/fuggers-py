@@ -59,6 +59,7 @@ from .ids import (
 )
 from .option_type import OptionType
 from .pay_receive import PayReceive
+from .reference import ReferenceData, ResolvableReference
 from .settlement_rules import SettlementAdjustment
 from .tenor import Tenor
 from .traits import (
@@ -109,6 +110,8 @@ __all__ = [
     "YieldCalculationRules",
     "PayReceive",
     "OptionType",
+    "ReferenceData",
+    "ResolvableReference",
     # Daycounts
     "DayCount",
     "DayCountConvention",

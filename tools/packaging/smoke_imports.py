@@ -15,9 +15,10 @@ import fuggers_py.bonds.yas
 import fuggers_py.bonds.yields
 import fuggers_py.credit
 import fuggers_py.credit.analytics
+import fuggers_py.credit.instruments
 import fuggers_py.credit.pricing
-import fuggers_py.credit.products
 import fuggers_py.credit.quotes
+import fuggers_py.credit.risk
 import fuggers_py.curves
 import fuggers_py.funding
 import fuggers_py.funding.analytics

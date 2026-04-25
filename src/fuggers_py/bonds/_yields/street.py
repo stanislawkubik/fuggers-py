@@ -1,4 +1,4 @@
-"""Street-convention yield (`fuggers_py._measures.yields.street`).
+"""Street-convention yield (`fuggers_py.bonds._yields.street`).
 
 The returned yield is a raw decimal rate, matching the bond solver's internal
 representation rather than a quoted percentage.

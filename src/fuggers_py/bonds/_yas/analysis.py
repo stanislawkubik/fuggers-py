@@ -1,4 +1,4 @@
-"""YAS analysis containers (`fuggers_py._measures.yas.analysis`).
+"""YAS analysis containers (`fuggers_py.bonds._yas.analysis`).
 
 The analysis object stores display-oriented yield and spread fields together
 with the computed risk bundle and settlement invoice.

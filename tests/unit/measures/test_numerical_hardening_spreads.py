@@ -4,22 +4,17 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.spreads import ProceedsAssetSwap
-from fuggers_py._products.bonds.instruments import FixedBond
+from fuggers_py.bonds.spreads import ProceedsAssetSwap
+from fuggers_py.bonds.instruments import FixedBond
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Currency, Date, Frequency
-from fuggers_py._curves_impl import DiscountCurveBuilder
+from tests.helpers._rates_helpers import flat_curve
 
 
 def test_proceeds_asset_swap_uses_settlement_normalized_swap_rate() -> None:
     reference_date = Date.from_ymd(2024, 1, 1)
     settlement_date = Date.from_ymd(2025, 1, 1)
-    curve = (
-        DiscountCurveBuilder(reference_date=reference_date)
-        .add_zero_rate(1.0, Decimal("0.03"))
-        .add_zero_rate(3.0, Decimal("0.03"))
-        .build()
-    )
+    curve = flat_curve(reference_date, "0.03")
     bond = FixedBond.new(
         issue_date=reference_date,
         maturity_date=Date.from_ymd(2027, 1, 1),

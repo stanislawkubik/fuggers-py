@@ -4,8 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.pricing import BondPricer
-from fuggers_py._measures.risk import (
+from fuggers_py.bonds.analytics_pricing import BondPricer
+from fuggers_py.bonds.risk import (
     BondRiskCalculator,
     analytical_convexity,
     dv01_from_duration,

@@ -7,7 +7,7 @@ import pytest
 from fuggers_py.bonds.types import BondType, IssuerType
 from fuggers_py._core import Currency, Date, Frequency, InstrumentId
 from fuggers_py._runtime.quotes import BondQuote
-from fuggers_py._reference import (
+from fuggers_py.bonds import (
     BondReferenceData,
     CallScheduleEntry,
     FloatingRateTerms,

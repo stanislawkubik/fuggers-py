@@ -46,15 +46,12 @@ from fuggers_py._core import (
     YieldCalculationRules as core_yield_calculation_rules,
 )
 from fuggers_py.bonds import FixedBondBuilder as bonds_fixed_bond_builder
-from fuggers_py.bonds import YieldCalculationRules as bonds_yield_calculation_rules
 from fuggers_py.bonds import current_yield as bonds_current_yield
 from fuggers_py.curves import RatesTermStructure as public_rates_term_structure
 from fuggers_py.inflation import USD_CPI_U_NSA as inflation_usd_cpi_u_nsa
 from fuggers_py.portfolio import Portfolio as portfolio_portfolio
 from fuggers_py.rates import IndexConventions as rates_index_conventions
 from fuggers_py.rates import OvernightCompounding as rates_overnight_compounding
-from fuggers_py.rates import OptionType as rates_option_type
-from fuggers_py.rates import PayReceive as rates_pay_receive
 from tests.helpers._paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -163,7 +160,6 @@ def test_root_shared_exports_match_phase2_surface() -> None:
         YieldCalculationRules,
     )
     from fuggers_py.bonds import BondType as bonds_bond_type, IssuerType as bonds_issuer_type
-    from fuggers_py.bonds.types import BondType as bond_types_bond_type, IssuerType as bond_types_issuer_type
 
     assert Date is root_date
     assert root_date is core_date
@@ -198,22 +194,17 @@ def test_root_shared_exports_match_phase2_surface() -> None:
     assert SettlementAdjustment is core_settlement_adjustment
     assert SettlementAdjustment.MODIFIED_FOLLOWING.value == "MODIFIED_FOLLOWING"
     assert YieldCalculationRules is core_yield_calculation_rules
-    assert YieldCalculationRules is bonds_yield_calculation_rules
     assert YieldCalculationRules.us_corporate().description == "US Corporate Bond Convention"
     assert BondType is bonds_bond_type
-    assert BondType is bond_types_bond_type
-    assert len({id(BondType), id(bonds_bond_type), id(bond_types_bond_type)}) == 1
+    assert len({id(BondType), id(bonds_bond_type)}) == 1
     assert IssuerType is bonds_issuer_type
-    assert IssuerType is bond_types_issuer_type
-    assert len({id(IssuerType), id(bonds_issuer_type), id(bond_types_issuer_type)}) == 1
+    assert len({id(IssuerType), id(bonds_issuer_type)}) == 1
     assert BondType.__module__ == "fuggers_py.bonds.types.bond_type"
     assert IssuerType.__module__ == "fuggers_py.bonds.types.issuer_type"
     assert BondType.FIXED_RATE.value == "FIXED_RATE"
     assert IssuerType.CORPORATE.value == "CORPORATE"
     assert PayReceive is core_pay_receive
-    assert PayReceive is rates_pay_receive
     assert OptionType is core_option_type
-    assert OptionType is rates_option_type
     assert USD_CPI_U_NSA is inflation_usd_cpi_u_nsa
     assert IndexConventions is rates_index_conventions
     assert OvernightCompounding is rates_overnight_compounding
@@ -296,8 +287,8 @@ def test_root_shared_exports_resolve_to_final_source_files() -> None:
         ),
         "USD_CPI_U_NSA": (
             inflation_usd_cpi_u_nsa,
-            "fuggers_py.inflation.reference",
-            ROOT / "src" / "fuggers_py" / "inflation" / "reference.py",
+            "fuggers_py.inflation.conventions",
+            ROOT / "src" / "fuggers_py" / "inflation" / "conventions.py",
         ),
         "IndexConventions": (
             rates_index_conventions,
@@ -319,10 +310,9 @@ def test_root_shared_exports_resolve_to_final_source_files() -> None:
 def test_bond_type_and_issuer_type_have_one_live_owner_class_each() -> None:
     from fuggers_py import BondType, IssuerType
     from fuggers_py.bonds import BondType as bonds_bond_type, IssuerType as bonds_issuer_type
-    from fuggers_py.bonds.types import BondType as bond_types_bond_type, IssuerType as bond_types_issuer_type
 
-    assert {id(BondType), id(bonds_bond_type), id(bond_types_bond_type)} == {id(BondType)}
-    assert {id(IssuerType), id(bonds_issuer_type), id(bond_types_issuer_type)} == {id(IssuerType)}
+    assert {id(BondType), id(bonds_bond_type)} == {id(BondType)}
+    assert {id(IssuerType), id(bonds_issuer_type)} == {id(IssuerType)}
 
     expected_definition_paths = {
         "BondType": ROOT / "src" / "fuggers_py" / "bonds" / "types" / "bond_type.py",

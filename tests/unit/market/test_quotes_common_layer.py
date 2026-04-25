@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._calc import QuoteSide as CalcQuoteSide
+from fuggers_py._runtime import QuoteSide as CalcQuoteSide
 from fuggers_py._core import Currency, CurrencyPair, Date, Frequency, InstrumentId, YearMonth
 from fuggers_py._runtime.quotes import (
     BasisSwapQuote,
@@ -18,8 +18,8 @@ from fuggers_py._runtime.quotes import (
     ScalarQuote,
     SwapQuote,
 )
-from fuggers_py._market.snapshot import CurveInput, CurveInstrumentType, MarketDataSnapshot
-from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py._runtime.snapshot import CurveInput, CurveInstrumentType, MarketDataSnapshot
+from fuggers_py.bonds import FixedBondBuilder
 from fuggers_py._core import YieldCalculationRules
 
 

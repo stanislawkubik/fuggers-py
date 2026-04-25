@@ -6,6 +6,6 @@
     "volatility": "0.01",
     "expected_oas": "-0.00911378870537117",
     "expected_effective_duration": "1.4237533188225182",
-    "expected_effective_convexity": "2.1062084958492635"
+    "expected_effective_convexity": "2.1062084403922694"
   }
 }

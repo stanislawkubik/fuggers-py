@@ -6,14 +6,9 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py._core.types import Compounding, Currency, Date, Frequency
-from fuggers_py.curves import CurveSpec, CurveType
+from fuggers_py.curves import CurveSpec
 from fuggers_py.curves.errors import InvalidCurveInput
-from fuggers_py.curves.calibrators import (
-    BondFitTarget,
-    CalibrationMode,
-    CalibrationObjective,
-    CalibrationSpec,
-)
+from fuggers_py.curves.calibrators import CalibrationSpec
 from fuggers_py.curves.calibrators._quotes import (
     QuoteValueKind,
     TargetSpaceCategory,
@@ -21,10 +16,10 @@ from fuggers_py.curves.calibrators._quotes import (
     normalized_quote_rows,
     quote_value_target_space,
 )
-from fuggers_py.curves.kernels import CurveKernel
+from fuggers_py.curves.kernels.base import CurveKernel
 from fuggers_py._runtime.quotes import BondQuote, SwapQuote
-from fuggers_py._products.bonds import FixedBondBuilder
-from fuggers_py._reference.bonds.types import CompoundingMethod
+from fuggers_py.bonds import FixedBondBuilder
+from fuggers_py.bonds.types import CompoundingMethod
 from fuggers_py._core import YieldCalculationRules
 
 
@@ -34,7 +29,7 @@ def _spec() -> CurveSpec:
         reference_date=Date.parse("2026-04-09"),
         day_count="ACT_365_FIXED",
         currency=Currency.USD,
-        type=CurveType.NOMINAL,
+        type="nominal",
     )
 
 
@@ -67,18 +62,18 @@ class _FlatZeroKernel(CurveKernel):
 
 def _bootstrap_calibration_spec() -> CalibrationSpec:
     return CalibrationSpec(
-        mode=CalibrationMode.BOOTSTRAP,
-        objective=CalibrationObjective.EXACT_FIT,
-        bond_fit_target=BondFitTarget.CLEAN_PRICE,
+        method="bootstrap",
+        objective="exact_fit",
+        bond_target="clean_price",
     )
 
 
 def _global_fit_calibration_spec() -> CalibrationSpec:
     return CalibrationSpec(
-        mode=CalibrationMode.GLOBAL_FIT,
-        objective=CalibrationObjective.WEIGHTED_L2,
-        regressor_names=("liquidity", "seasonality"),
-        bond_fit_target=BondFitTarget.CLEAN_PRICE,
+        method="global_fit",
+        objective="weighted_l2",
+        regressors=("liquidity", "seasonality"),
+        bond_target="clean_price",
     )
 
 
@@ -176,9 +171,9 @@ def test_global_fit_bond_price_normalization_uses_requested_price_target_and_nev
         [quote],
         spec=_spec(),
         calibration_spec=CalibrationSpec(
-            mode=CalibrationMode.GLOBAL_FIT,
-            objective=CalibrationObjective.WEIGHTED_L2,
-            bond_fit_target=BondFitTarget.CLEAN_PRICE,
+            method="global_fit",
+            objective="weighted_l2",
+            bond_target="clean_price",
         ),
         require_strictly_positive_tenor=True,
     )
@@ -186,9 +181,9 @@ def test_global_fit_bond_price_normalization_uses_requested_price_target_and_nev
         [quote],
         spec=_spec(),
         calibration_spec=CalibrationSpec(
-            mode=CalibrationMode.GLOBAL_FIT,
-            objective=CalibrationObjective.WEIGHTED_L2,
-            bond_fit_target=BondFitTarget.DIRTY_PRICE,
+            method="global_fit",
+            objective="weighted_l2",
+            bond_target="dirty_price",
         ),
         require_strictly_positive_tenor=True,
     )
@@ -214,9 +209,9 @@ def test_global_fit_bond_price_target_wins_over_ytm_when_both_are_present() -> N
         [quote],
         spec=_spec(),
         calibration_spec=CalibrationSpec(
-            mode=CalibrationMode.GLOBAL_FIT,
-            objective=CalibrationObjective.WEIGHTED_L2,
-            bond_fit_target=BondFitTarget.CLEAN_PRICE,
+            method="global_fit",
+            objective="weighted_l2",
+            bond_target="clean_price",
         ),
         require_strictly_positive_tenor=True,
     )
@@ -224,9 +219,9 @@ def test_global_fit_bond_price_target_wins_over_ytm_when_both_are_present() -> N
         [quote],
         spec=_spec(),
         calibration_spec=CalibrationSpec(
-            mode=CalibrationMode.GLOBAL_FIT,
-            objective=CalibrationObjective.WEIGHTED_L2,
-            bond_fit_target=BondFitTarget.DIRTY_PRICE,
+            method="global_fit",
+            objective="weighted_l2",
+            bond_target="dirty_price",
         ),
         require_strictly_positive_tenor=True,
     )
@@ -248,9 +243,9 @@ def test_global_fit_uses_bond_ytm_when_no_price_is_present() -> None:
         ],
         spec=_spec(),
         calibration_spec=CalibrationSpec(
-            mode=CalibrationMode.GLOBAL_FIT,
-            objective=CalibrationObjective.WEIGHTED_L2,
-            bond_fit_target=BondFitTarget.CLEAN_PRICE,
+            method="global_fit",
+            objective="weighted_l2",
+            bond_target="clean_price",
         ),
         require_strictly_positive_tenor=True,
     )
@@ -276,15 +271,15 @@ def test_bond_quote_regressor_values_follow_calibration_spec_order_and_fill_miss
         ],
         spec=_spec(),
         calibration_spec=CalibrationSpec(
-            mode=CalibrationMode.GLOBAL_FIT,
-            objective=CalibrationObjective.WEIGHTED_L2,
-            regressor_names=(
+            method="global_fit",
+            objective="weighted_l2",
+            regressors=(
                 "repo_specialness_bp",
                 "issue_age_years",
                 "issue_size_bn",
                 "deliverable_bpv",
             ),
-            bond_fit_target=BondFitTarget.CLEAN_PRICE,
+            bond_target="clean_price",
         ),
         require_strictly_positive_tenor=True,
     )
@@ -292,7 +287,7 @@ def test_bond_quote_regressor_values_follow_calibration_spec_order_and_fill_miss
     assert row.regressor_values == pytest.approx((-3.5, 0.0, 42.0, 1.25))
 
 
-def test_non_bond_rows_still_use_the_same_row_type_with_zero_regressor_values() -> None:
+def test_swap_quote_rows_are_zero_rate_observations_with_zero_regressor_values() -> None:
     row, = normalized_quote_rows(
         [
             SwapQuote(
@@ -309,6 +304,8 @@ def test_non_bond_rows_still_use_the_same_row_type_with_zero_regressor_values() 
     )
 
     assert row.value_kind is QuoteValueKind.ZERO_RATE
+    assert row.observed_kind == "SWAP_ZERO_RATE"
+    assert row.value == pytest.approx(0.04)
     assert row.regressor_values == (0.0, 0.0)
 
 
@@ -368,9 +365,9 @@ def test_model_quote_value_prices_bond_clean_and_dirty_targets_directly_from_the
         [dirty_quote],
         spec=_spec(),
         calibration_spec=CalibrationSpec(
-            mode=CalibrationMode.GLOBAL_FIT,
-            objective=CalibrationObjective.WEIGHTED_L2,
-            bond_fit_target=BondFitTarget.DIRTY_PRICE,
+            method="global_fit",
+            objective="weighted_l2",
+            bond_target="dirty_price",
         ),
         require_strictly_positive_tenor=True,
     )

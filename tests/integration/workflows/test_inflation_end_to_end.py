@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from decimal import Decimal
 
 from fuggers_py._core import Currency, Date, PayReceive, Price
-from fuggers_py._market.state import AnalyticsCurves
-from fuggers_py._market.snapshot import MarketDataSnapshot
-from fuggers_py._market.sources import MarketDataProvider
-from fuggers_py._calc import PricingRouter
-from fuggers_py._curves_impl.inflation import bootstrap_inflation_curve
-from fuggers_py._measures.inflation import linker_swap_parity_check
+from fuggers_py._runtime.state import AnalyticsCurves
+from fuggers_py._runtime.snapshot import MarketDataSnapshot
+from fuggers_py._runtime.sources import MarketDataProvider
+from fuggers_py._runtime import PricingRouter
 from fuggers_py.inflation import InflationSwapPricer
 from fuggers_py.inflation import (
     StandardCouponInflationSwap,
     USD_CPI_U_NSA,
     ZeroCouponInflationSwap,
+    linker_swap_parity_check,
     load_monthly_cpi_fixings_csv,
     load_monthly_cpi_fixings_json,
     parse_treasury_auctioned_tips_json,
@@ -22,6 +22,18 @@ from fuggers_py.inflation import (
     tips_bond_from_treasury_auction_row,
 )
 from tests.helpers._rates_helpers import flat_curve
+
+
+@dataclass(frozen=True, slots=True)
+class _ProjectionCurve:
+    base_date: Date
+    base_cpi: Decimal
+    annual_inflation: Decimal
+
+    def reference_cpi(self, date: Date, convention) -> Decimal:
+        del convention
+        years = Decimal(self.base_date.days_between(date)) / Decimal(365)
+        return self.base_cpi * (Decimal(1) + self.annual_inflation * years)
 
 
 def test_inflation_end_to_end_from_treasury_adapter_to_routers(tmp_path) -> None:
@@ -60,7 +72,6 @@ def test_inflation_end_to_end_from_treasury_adapter_to_routers(tmp_path) -> None
 
     assert csv_fixings == json_fixings
 
-    fixing_source = treasury_cpi_source_from_fixings(csv_fixings)
     snapshot = MarketDataSnapshot(inflation_fixings=csv_fixings)
     provider = MarketDataProvider.from_snapshot(snapshot)
 
@@ -96,38 +107,15 @@ def test_inflation_end_to_end_from_treasury_adapter_to_routers(tmp_path) -> None
     assert tips_output.dirty_price is not None
 
     discount_curve = flat_curve(Date.from_ymd(2024, 1, 10), "0.03")
-    bootstrap = bootstrap_inflation_curve(
-        [
-            ZeroCouponInflationSwap.new(
-                trade_date=Date.from_ymd(2024, 1, 10),
-                effective_date=Date.from_ymd(2024, 1, 15),
-                maturity_date=Date.from_ymd(2025, 1, 15),
-                notional=Decimal("1000000"),
-                fixed_rate=Decimal("0.0200"),
-                pay_receive=PayReceive.PAY,
-                currency=Currency.USD,
-                inflation_convention=USD_CPI_U_NSA,
-                instrument_id="ZCIS-CAL-1Y",
-            ),
-            ZeroCouponInflationSwap.new(
-                trade_date=Date.from_ymd(2024, 1, 10),
-                effective_date=Date.from_ymd(2024, 1, 15),
-                maturity_date=Date.from_ymd(2026, 1, 15),
-                notional=Decimal("1000000"),
-                fixed_rate=Decimal("0.0350"),
-                pay_receive=PayReceive.PAY,
-                currency=Currency.USD,
-                inflation_convention=USD_CPI_U_NSA,
-                instrument_id="ZCIS-CAL-2Y",
-            ),
-        ],
-        fixing_source=fixing_source,
-        discount_curve=discount_curve,
+    inflation_curve = _ProjectionCurve(
+        base_date=Date.from_ymd(2024, 1, 2),
+        base_cpi=Decimal("100"),
+        annual_inflation=Decimal("0.025"),
     )
     curves = AnalyticsCurves(
         discount_curve=discount_curve,
-        inflation_curve=bootstrap.curve,
-        inflation_curves={"CPURNSA": bootstrap.curve},
+        inflation_curve=inflation_curve,
+        inflation_curves={"CPURNSA": inflation_curve},
     )
     zcis = ZeroCouponInflationSwap.new(
         trade_date=Date.from_ymd(2024, 1, 10),

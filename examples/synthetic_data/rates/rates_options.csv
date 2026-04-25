@@ -1,4 +1,0 @@
-instrument_id,underlying_future,expiry_date,strike,option_type,family_id
-TYM6C110,TYM6,2026-03-20,110.0,CALL,TYM6_MAR20
-TYM6C112,TYM6,2026-03-20,112.0,CALL,TYM6_MAR20
-TYM6C114,TYM6,2026-03-20,114.0,CALL,TYM6_MAR20

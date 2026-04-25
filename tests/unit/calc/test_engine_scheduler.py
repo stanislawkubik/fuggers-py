@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, time, timedelta
 
-import fuggers_py._calc.scheduler as scheduler_module
+import fuggers_py._runtime.scheduler as scheduler_module
 
 import pytest
 
-from fuggers_py._calc.calc_graph import NodeId
-from fuggers_py._calc.errors import SchedulerError
-from fuggers_py._calc.scheduler import CronScheduler, EodScheduler, IntervalScheduler, ThrottleManager, UpdateSource
+from fuggers_py._runtime.calc_graph import NodeId
+from fuggers_py._runtime.errors import SchedulerError
+from fuggers_py._runtime.scheduler import CronScheduler, EodScheduler, IntervalScheduler, ThrottleManager, UpdateSource
 
 
 class _FakeCroniter:

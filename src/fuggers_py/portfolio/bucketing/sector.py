@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from fuggers_py.bonds import Sector
-
 from ..portfolio import Portfolio
 from ..results import SectorDistribution
-from ..types import Position
+from ..types import Position, Sector
 
 
 def bucket_by_sector(portfolio: Portfolio) -> SectorDistribution:

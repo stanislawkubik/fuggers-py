@@ -1,4 +1,4 @@
-"""Yield solver (`fuggers_py._measures.yields.solver`).
+"""Yield solver (`fuggers_py.bonds._yields.solver`).
 
 This wrapper keeps the bond yield solver behavior intact while translating
 bond-layer failures into analytics-layer errors.
@@ -11,7 +11,7 @@ from fuggers_py.bonds._yields.bond import YieldSolver as _BondYieldSolver
 from fuggers_py.bonds.errors import BondPricingError, YieldConvergenceFailed
 from fuggers_py.bonds.types import YieldConvention
 
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 
 
 class YieldSolver(_BondYieldSolver):

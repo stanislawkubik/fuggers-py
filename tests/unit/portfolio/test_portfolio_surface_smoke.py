@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._products.bonds.instruments import FixedBond
-from fuggers_py._reference.bonds.types import CreditRating, RatingInfo, Sector, SectorInfo
+from fuggers_py.bonds.instruments import FixedBond
+from fuggers_py.bonds.types import CreditRating, RatingInfo, Sector, SectorInfo
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Currency, Date, Frequency
-from fuggers_py._curves_impl import DiscountCurveBuilder
 from fuggers_py.portfolio import (
     AnalyticsConfig,
     CashPosition,
@@ -17,15 +16,11 @@ from fuggers_py.portfolio import (
     calculate_etf_nav,
     calculate_portfolio_analytics,
 )
+from tests.helpers._rates_helpers import flat_curve
 
 
 def _curve(ref: Date):
-    return (
-        DiscountCurveBuilder(reference_date=ref)
-        .add_zero_rate(1.0, Decimal("0.03"))
-        .add_zero_rate(10.0, Decimal("0.04"))
-        .build()
-    )
+    return flat_curve(ref, "0.035")
 
 
 def _holding(ref: Date, *, years: int, coupon: str, label: str, sector: Sector, rating: CreditRating) -> Holding:

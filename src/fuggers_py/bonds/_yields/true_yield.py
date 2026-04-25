@@ -1,4 +1,4 @@
-"""True yield helpers (`fuggers_py._measures.yields.true_yield`).
+"""True yield helpers (`fuggers_py.bonds._yields.true_yield`).
 
 True yield is represented as a raw decimal rate. The helper adds the supplied
 settlement adjustment directly to the street yield.

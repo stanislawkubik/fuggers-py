@@ -6,21 +6,20 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py.bonds.types import BondType, IssuerType
-from fuggers_py._calc import (
+from fuggers_py._runtime import (
     NodeId,
     PricingEngineBuilder,
     PricingInput,
     QuoteUpdate,
 )
 from fuggers_py._core import Currency, Date
-from fuggers_py._calc import QuoteSide
+from fuggers_py._runtime import QuoteSide
 from fuggers_py._core import InstrumentId
 from fuggers_py._runtime.quotes import RawQuote
-from fuggers_py._market.snapshot import CurvePoint
-from fuggers_py._market.state import AnalyticsCurves
-from fuggers_py._market.sources import MarketDataProvider
-from fuggers_py._reference import BondReferenceData, ReferenceDataProvider
-from fuggers_py._curves_impl import CurveType
+from fuggers_py._runtime.snapshot import CurvePoint
+from fuggers_py._runtime.state import AnalyticsCurves
+from fuggers_py._runtime.sources import MarketDataProvider
+from fuggers_py.bonds import BondReferenceData, ReferenceDataProvider
 from tests.helpers._public_curve_helpers import linear_zero_curve
 
 
@@ -71,7 +70,7 @@ async def test_reactive_engine_processes_updates_without_background_hangs() -> N
                         CurvePoint(Decimal("1.0"), Decimal("0.0425")),
                         CurvePoint(Decimal("5.0"), Decimal("0.0390")),
                     ),
-                    curve_type=CurveType.OVERNIGHT_DISCOUNT,
+                    curve_type="overnight_discount",
                 )
             ),
         ),

@@ -4,13 +4,13 @@ from decimal import Decimal
 
 import pytest
 
-import fuggers_py._pricers.bonds.yield_engine as yield_engine_module
+import fuggers_py.bonds._pricing_yield_engine as yield_engine_module
 
-from fuggers_py._measures.cashflows.irregular import IrregularPeriodHandler
-from fuggers_py._measures.errors import AnalyticsError
-from fuggers_py._measures.yields.street import street_convention_yield
-from fuggers_py._products.bonds.instruments import FixedBondBuilder
-from fuggers_py._pricers.bonds.yield_engine import StandardYieldEngine, _prepare_cashflows
+from fuggers_py.bonds.cashflows.irregular import IrregularPeriodHandler
+from fuggers_py.bonds import AnalyticsError
+from fuggers_py.bonds.yields import street_convention_yield
+from fuggers_py.bonds.instruments import FixedBondBuilder
+from fuggers_py.bonds._pricing_yield_engine import StandardYieldEngine, _prepare_cashflows
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Currency, Date, Frequency
 from fuggers_py._core.daycounts import ActActIcma, DayCountConvention

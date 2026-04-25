@@ -5,13 +5,13 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.risk import analytical_convexity
-from fuggers_py._products.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
-from fuggers_py._products.bonds.instruments import FixedBond, FixedBondBuilder
-from fuggers_py._pricers.bonds import BondPricer
-from fuggers_py._pricers.bonds.yield_engine import _prepare_cashflows
-from fuggers_py._pricers.bonds.risk import RiskMetrics
-from fuggers_py._reference.bonds.types import CompoundingMethod, StubPeriodRules
+from fuggers_py.bonds.risk import analytical_convexity
+from fuggers_py.bonds.cashflows import AccruedInterestCalculator, AccruedInterestInputs
+from fuggers_py.bonds.instruments import FixedBond, FixedBondBuilder
+from fuggers_py.bonds import BondPricer
+from fuggers_py.bonds._pricing_yield_engine import _prepare_cashflows
+from fuggers_py.bonds import RiskMetrics
+from fuggers_py.bonds.types import CompoundingMethod, StubPeriodRules
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Compounding, Date, Frequency, Yield
 

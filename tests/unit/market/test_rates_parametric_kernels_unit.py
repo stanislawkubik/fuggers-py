@@ -5,19 +5,19 @@ from math import exp
 import pytest
 
 from fuggers_py._core.types import Currency, Date
-from fuggers_py.curves import CurveSpec, CurveType, ExtrapolationPolicy, YieldCurve
+from fuggers_py.curves import CurveSpec, YieldCurve
 from fuggers_py.curves.errors import InvalidCurveInput, TenorOutOfBounds
-from fuggers_py.curves.kernels import NelsonSiegelKernel, SvenssonKernel
+from fuggers_py.curves.kernels.parametric import NelsonSiegelKernel, SvenssonKernel
 from fuggers_py._math.interpolation.parametric import NelsonSiegel, Svensson
 
 
-def _nominal_spec(*, extrapolation_policy: ExtrapolationPolicy = ExtrapolationPolicy.ERROR) -> CurveSpec:
+def _nominal_spec(*, extrapolation_policy: str = "error") -> CurveSpec:
     return CurveSpec(
         name="USD Nominal",
         reference_date=Date.parse("2026-04-09"),
         day_count="ACT_365_FIXED",
         currency=Currency.USD,
-        type=CurveType.NOMINAL,
+        type="nominal",
         extrapolation_policy=extrapolation_policy,
     )
 
@@ -79,6 +79,84 @@ def test_substep_d6_parametric_kernels_support_extrapolation_when_enabled() -> N
     assert kernel.rate_at(15.0) == pytest.approx(
         NelsonSiegel.new(beta0=0.03, beta1=-0.01, beta2=0.02, tau=1.5).interpolate(15.0)
     )
+
+
+def test_substep_d6_error_policy_rejects_out_of_range_parametric_curve_even_if_kernel_allows_it() -> None:
+    curve = YieldCurve(
+        spec=_nominal_spec(extrapolation_policy="error"),
+        kernel=NelsonSiegelKernel(
+            beta0=0.03,
+            beta1=-0.01,
+            beta2=0.02,
+            tau=1.5,
+            max_t=10.0,
+            allow_extrapolation=True,
+        ),
+    )
+
+    with pytest.raises(TenorOutOfBounds):
+        curve.rate_at(15.0)
+
+
+def test_substep_d6_hold_last_zero_rate_overrides_parametric_extrapolation() -> None:
+    model = NelsonSiegel.new(beta0=0.03, beta1=-0.01, beta2=0.02, tau=1.5)
+    curve = YieldCurve(
+        spec=_nominal_spec(extrapolation_policy="hold_last_zero_rate"),
+        kernel=NelsonSiegelKernel(
+            beta0=0.03,
+            beta1=-0.01,
+            beta2=0.02,
+            tau=1.5,
+            max_t=10.0,
+            allow_extrapolation=True,
+        ),
+    )
+
+    assert curve.rate_at(15.0) == pytest.approx(model.interpolate(10.0))
+    assert curve.discount_factor_at(15.0) == pytest.approx(exp(-model.interpolate(10.0) * 15.0))
+
+
+def test_substep_d6_hold_last_native_rate_uses_parametric_final_zero_rate() -> None:
+    model = Svensson.new(
+        beta0=0.025,
+        beta1=-0.01,
+        beta2=0.02,
+        beta3=-0.003,
+        tau1=1.5,
+        tau2=4.0,
+    )
+    curve = YieldCurve(
+        spec=_nominal_spec(extrapolation_policy="hold_last_native_rate"),
+        kernel=SvenssonKernel(
+            beta0=0.025,
+            beta1=-0.01,
+            beta2=0.02,
+            beta3=-0.003,
+            tau1=1.5,
+            tau2=4.0,
+            max_t=10.0,
+            allow_extrapolation=True,
+        ),
+    )
+
+    assert curve.rate_at(15.0) == pytest.approx(model.interpolate(10.0))
+
+
+def test_substep_d6_hold_last_forward_rate_rejects_parametric_kernel() -> None:
+    curve = YieldCurve(
+        spec=_nominal_spec(extrapolation_policy="hold_last_forward_rate"),
+        kernel=NelsonSiegelKernel(
+            beta0=0.03,
+            beta1=-0.01,
+            beta2=0.02,
+            tau=1.5,
+            max_t=10.0,
+            allow_extrapolation=True,
+        ),
+    )
+
+    with pytest.raises(InvalidCurveInput, match="hold_last_forward_rate"):
+        curve.rate_at(15.0)
 
 
 def test_substep_d6_parametric_kernels_reject_extrapolation_when_disabled() -> None:

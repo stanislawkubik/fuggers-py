@@ -1,4 +1,4 @@
-"""Yield engine (`fuggers_py._measures.yields.engine`).
+"""Yield engine (`fuggers_py.bonds._yields.engine`).
 
 This module wraps the lower-level bond yield engine and exposes analytics
 results with explicit decimal-versus-percentage helpers. The engine result
@@ -18,7 +18,7 @@ from fuggers_py.bonds.traits import BondCashFlow
 from fuggers_py.bonds.types import YieldConvention
 from fuggers_py._core.types import Date
 
-from ..analytics_errors import AnalyticsError
+from ..errors import AnalyticsError
 from .current import current_yield_simple as _current_yield_simple
 from .money_market import bond_equivalent_yield, discount_yield
 

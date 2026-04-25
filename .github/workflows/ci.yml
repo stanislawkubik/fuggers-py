@@ -72,6 +72,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch pull request base branch
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags --prune origin "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -90,6 +94,19 @@ jobs:
 
       - name: Run release-target Ruff gate
         run: python tools/run_release_ruff.py
+
+      - name: Run structural API and docs gates
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF_ARGS=(--base-ref "origin/${{ github.base_ref }}")
+          else
+            BASE_REF_ARGS=()
+          fi
+          python tools/validate_api_cleanliness.py "${BASE_REF_ARGS[@]}"
+          python tools/validate_public_api_surface.py
+          python tools/validate_public_api_surface.py --check-contract-permission "${BASE_REF_ARGS[@]}"
+          python tools/validate_docs_coverage.py "${BASE_REF_ARGS[@]}"
 
       - name: Run phased mypy gate
         run: mypy

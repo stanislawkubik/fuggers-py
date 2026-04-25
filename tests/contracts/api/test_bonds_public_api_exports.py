@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import ast
-import fuggers_py.bonds as bonds_pkg
+import inspect
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
+
+import fuggers_py.bonds as bonds_pkg
 
 from fuggers_py.bonds import (
     BinomialTree,
@@ -22,11 +24,10 @@ from fuggers_py.bonds import (
     HullWhiteModel,
     IssuerType,
     TipsBond,
-    YieldCalculationRules,
     current_yield,
     g_spread,
 )
-from fuggers_py import Compounding, Date, Frequency, Yield
+from fuggers_py import Compounding, Date, Frequency, Yield, YieldCalculationRules
 
 
 def test_bonds_root_is_a_small_direct_import_surface() -> None:
@@ -66,7 +67,6 @@ def _base_bond(*, years: int = 5, coupon: str = "0.05") -> FixedBond:
 
 def test_bonds_root_imports_expose_current_first_layer_aliases() -> None:
     from fuggers_py import BondType as root_bond_type, IssuerType as root_issuer_type
-    from fuggers_py.bonds.types import BondType as bond_types_bond_type, IssuerType as bond_types_issuer_type
 
     expected_key_exports = {
         "Bond",
@@ -84,7 +84,6 @@ def test_bonds_root_imports_expose_current_first_layer_aliases() -> None:
         "TipsBond",
         "YASCalculator",
         "YasAnalysis",
-        "YieldCalculationRules",
         "current_yield",
         "g_spread",
         "z_spread",
@@ -103,16 +102,29 @@ def test_bonds_root_imports_expose_current_first_layer_aliases() -> None:
     assert bonds_pkg.HullWhiteModel is HullWhiteModel
     assert bonds_pkg.TipsBond is TipsBond
     assert bonds_pkg.YASCalculator is YASCalculator
-    assert bonds_pkg.YieldCalculationRules is YieldCalculationRules
     assert bonds_pkg.current_yield is current_yield
     assert bonds_pkg.g_spread is g_spread
     assert BondType is root_bond_type
-    assert BondType is bond_types_bond_type
+    assert BondType is bonds_pkg.BondType
     assert IssuerType is root_issuer_type
-    assert IssuerType is bond_types_issuer_type
+    assert IssuerType is bonds_pkg.IssuerType
     assert BondType.__module__ == "fuggers_py.bonds.types.bond_type"
     assert IssuerType.__module__ == "fuggers_py.bonds.types.issuer_type"
     assert BondQuote.__module__ == "fuggers_py.bonds.quotes"
+
+
+def test_bonds_exports_resolve_under_bonds() -> None:
+    root = Path(bonds_pkg.__file__).resolve().parent
+    source_less_constants = {"DEFAULT_BUMP_SIZE", "SMALL_BUMP_SIZE"}
+    for name in bonds_pkg.__all__:
+        value = getattr(bonds_pkg, name)
+        try:
+            source = inspect.getsourcefile(value)
+        except TypeError:
+            assert name in source_less_constants
+            continue
+        assert source is not None
+        assert Path(source).resolve().is_relative_to(root), name
 
 
 def test_fixed_bond_builder_and_pricer_are_usable_from_root_exports() -> None:

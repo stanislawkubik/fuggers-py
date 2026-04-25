@@ -1,6 +1,0 @@
-as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
-2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_1W,1W,USD,zero_rate,0.0424,decimal,General collateral repo anchor
-2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_1M,1M,USD,zero_rate,0.0420,decimal,General collateral repo anchor
-2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_3M,3M,USD,zero_rate,0.0413,decimal,General collateral repo anchor
-2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_6M,6M,USD,zero_rate,0.0404,decimal,General collateral repo anchor
-2026-01-15,repo_funding_curve,usd.repo.gc,USD_REPO_1Y,1Y,USD,zero_rate,0.0394,decimal,General collateral repo anchor

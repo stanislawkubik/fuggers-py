@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.yields import (
+from fuggers_py.bonds.yields import (
     StandardYieldEngine,
     YieldSolver,
     bond_equivalent_yield,

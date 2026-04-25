@@ -33,6 +33,7 @@ master_doc = "index"
 html_theme = "furo"
 html_static_path = ["_static"]
 html_title = "fuggers-py"
+html_logo = "_static/fuggers-py-logo.png"
 
 myst_heading_anchors = 3
 napoleon_google_docstring = False

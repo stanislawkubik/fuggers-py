@@ -4,20 +4,15 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._measures.pricing import BondPricer
-from fuggers_py._measures.risk.duration import modified_duration, spread_duration
-from fuggers_py._products.bonds.instruments import FixedBond
-from fuggers_py._core.types import Compounding, Date, Frequency
-from fuggers_py._curves_impl import ZeroCurveBuilder
+from fuggers_py.bonds.analytics_pricing import BondPricer
+from fuggers_py.bonds.risk import modified_duration, spread_duration
+from fuggers_py.bonds.instruments import FixedBond
+from fuggers_py._core.types import Date, Frequency
+from tests.helpers._rates_helpers import flat_curve
 
 
 def _flat_curve(ref: Date, rate: str) -> object:
-    return (
-        ZeroCurveBuilder(reference_date=ref, compounding=Compounding.SEMI_ANNUAL)
-        .add_rate(ref.add_days(365), Decimal(rate))
-        .add_rate(ref.add_days(365 * 10), Decimal(rate))
-        .build()
-    )
+    return flat_curve(ref, rate)
 
 
 def test_spread_duration_positive_and_close_to_modified() -> None:

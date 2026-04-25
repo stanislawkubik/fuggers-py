@@ -20,10 +20,12 @@ from .analytics import (
 )
 from .products import RepoTrade
 from .quotes import HaircutQuote, RepoQuote
+from .reference_data import RepoReferenceData
 
 __all__ = [
     "HaircutQuote",
     "RepoQuote",
+    "RepoReferenceData",
     "RepoTrade",
     "all_in_financing_cost",
     "financed_cash",

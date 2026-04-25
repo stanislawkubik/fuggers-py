@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from fuggers_py._reference.bonds.errors import InvalidIdentifier
-from fuggers_py._reference.bonds.types import Cusip, Figi, Isin, Sedol
+from fuggers_py.bonds.errors import InvalidIdentifier
+from fuggers_py.bonds.types import Cusip, Figi, Isin, Sedol
 
 
 def test_identifier_validation_valid_examples() -> None:

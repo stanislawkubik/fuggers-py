@@ -1,9 +1,0 @@
-as_of,quote_family,curve_name,instrument_id,tenor,currency,quote_field,value,unit,note
-2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_1Y,1Y,USD,inflation_swap_rate,0.0222,decimal,1Y zero coupon inflation swap
-2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_2Y,2Y,USD,inflation_swap_rate,0.0219,decimal,2Y zero coupon inflation swap
-2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_3Y,3Y,USD,inflation_swap_rate,0.0217,decimal,3Y zero coupon inflation swap
-2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_5Y,5Y,USD,inflation_swap_rate,0.0215,decimal,5Y zero coupon inflation swap
-2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_7Y,7Y,USD,inflation_swap_rate,0.0216,decimal,7Y zero coupon inflation swap
-2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_10Y,10Y,USD,inflation_swap_rate,0.0217,decimal,10Y zero coupon inflation swap
-2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_20Y,20Y,USD,inflation_swap_rate,0.0215,decimal,20Y zero coupon inflation swap
-2026-01-15,inflation_swap_curve,usd.cpi.zc,USD_ZCINF_30Y,30Y,USD,inflation_swap_rate,0.0213,decimal,30Y zero coupon inflation swap

@@ -5,9 +5,9 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._reference.bonds.errors import InvalidBondSpec
-from fuggers_py._products.bonds.instruments import CallEntry, CallSchedule, CallType, CallableBondBuilder, FixedBond
-from fuggers_py._reference.bonds.types import PutType
+from fuggers_py.bonds.errors import InvalidBondSpec
+from fuggers_py.bonds.instruments import CallEntry, CallSchedule, CallType, CallableBondBuilder, FixedBond
+from fuggers_py.bonds.types import PutType
 from fuggers_py._core import YieldCalculationRules
 from fuggers_py._core import Date, Frequency
 

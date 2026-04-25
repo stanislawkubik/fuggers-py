@@ -13,14 +13,13 @@ from typing import TypedDict, cast
 
 from fuggers_py.curves import DiscountingCurve
 from fuggers_py._core.types import Date
-from fuggers_py.bonds import CreditRating
 
 from ..analytics.base import PortfolioAnalytics
 from ..analytics.credit import (
     calculate_credit_quality as _calculate_credit_quality_dict,
 )
 from ..portfolio import Portfolio
-from ..types import PortfolioMetrics, Position
+from ..types import CreditRating, PortfolioMetrics, Position
 
 
 class _QualityTiersRaw(TypedDict, total=False):

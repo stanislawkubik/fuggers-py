@@ -1,28 +1,20 @@
 from __future__ import annotations
 
+import pytest
+
 from fuggers_py import Date
 import fuggers_py.curves as curves
-from fuggers_py.rates import SwapQuote
 from fuggers_py.curves import (
-    BondFitTarget,
-    CalibrationMode,
-    CalibrationObjective,
+    CalibrationPoint,
     CalibrationReport,
-    CalibrationSpec,
-    CurveKernel,
-    CurveKernelKind,
     CurveSpec,
-    CurveType,
     DiscountingCurve,
-    ExtrapolationPolicy,
-    GlobalFitOptimizerKind,
-    GlobalFitReport,
-    KernelSpec,
-    RateSpace,
     RatesTermStructure,
-    RelativeRateCurve,
+    STANDARD_KEY_RATE_TENORS,
     YieldCurve,
 )
+from fuggers_py.curves.kernels.base import CurveKernel
+from fuggers_py.rates import SwapQuote
 
 
 class _FlatKernel(CurveKernel):
@@ -37,60 +29,60 @@ class _FlatKernel(CurveKernel):
         return self._zero_rate
 
 
-def test_curves_rates_exports_the_public_construction_surface() -> None:
-    expected_exports = [
+def test_curves_rates_exports_the_first_layer_curve_surface() -> None:
+    assert curves.__all__ == [
+        "CurveSpec",
+        "YieldCurve",
+        "RatesTermStructure",
+        "DiscountingCurve",
+        "CalibrationReport",
+        "CalibrationPoint",
+        "STANDARD_KEY_RATE_TENORS",
+    ]
+
+
+def test_curves_rates_reexports_first_layer_types_and_helpers() -> None:
+    assert CurveSpec is curves.CurveSpec
+    assert YieldCurve is curves.YieldCurve
+    assert RatesTermStructure is curves.RatesTermStructure
+    assert DiscountingCurve is curves.DiscountingCurve
+    assert CalibrationReport is curves.CalibrationReport
+    assert CalibrationPoint is curves.CalibrationPoint
+    assert STANDARD_KEY_RATE_TENORS is curves.STANDARD_KEY_RATE_TENORS
+    assert issubclass(DiscountingCurve, RatesTermStructure)
+    assert issubclass(YieldCurve, DiscountingCurve)
+    assert CurveSpec.__module__ == "fuggers_py.curves.spec"
+    assert YieldCurve.__module__ == "fuggers_py.curves.base"
+    assert DiscountingCurve.shifted.__module__ == "fuggers_py.curves.base"
+    assert DiscountingCurve.bumped.__module__ == "fuggers_py.curves.base"
+
+
+def test_curves_rates_root_does_not_export_advanced_fit_controls() -> None:
+    removed_names = [
         "BondFitTarget",
         "CalibrationMode",
         "CalibrationObjective",
-        "CalibrationPoint",
-        "CalibrationReport",
         "CalibrationSpec",
         "CurveKernel",
         "CurveKernelKind",
-        "CurveSpec",
         "CurveType",
-        "DiscountingCurve",
         "ExtrapolationPolicy",
         "GlobalFitOptimizerKind",
         "GlobalFitPoint",
         "GlobalFitReport",
+        "key_rate_bumped_curve",
         "KernelSpec",
+        "parallel_bumped_curve",
         "RateSpace",
-        "RatesTermStructure",
         "RelativeRateCurve",
-        "YieldCurve",
     ]
 
-    assert curves.__all__ == expected_exports, "curves should export the full public rates surface."
+    for name in removed_names:
+        assert name not in curves.__all__
+        assert not hasattr(curves, name)
 
 
-def test_curves_rates_reexports_construction_and_report_types() -> None:
-    assert CurveSpec is curves.CurveSpec
-    assert CurveKernelKind is curves.CurveKernelKind
-    assert KernelSpec is curves.KernelSpec
-    assert CalibrationMode is curves.CalibrationMode
-    assert CalibrationObjective is curves.CalibrationObjective
-    assert BondFitTarget is curves.BondFitTarget
-    assert CalibrationSpec is curves.CalibrationSpec
-    assert GlobalFitOptimizerKind is curves.GlobalFitOptimizerKind
-    assert CalibrationReport is curves.CalibrationReport
-    assert GlobalFitReport is curves.GlobalFitReport
-    assert issubclass(DiscountingCurve, RatesTermStructure)
-    assert issubclass(YieldCurve, DiscountingCurve)
-    assert issubclass(RelativeRateCurve, RatesTermStructure)
-    assert BondFitTarget.__module__ == "fuggers_py.curves.calibrators.base"
-    assert CalibrationMode.__module__ == "fuggers_py.curves.calibrators.base"
-    assert CalibrationObjective.__module__ == "fuggers_py.curves.calibrators.base"
-    assert CalibrationSpec.__module__ == "fuggers_py.curves.calibrators.base"
-    assert CurveKernel.__module__ == "fuggers_py.curves.kernels.base"
-    assert CurveKernelKind.__module__ == "fuggers_py.curves.kernels.base"
-    assert KernelSpec.__module__ == "fuggers_py.curves.kernels.base"
-    assert CalibrationReport.__module__ == "fuggers_py.curves.reports"
-    assert GlobalFitReport.__module__ == "fuggers_py.curves.reports"
-    assert GlobalFitOptimizerKind.__module__ == "fuggers_py.curves.calibrators.base"
-
-
-def test_yield_curve_fit_can_be_called_from_the_rates_public_surface() -> None:
+def test_yield_curve_fit_can_be_called_from_the_first_layer_surface() -> None:
     reference_date = Date.from_ymd(2026, 4, 9)
 
     curve = YieldCurve.fit(
@@ -104,17 +96,8 @@ def test_yield_curve_fit_can_be_called_from_the_rates_public_surface() -> None:
             reference_date=reference_date,
             day_count="ACT/365F",
             currency="usd",
-            type=CurveType.OVERNIGHT_DISCOUNT,
-            extrapolation_policy=ExtrapolationPolicy.HOLD_LAST_ZERO_RATE,
-        ),
-        kernel_spec=KernelSpec(
-            kind=CurveKernelKind.CUBIC_SPLINE,
-            parameters={"knots": (1.0, 2.0, 5.0)},
-        ),
-        calibration_spec=CalibrationSpec(
-            mode=CalibrationMode.GLOBAL_FIT,
-            objective=CalibrationObjective.WEIGHTED_L2,
-            bond_fit_target=BondFitTarget.DIRTY_PRICE,
+            type="overnight_discount",
+            extrapolation_policy="hold_last_zero_rate",
         ),
     )
 
@@ -122,26 +105,64 @@ def test_yield_curve_fit_can_be_called_from_the_rates_public_surface() -> None:
     assert curve.rate_at(1.0) == 0.025
     assert curve.rate_at(2.0) == 0.03
     assert curve.rate_at(5.0) == 0.035
-    assert curve.calibration_report is not None
     assert isinstance(curve.calibration_report, CalibrationReport)
+    assert curve.calibration_report.method == "bootstrap"
+    first_point = curve.calibration_report.points[0]
+    assert first_point.curve_only_value is None
+    assert first_point.regressor_contribution is None
 
 
-def test_yield_curve_manual_constructor_can_be_used_from_the_rates_public_surface() -> None:
+def test_yield_curve_fit_reports_identify_bootstrap_and_global_fit_methods() -> None:
     reference_date = Date.from_ymd(2026, 4, 9)
-    report = CalibrationReport(objective="EXACT_FIT")
+    quotes = [
+        SwapQuote(instrument_id="1Y", tenor="1Y", rate=0.025, currency="USD", as_of=reference_date),
+        SwapQuote(instrument_id="2Y", tenor="2Y", rate=0.03, currency="USD", as_of=reference_date),
+        SwapQuote(instrument_id="5Y", tenor="5Y", rate=0.035, currency="USD", as_of=reference_date),
+    ]
+    spec = CurveSpec(
+        name="USD OIS",
+        reference_date=reference_date,
+        day_count="ACT/365F",
+        currency="usd",
+        type="overnight_discount",
+        extrapolation_policy="hold_last_zero_rate",
+    )
+
+    bootstrap_curve = YieldCurve.fit(quotes=quotes, spec=spec)
+    global_fit_curve = YieldCurve.fit(
+        quotes=quotes,
+        spec=spec,
+        kernel="cubic_spline",
+        method="global_fit",
+        kernel_params={"knots": (1.0, 2.0, 5.0)},
+    )
+
+    assert bootstrap_curve.calibration_report is not None
+    assert global_fit_curve.calibration_report is not None
+    assert bootstrap_curve.calibration_report.method == "bootstrap"
+    assert global_fit_curve.calibration_report.method == "global_fit"
+    assert bootstrap_curve.calibration_report.points[0].curve_only_value is None
+    assert bootstrap_curve.calibration_report.points[0].regressor_contribution is None
+    assert global_fit_curve.calibration_report.points[0].curve_only_value is not None
+    assert global_fit_curve.calibration_report.points[0].regressor_contribution is not None
+
+
+def test_yield_curve_manual_constructor_uses_one_internal_kernel() -> None:
+    reference_date = Date.from_ymd(2026, 4, 9)
+    report = CalibrationReport(objective="exact_fit")
     curve = YieldCurve(
         spec=CurveSpec(
             name="USD OIS",
             reference_date=reference_date,
             day_count="ACT/365F",
             currency="usd",
-            type=CurveType.OVERNIGHT_DISCOUNT,
-            extrapolation_policy=ExtrapolationPolicy.ERROR,
+            type="overnight_discount",
+            extrapolation_policy="error",
         ),
         kernel=_FlatKernel(zero_rate=0.031, max_t=10.0),
         calibration_report=report,
     )
 
-    assert curve.rate_space is RateSpace.ZERO
     assert curve.rate_at(1.0) == 0.031
+    assert curve.zero_rate_at(1.0) == pytest.approx(0.031)
     assert curve.calibration_report is report

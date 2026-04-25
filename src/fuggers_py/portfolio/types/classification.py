@@ -9,8 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from fuggers_py.bonds import CreditRating, RatingInfo, Sector, SectorInfo, Seniority, SeniorityInfo
 from fuggers_py._core.types import Currency
+
+from .rating import CreditRating, RatingInfo
+from .sector import Sector, SectorInfo
+from .seniority import Seniority, SeniorityInfo
 
 
 @dataclass(frozen=True, slots=True)

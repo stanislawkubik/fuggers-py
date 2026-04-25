@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from importlib.util import module_from_spec, spec_from_file_location
 from decimal import Decimal
-import sys
 
-from fuggers_py._products.bonds import FixedBondBuilder
+from fuggers_py.bonds import FixedBondBuilder
+from fuggers_py.bonds.rv.basis_swapped_bonds import bond_to_common_currency_fixed, bond_to_common_currency_floating
 from fuggers_py._core import Currency, Date, Frequency, PayReceive, YieldCalculationRules
-from fuggers_py._market.state import AnalyticsCurves
-from fuggers_py._pricers.rates import AssetSwapPricer, BasisSwapPricer, CrossCurrencyBasisSwapPricer
-from fuggers_py._products.rates import (
+from fuggers_py._runtime.state import AnalyticsCurves
+from fuggers_py.rates import AssetSwapPricer, BasisSwapPricer, CrossCurrencyBasisSwapPricer
+from fuggers_py.rates import (
     AssetSwap,
     BasisSwap,
     CrossCurrencyBasisSwap,
@@ -17,16 +16,6 @@ from fuggers_py._products.rates import (
 )
 
 from tests.helpers._rates_helpers import flat_curve, multicurve_analytics_curves, rate_index
-from tests.helpers._paths import REPO_ROOT
-
-_BASIS_SWAPPED_BONDS_PATH = REPO_ROOT / "src" / "fuggers_py" / "_measures" / "rv" / "basis_swapped_bonds.py"
-_SPEC = spec_from_file_location("tests_basis_swapped_bonds", _BASIS_SWAPPED_BONDS_PATH)
-assert _SPEC is not None and _SPEC.loader is not None
-_BASIS_SWAPPED_BONDS = module_from_spec(_SPEC)
-sys.modules[_SPEC.name] = _BASIS_SWAPPED_BONDS
-_SPEC.loader.exec_module(_BASIS_SWAPPED_BONDS)
-bond_to_common_currency_fixed = _BASIS_SWAPPED_BONDS.bond_to_common_currency_fixed
-bond_to_common_currency_floating = _BASIS_SWAPPED_BONDS.bond_to_common_currency_floating
 
 
 def _bond(settlement: Date):

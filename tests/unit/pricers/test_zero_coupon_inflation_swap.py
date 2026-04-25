@@ -6,10 +6,10 @@ from decimal import Decimal
 import pytest
 
 from fuggers_py._core import Currency, Date, PayReceive
-from fuggers_py._market.state import AnalyticsCurves
+from fuggers_py._runtime.state import AnalyticsCurves
 from fuggers_py._core import YearMonth
-from fuggers_py._market.snapshot import InflationFixing
-from fuggers_py._market.sources import InMemoryInflationFixingSource
+from fuggers_py._runtime.snapshot import InflationFixing
+from fuggers_py._runtime.sources import InMemoryInflationFixingSource
 from fuggers_py.inflation import USD_CPI_U_NSA, reference_cpi
 from fuggers_py.inflation import InflationSwapPricer
 from fuggers_py.inflation import ZeroCouponInflationSwap

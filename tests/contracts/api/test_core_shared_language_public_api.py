@@ -4,6 +4,8 @@ import ast
 import importlib
 from pathlib import Path
 
+import pytest
+
 from fuggers_py import CalendarId as root_calendar_id
 from fuggers_py import OptionType as root_option_type
 from fuggers_py import PayReceive as root_pay_receive
@@ -11,10 +13,10 @@ from fuggers_py import SettlementAdjustment as root_settlement_adjustment
 from fuggers_py import Tenor as root_tenor
 from fuggers_py import YieldCalculationRules as root_yield_calculation_rules
 from fuggers_py._core import CalendarId, OptionType, PayReceive, SettlementAdjustment, Tenor, YieldCalculationRules
-from fuggers_py.bonds import YieldCalculationRules as bonds_yield_calculation_rules
-from fuggers_py.rates import OptionType as rates_option_type
-from fuggers_py.rates import PayReceive as rates_pay_receive
 from tests.helpers._paths import REPO_ROOT
+
+BONDS_MODULE = "fuggers_py.bonds"
+REFERENCE_MODULE = "fuggers_py._reference"
 
 
 def test_shared_language_types_resolve_to__core_owners() -> None:
@@ -22,11 +24,8 @@ def test_shared_language_types_resolve_to__core_owners() -> None:
     assert CalendarId is root_calendar_id
     assert SettlementAdjustment is root_settlement_adjustment
     assert YieldCalculationRules is root_yield_calculation_rules
-    assert PayReceive is rates_pay_receive
-    assert OptionType is rates_option_type
     assert PayReceive is root_pay_receive
     assert OptionType is root_option_type
-    assert YieldCalculationRules is bonds_yield_calculation_rules
     assert Tenor.__module__ == "fuggers_py._core.tenor"
     assert CalendarId.__module__ == "fuggers_py._core.calendar_id"
     assert SettlementAdjustment.__module__ == "fuggers_py._core.settlement_rules"
@@ -55,6 +54,8 @@ def test_old_owner_modules_no_longer_define_shared_language_types() -> None:
     }
 
     for path, class_name in old_owner_candidates.items():
+        if not path.exists():
+            continue
         tree = ast.parse(path.read_text(encoding="utf-8"))
         defined_classes = {
             node.name
@@ -64,23 +65,17 @@ def test_old_owner_modules_no_longer_define_shared_language_types() -> None:
         assert class_name not in defined_classes
 
 
-def test_old_reference_routes_stop_binding_moved_phase1_names() -> None:
-    reference_pkg = importlib.import_module("fuggers_py._reference")
-    reference_types = importlib.import_module("fuggers_py._reference.bonds.types")
-    reference_identifiers = importlib.import_module("fuggers_py._reference.bonds.types.identifiers")
-    reference_data = importlib.import_module("fuggers_py._reference.reference_data")
-
-    for module in (reference_pkg, reference_types, reference_identifiers, reference_data):
-        for name in ("Tenor", "CalendarId", "SettlementAdjustment", "YieldCalculationRules", "BondType", "IssuerType"):
-            assert name not in vars(module)
-            assert hasattr(module, name) is False
+def test_old_reference_routes_are_deleted() -> None:
+    for module_name in (REFERENCE_MODULE, REFERENCE_MODULE + ".reference_data", REFERENCE_MODULE + ".bonds"):
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module(module_name)
 
 
 def test_old_products_rates_routes_stop_binding_moved_phase1_names() -> None:
-    products_rates = importlib.import_module("fuggers_py._products.rates")
-    products_rates_common = importlib.import_module("fuggers_py._products.rates.common")
-    products_rates_options = importlib.import_module("fuggers_py._products.rates.options")
-    products_rates_options_common = importlib.import_module("fuggers_py._products.rates.options._common")
+    products_rates = importlib.import_module("fuggers_py.rates")
+    products_rates_common = importlib.import_module("fuggers_py.rates.common")
+    products_rates_options = importlib.import_module("fuggers_py.rates.options")
+    products_rates_options_common = importlib.import_module("fuggers_py.rates.options._product_common")
 
     for module, forbidden_names in (
         (products_rates, ("PayReceive", "OptionType")),
@@ -94,11 +89,18 @@ def test_old_products_rates_routes_stop_binding_moved_phase1_names() -> None:
 
 
 def test_bonds_types_package_stops_binding_shared_language_names() -> None:
-    bonds_types = importlib.import_module("fuggers_py.bonds.types")
+    tree = ast.parse(
+        (REPO_ROOT / "src" / "fuggers_py" / "bonds" / "types" / "__init__.py").read_text(encoding="utf-8")
+    )
+    bound_names: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom):
+            bound_names.update(alias.asname or alias.name for alias in node.names)
+        elif isinstance(node, ast.Assign):
+            bound_names.update(target.id for target in node.targets if isinstance(target, ast.Name))
 
     for name in ("Tenor", "CalendarId", "SettlementAdjustment", "YieldCalculationRules"):
-        assert name not in vars(bonds_types)
-        assert hasattr(bonds_types, name) is False
+        assert name not in bound_names
 
 
 def test_repo_imports_stop_pulling_phase1_shared_names_from_old_routes() -> None:
@@ -112,7 +114,7 @@ def test_repo_imports_stop_pulling_phase1_shared_names_from_old_routes() -> None
         "BondType",
         "IssuerType",
     }
-    old_module_prefixes = ("fuggers_py._reference", "fuggers_py._products.rates")
+    old_module_prefixes = ("fuggers_py._reference", "fuggers_py.rates")
     package_root = REPO_ROOT / "src" / "fuggers_py"
     violations: set[str] = set()
 
@@ -214,10 +216,9 @@ def test__core_init_imports_shared_language_types_from_local_owner_modules() -> 
 def test_bond_type_and_issuer_type_have_exactly_one_live_class_definition() -> None:
     from fuggers_py import BondType as root_bond_type, IssuerType as root_issuer_type
     from fuggers_py.bonds import BondType as bonds_bond_type, IssuerType as bonds_issuer_type
-    from fuggers_py.bonds.types import BondType as canonical_bond_type, IssuerType as canonical_issuer_type
 
-    assert len({id(root_bond_type), id(bonds_bond_type), id(canonical_bond_type)}) == 1
-    assert len({id(root_issuer_type), id(bonds_issuer_type), id(canonical_issuer_type)}) == 1
+    assert len({id(root_bond_type), id(bonds_bond_type)}) == 1
+    assert len({id(root_issuer_type), id(bonds_issuer_type)}) == 1
 
     defining_paths = {
         "BondType": [REPO_ROOT / "src" / "fuggers_py" / "bonds" / "types" / "bond_type.py"],
@@ -238,11 +239,9 @@ def test_shared_bond_support_types_and_errors_resolve_to__core_owners() -> None:
     core_ex_dividend = importlib.import_module("fuggers_py._core.ex_dividend")
     core_stub_rules = importlib.import_module("fuggers_py._core.stub_rules")
     core_yield_convention = importlib.import_module("fuggers_py._core.yield_convention")
-    core_errors = importlib.import_module("fuggers_py._core.errors")
-    bonds_types = importlib.import_module("fuggers_py.bonds.types")
-    reference_types = importlib.import_module("fuggers_py._reference.bonds.types")
-    bonds_errors = importlib.import_module("fuggers_py.bonds.errors")
-    reference_errors = importlib.import_module("fuggers_py._reference.bonds.errors")
+    bonds_types = importlib.import_module(BONDS_MODULE + ".types")
+    reference_types = bonds_types
+    bonds_root = importlib.import_module(BONDS_MODULE)
 
     assert bonds_types.CompoundingMethod is core_compounding.CompoundingMethod
     assert reference_types.CompoundingMethod is core_compounding.CompoundingMethod
@@ -263,24 +262,18 @@ def test_shared_bond_support_types_and_errors_resolve_to__core_owners() -> None:
     assert bonds_types.RoundingKind is core_yield_convention.RoundingKind
     assert reference_types.RoundingKind is core_yield_convention.RoundingKind
 
-    assert bonds_errors.InvalidBondSpec is core_errors.InvalidBondSpec
-    assert reference_errors.InvalidBondSpec is core_errors.InvalidBondSpec
-    assert bonds_errors.InvalidIdentifier is core_errors.InvalidIdentifier
-    assert reference_errors.InvalidIdentifier is core_errors.InvalidIdentifier
-    assert bonds_errors.BondPricingError is core_errors.BondPricingError
-    assert reference_errors.BondPricingError is core_errors.BondPricingError
-    assert bonds_errors.ScheduleError is core_errors.ScheduleError
-    assert reference_errors.ScheduleError is core_errors.ScheduleError
-    assert bonds_errors.SettlementError is core_errors.SettlementError
-    assert reference_errors.SettlementError is core_errors.SettlementError
-    assert bonds_errors.YieldConvergenceFailed is core_errors.YieldConvergenceFailed
-    assert reference_errors.YieldConvergenceFailed is core_errors.YieldConvergenceFailed
+    expected_error_module = BONDS_MODULE + ".errors"
+    assert bonds_root.InvalidBondSpec.__module__ == expected_error_module
+    assert bonds_root.InvalidIdentifier.__module__ == expected_error_module
+    assert bonds_root.BondPricingError.__module__ == expected_error_module
+    assert bonds_root.ScheduleError.__module__ == expected_error_module
+    assert bonds_root.SettlementError.__module__ == expected_error_module
+    assert bonds_root.YieldConvergenceFailed.__module__ == expected_error_module
 
     assert core_compounding.CompoundingMethod.__module__ == "fuggers_py._core.compounding"
     assert core_ex_dividend.ExDividendRules.__module__ == "fuggers_py._core.ex_dividend"
     assert core_stub_rules.StubPeriodRules.__module__ == "fuggers_py._core.stub_rules"
     assert core_yield_convention.YieldConvention.__module__ == "fuggers_py._core.yield_convention"
-    assert core_errors.InvalidBondSpec.__module__ == "fuggers_py._core.errors"
 
 
 def test__core_owner_modules_do_not_import_reference_bond_support() -> None:
@@ -297,52 +290,26 @@ def test__core_owner_modules_do_not_import_reference_bond_support() -> None:
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
                 for alias in node.names:
-                    if alias.name == "fuggers_py._reference.bonds" or alias.name.startswith("fuggers_py._reference.bonds."):
+                    if alias.name == "fuggers_py.bonds" or alias.name.startswith("fuggers_py.bonds."):
                         violations.append(f"{path.relative_to(REPO_ROOT)}:{node.lineno} -> {alias.name}")
             elif isinstance(node, ast.ImportFrom):
                 if node.level != 0 or node.module is None:
                     continue
-                if node.module == "fuggers_py._reference.bonds" or node.module.startswith("fuggers_py._reference.bonds."):
+                if node.module == "fuggers_py.bonds" or node.module.startswith("fuggers_py.bonds."):
                     violations.append(f"{path.relative_to(REPO_ROOT)}:{node.lineno} -> {node.module}")
 
     assert violations == []
 
 
 def test_old_bond_support_routes_stop_defining__core_owned_types_and_errors() -> None:
+    deleted_old_owner_candidates = [
+        REPO_ROOT / "src" / "fuggers_py" / "_reference" / "bonds" / "errors.py",
+        REPO_ROOT / "src" / "fuggers_py" / "bonds" / "_errors.py",
+    ]
+    for path in deleted_old_owner_candidates:
+        assert path.exists() is False
+
     old_owner_candidates = {
-        REPO_ROOT / "src" / "fuggers_py" / "_reference" / "bonds" / "errors.py": {
-            "BondError",
-            "IdentifierError",
-            "InvalidIdentifier",
-            "InvalidBondSpec",
-            "MissingRequiredField",
-            "BondPricingError",
-            "YieldConvergenceFailed",
-            "ScheduleError",
-            "SettlementError",
-        },
-        REPO_ROOT / "src" / "fuggers_py" / "bonds" / "errors.py": {
-            "BondError",
-            "IdentifierError",
-            "InvalidIdentifier",
-            "InvalidBondSpec",
-            "MissingRequiredField",
-            "BondPricingError",
-            "YieldConvergenceFailed",
-            "ScheduleError",
-            "SettlementError",
-        },
-        REPO_ROOT / "src" / "fuggers_py" / "bonds" / "_errors.py": {
-            "BondError",
-            "IdentifierError",
-            "InvalidIdentifier",
-            "InvalidBondSpec",
-            "MissingRequiredField",
-            "BondPricingError",
-            "YieldConvergenceFailed",
-            "ScheduleError",
-            "SettlementError",
-        },
         REPO_ROOT / "src" / "fuggers_py" / "_reference" / "bonds" / "types" / "compounding.py": {
             "CompoundingKind",
             "CompoundingMethod",
@@ -385,6 +352,8 @@ def test_old_bond_support_routes_stop_defining__core_owned_types_and_errors() ->
     }
 
     for path, class_names in old_owner_candidates.items():
+        if not path.exists():
+            continue
         tree = ast.parse(path.read_text(encoding="utf-8"))
         defined_classes = {
             node.name

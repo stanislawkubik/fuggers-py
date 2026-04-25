@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from fuggers_py._core import Currency, Date
-from fuggers_py._calc import QuoteSide
+from fuggers_py._runtime import QuoteSide
 from fuggers_py._core import CurrencyPair, CurveId, EtfId, InstrumentId, VolSurfaceId, YearMonth
 from fuggers_py._runtime.quotes import (
     BasisSwapQuote,
@@ -15,7 +15,7 @@ from fuggers_py._runtime.quotes import (
     RepoQuote,
     SwapQuote,
 )
-from fuggers_py._market.snapshot import (
+from fuggers_py._runtime.snapshot import (
     CurveInput,
     CurveInputs,
     CurveInstrumentType,
@@ -26,7 +26,7 @@ from fuggers_py._market.snapshot import (
     InflationFixing,
     MarketDataSnapshot,
 )
-from fuggers_py._market.sources import (
+from fuggers_py._runtime.sources import (
     CurveInputSource,
     FxRateSource,
     InMemoryCurveSource,

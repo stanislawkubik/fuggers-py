@@ -6,7 +6,7 @@ from math import exp
 
 import pytest
 
-from fuggers_py._measures.spreads import (
+from fuggers_py.bonds.spreads import (
     ASWType as AnalyticsASWType,
     BenchmarkKind,
     BenchmarkSpec,
@@ -22,17 +22,17 @@ from fuggers_py._measures.spreads import (
     i_spread_bps,
     z_spread_from_curve,
 )
-from fuggers_py._measures.errors import AnalyticsError
-from fuggers_py._reference.bonds.types import ASWType
-from fuggers_py._products.bonds.traits import BondCashFlow, CashFlowType
+from fuggers_py.bonds import AnalyticsError
+from fuggers_py.bonds.types import ASWType
+from fuggers_py.bonds.traits import BondCashFlow, CashFlowType
 from fuggers_py._core import Tenor
-from fuggers_py._curves_impl import DiscountCurveBuilder
 from fuggers_py._core import Currency, Date
+from tests.helpers._rates_helpers import flat_curve
 
 
 def test_asw_type_remains_available_from_analytics_surface() -> None:
     assert AnalyticsASWType is ASWType
-    assert not hasattr(importlib.import_module("fuggers_py._measures.spreads.asw"), "ASWType")
+    assert importlib.import_module("fuggers_py.bonds.spreads").ASWType is ASWType
 
 
 def test_security_id_wrapper() -> None:
@@ -169,9 +169,7 @@ def test_g_spread_benchmark_bps_wrapper_matches_decimal_result() -> None:
 def test_ispread_rejects_settlement_after_maturity(fixed_rate_2025_bond) -> None:
     bond = fixed_rate_2025_bond
     ref = Date.from_ymd(2020, 1, 1)
-    curve = DiscountCurveBuilder(reference_date=ref)
-    curve.add_zero_rate(1.0, Decimal("0.02")).add_zero_rate(10.0, Decimal("0.02"))
-    rate_curve = curve.build()
+    rate_curve = flat_curve(ref, "0.02")
 
     calc = ISpreadCalculator(curve=rate_curve)
     assert calc.spread_decimal(bond, Decimal("0.05")) == Decimal("0.03")
@@ -183,9 +181,7 @@ def test_ispread_rejects_settlement_after_maturity(fixed_rate_2025_bond) -> None
 
 def test_z_spread_roundtrip() -> None:
     ref = Date.from_ymd(2020, 1, 1)
-    curve = DiscountCurveBuilder(reference_date=ref)
-    curve.add_zero_rate(1.0, Decimal("0.02")).add_zero_rate(3.0, Decimal("0.02"))
-    rate_curve = curve.build()
+    rate_curve = flat_curve(ref, "0.02")
 
     cashflows = [
         BondCashFlow(date=ref.add_years(1), amount=Decimal("5"), flow_type=CashFlowType.COUPON),

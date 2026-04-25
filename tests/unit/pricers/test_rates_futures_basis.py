@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._pricers.rates.futures import basis_metrics, gross_basis, net_basis
+from fuggers_py.rates.futures import basis_metrics, gross_basis, net_basis
 
 
 def test_basis_helpers_follow_the_documented_sign_convention() -> None:

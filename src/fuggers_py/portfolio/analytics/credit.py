@@ -8,10 +8,8 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py.bonds import CreditRating
-
 from ..portfolio import Portfolio
-from ..types import Holding, Position
+from ..types import CreditRating, Holding, Position
 
 
 _SCORE_TO_RATING = {rating.score(): rating for rating in CreditRating}

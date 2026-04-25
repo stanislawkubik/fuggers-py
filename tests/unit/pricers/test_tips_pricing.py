@@ -4,13 +4,13 @@ from decimal import Decimal
 
 import pytest
 
-from fuggers_py._pricers.bonds import BondPricer, TipsPricer
-from fuggers_py._products.bonds import TipsBond
+from fuggers_py.bonds import BondPricer, TipsPricer
+from fuggers_py.bonds import TipsBond
 from fuggers_py._core import Compounding, Currency, Date, Frequency, Price, Yield
 from fuggers_py._core import YearMonth
-from fuggers_py._market.snapshot import InflationFixing
-from fuggers_py._market.sources import InMemoryInflationFixingSource
-from fuggers_py._calc.pricing_router import PricingRouter
+from fuggers_py._runtime.snapshot import InflationFixing
+from fuggers_py._runtime.sources import InMemoryInflationFixingSource
+from fuggers_py._runtime.pricing_router import PricingRouter
 from fuggers_py.inflation import USD_CPI_U_NSA
 
 

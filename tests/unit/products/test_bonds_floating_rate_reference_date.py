@@ -4,8 +4,8 @@ from dataclasses import dataclass, replace
 from decimal import Decimal
 
 from fuggers_py._core import Currency, Date, Frequency
-from fuggers_py._products.bonds.instruments import FloatingRateNoteBuilder
-from fuggers_py._reference.bonds.types import RateIndex
+from fuggers_py.bonds.instruments import FloatingRateNoteBuilder
+from fuggers_py.bonds.types import RateIndex
 from fuggers_py._core import YieldCalculationRules
 
 

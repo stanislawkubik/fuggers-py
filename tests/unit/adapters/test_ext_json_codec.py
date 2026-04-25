@@ -6,7 +6,7 @@ from fuggers_py.bonds.types import BondType, IssuerType
 from fuggers_py._core import Currency, Date, Frequency
 from fuggers_py._storage import JsonCodec, PrettyJsonCodec
 from fuggers_py._core import InstrumentId
-from fuggers_py._reference import BondReferenceData
+from fuggers_py.bonds.reference_data import BondReferenceData
 
 
 def test_json_codec_round_trips_nested_dataclass_payloads() -> None:

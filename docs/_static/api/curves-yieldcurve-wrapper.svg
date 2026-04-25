@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="280" viewBox="0 0 760 280" role="img" aria-labelledby="title desc">
+  <title id="title">YieldCurve wrapper</title>
+  <desc id="desc">YieldCurve wraps one CurveKernel, carries one CurveSpec, and may attach one CalibrationReport.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #d8e1eb; stroke-width: 1.5; rx: 18; ry: 18; }
+      .box { stroke-width: 1.6; rx: 12; ry: 12; }
+      .curve { stroke: #0f766e; fill: #f0fdfa; }
+      .kernel { stroke: #2563eb; fill: #eff6ff; }
+      .spec { stroke: #c2410c; fill: #fff7ed; }
+      .report { stroke: #7c3aed; fill: #f5f3ff; }
+      .title { font: 700 24px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .label { font: 700 18px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .small { font: 400 13px Arial, Helvetica, sans-serif; fill: #475569; }
+      .center { text-anchor: middle; }
+      .line { stroke: #334155; stroke-width: 2.3; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="760" height="280"/>
+  <rect class="panel" x="24" y="24" width="712" height="232"/>
+  <text x="380" y="68" class="title center">What `YieldCurve` holds</text>
+
+  <rect x="282" y="106" width="196" height="74" class="box curve"/>
+  <text x="380" y="139" class="label center">YieldCurve</text>
+  <text x="380" y="162" class="small center">public curve object</text>
+
+  <rect x="70" y="110" width="150" height="66" class="box spec"/>
+  <text x="145" y="138" class="label center">CurveSpec</text>
+  <text x="145" y="160" class="small center">identity</text>
+
+  <rect x="540" y="70" width="150" height="66" class="box kernel"/>
+  <text x="615" y="98" class="label center">CurveKernel</text>
+  <text x="615" y="120" class="small center">raw curve shape</text>
+
+  <rect x="540" y="166" width="150" height="66" class="box report"/>
+  <text x="615" y="194" class="label center">Calibration</text>
+  <text x="615" y="216" class="label center">Report</text>
+
+  <path d="M 220 143 L 282 143" class="line"/>
+  <path d="M 478 130 C 504 130 510 103 540 103" class="line"/>
+  <path d="M 478 156 C 504 156 510 199 540 199" class="line"/>
+</svg>

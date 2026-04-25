@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from fuggers_py._measures.rv import rank_rich_cheap
+from fuggers_py.bonds.rv import rank_rich_cheap
 
 from tests.helpers._fitted_bond_helpers import exponential_model, fit_result
 

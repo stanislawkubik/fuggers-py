@@ -1,4 +1,4 @@
-"""Benchmark specification (`fuggers_py._measures.spreads.benchmark`)."""
+"""Benchmark specification (`fuggers_py.bonds.spreads`)."""
 
 from __future__ import annotations
 

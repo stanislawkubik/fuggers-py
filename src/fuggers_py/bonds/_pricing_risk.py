@@ -1,4 +1,4 @@
-"""Bond risk measures (`fuggers_py._pricers.bonds.risk.metrics`)."""
+"""Bond risk measures (`fuggers_py.bonds.risk.metrics`)."""
 
 from __future__ import annotations
 
