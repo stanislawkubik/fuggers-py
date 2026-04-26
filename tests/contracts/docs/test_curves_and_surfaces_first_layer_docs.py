@@ -92,3 +92,22 @@ def test_curve_static_docs_do_not_mention_removed_report_types() -> None:
         text = path.read_text(encoding="utf-8")
         for removed_name in removed_report_names:
             assert removed_name not in text, f"{path.relative_to(ROOT)} still mentions {removed_name}"
+
+
+def test_curve_docs_do_not_render_raw_sphinx_api_reference() -> None:
+    text = (ROOT / "docs/api/curves.md").read_text(encoding="utf-8")
+
+    assert ".. automodule::" not in text
+    assert "## API Reference" not in text
+
+
+def test_curve_docs_identify_advanced_imports_and_work_in_progress() -> None:
+    text = (ROOT / "docs/api/curves.md").read_text(encoding="utf-8")
+
+    assert "It lists the deeper imports that are meant to be usable from user code today." in text
+    assert "`fuggers_py.curves.calibrators` | `CalibrationSpec`" in text
+    assert "`fuggers_py.curves.kernels` | `KernelSpec`" in text
+    assert "`fuggers_py.curves.conversion` | `ValueConverter`" in text
+    assert "## Work In Progress" in text
+    assert "`fuggers_py.curves.multicurve`" in text
+    assert "`CurrencyPair` and `RateIndex`" in text

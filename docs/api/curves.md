@@ -274,16 +274,19 @@ than a fitted `YieldCurve`.
 
 ## Advanced Submodules
 
-The root package is enough for fitting, moving, and querying curves. The
-advanced submodules are for code that needs reusable fit settings, custom
-extension points, or lower-level utilities.
+The root package is enough for normal curve work: fit a curve, move it, and
+query rates or discount factors.
 
-| Import | Use it when |
-| --- | --- |
-| `fuggers_py.curves.calibrators.CalibrationSpec` | You want one object that stores the fit route, objective, bond target, and regressor order. |
-| `fuggers_py.curves.kernels.KernelSpec` | You want one object that stores the kernel family and its parameters. |
-| `fuggers_py.curves.conversion.ValueConverter` | You need low-level rate, discount-factor, or forward-rate conversions outside a fitted curve. |
-| `fuggers_py.curves.multicurve` | You are working with multi-curve or index lookup helpers rather than one fitted discount curve. |
+The table below is not a dump of every class inside `src/fuggers_py/curves`.
+It lists the deeper imports that are meant to be usable from user code today.
+Other classes in these folders are implementation details used by
+`YieldCurve.fit(...)`.
+
+| Import | Public names | Use it when |
+| --- | --- | --- |
+| `fuggers_py.curves.calibrators` | `CalibrationSpec` | You want one object that stores the fit route, objective, bond target, and regressor order. |
+| `fuggers_py.curves.kernels` | `KernelSpec` | You want one object that stores the kernel family and its parameters. |
+| `fuggers_py.curves.conversion` | `ValueConverter` | You need rate, discount-factor, or forward-rate conversions without building a curve. |
 
 Example: keep a reusable global-fit setup in one object.
 
@@ -319,18 +322,25 @@ discount_factor = ValueConverter.zero_to_df(0.0425, 5.0)
 zero_rate = ValueConverter.df_to_zero(discount_factor, 5.0)
 ```
 
-Concrete kernel classes live in their implementation modules under
-`fuggers_py.curves.kernels`. They are not root exports. Most users should not
-instantiate them directly; `YieldCurve.fit(...)` builds them and returns a
-`YieldCurve`.
+Concrete kernel and calibrator classes live in implementation modules under
+`fuggers_py.curves.kernels` and `fuggers_py.curves.calibrators`. They are not
+the public fitting interface. Most users should not instantiate them directly;
+`YieldCurve.fit(...)` builds them and returns a `YieldCurve`.
 
 At the moment, the public fitting workflows do not require deeper imports. The
-main practical reasons to use them are configuration reuse, validating fit
-instructions early, or writing lower-level extension code.
+main reasons to use them are configuration reuse, checking fit instructions
+before a run, or writing lower-level extension code.
 
-## API Reference
+## Work In Progress
 
-.. automodule:: fuggers_py.curves
-   :members:
-   :undoc-members:
-   :show-inheritance:
+Some curve code exists, but is not yet a complete user-facing workflow.
+
+| Area | What exists today | What is not complete yet |
+| --- | --- | --- |
+| `fuggers_py.curves.multicurve` | `CurrencyPair` and `RateIndex` identifiers for describing FX pairs and rate indexes. | A public workflow for fitting and solving linked curves together. |
+| Concrete kernel classes | Internal classes that `YieldCurve.fit(...)` uses to represent fitted shapes. | A stable direct-construction API for users. |
+| Concrete calibrator classes | Internal classes that turn quotes and specs into fitted kernels. | A stable direct-calibrator API for users. |
+
+Use these areas for internal or research code only. The supported user path is
+still `YieldCurve.fit(...)`, which returns one `YieldCurve` and one
+`CalibrationReport`.
