@@ -96,7 +96,7 @@ jobs:
         run: python -m pip wheel . --no-deps -w /tmp/fuggers-pip-wheel-check
 
       - name: Install package for version-provenance checks
-        run: python -m pip install -e . --no-deps
+        run: python -m pip install -e .
 
       - name: Check distribution metadata
         run: python -m twine check dist/*
