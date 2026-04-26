@@ -35,6 +35,10 @@ from fuggers_py.bonds import BondPricer, BondQuote, FixedBondBuilder, RiskMetric
 The public surface is the names listed in `fuggers_py.bonds.__all__` and in
 `specs/public_api_surface.json` for `fuggers_py.bonds`.
 
+Bond-local support records are available from `fuggers_py.bonds.types`. Use
+that package for identifiers, quote conventions, rating or sector metadata,
+embedded put schedules, and amortization schedules.
+
 `ZSpreadCalculator` is importable today because the package imports it
 internally, but it is not in `__all__` and not in the public surface spec. Do
 not document it or rely on it as public API. Use `z_spread()` and

@@ -156,6 +156,19 @@ def test_removed_root_directories_do_not_exist() -> None:
     assert not (PACKAGE_ROOT / "_compat.py").exists()
 
 
+def test_public_packages_do_not_keep_shadowed_module_files_next_to_packages() -> None:
+    offenders: list[str] = []
+
+    for package_name in CANONICAL_PUBLIC_DIRS:
+        package_dir = PACKAGE_ROOT / package_name
+        for child_dir in sorted(path for path in package_dir.iterdir() if path.is_dir() and path.name != "__pycache__"):
+            shadow_file = package_dir / f"{child_dir.name}.py"
+            if shadow_file.exists():
+                offenders.append(str(shadow_file.relative_to(ROOT)))
+
+    assert offenders == []
+
+
 def test_repo_contains_no_removed_root_namespace_references() -> None:
     namespace_pattern = re.compile(rf"fuggers_py\.({'|'.join(REMOVED_NAMESPACE_ROOTS)})\b")
     offenders: list[str] = []

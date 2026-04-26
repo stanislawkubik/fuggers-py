@@ -64,6 +64,12 @@ from fuggers_py.vol_surfaces import VolatilitySurface
 
 - First-layer public home for bond instruments, quotes, pricing, risk, spreads, yields, and YAS-style bond analytics.
 - `products.py`, `quotes.py`, `pricing.py`, `risk.py`, `spreads.py`, `yields.py`, and `yas.py`: the domain bundles that feed the one-layer `fuggers_py.bonds` surface.
+- `types/`: bond-local type records such as identifiers, quote conventions,
+  rating or sector metadata, embedded-option schedules, and amortization
+  schedules.
+- `instruments/`, `cashflows/`, `options/`, `conventions/`, and `rv/`: bond
+  implementation subpackages used behind the public `fuggers_py.bonds`
+  surface.
 
 ### `rates/`
 

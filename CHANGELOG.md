@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## 0.3.0 - 2026-04-26
+
 ### Breaking
 
 - The public imports now use the first-layer packages:
