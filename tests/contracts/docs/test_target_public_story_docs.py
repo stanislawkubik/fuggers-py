@@ -102,3 +102,9 @@ def test_validation_strategy_keeps_hooks_secondary_to_shell_validators() -> None
     assert "hooks are optional wrappers, not the main validation surface" in text
     assert "separate source of rules" in text
     assert "python tools/repo_hooks.py stop-hook" in text
+
+
+def test_publish_tree_does_not_ship_legacy_examples_or_duplicate_rtd_configs() -> None:
+    assert not (ROOT / "artifacts/legacy_examples").exists()
+    assert (ROOT / ".readthedocs.yaml").exists()
+    assert not (ROOT / ".readthedocs.yml").exists()

@@ -32,8 +32,34 @@ source_suffix = {
 master_doc = "index"
 html_theme = "furo"
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 html_title = "fuggers-py"
 html_logo = "_static/fuggers-py-logo.png"
+html_theme_options = {
+    "sidebar_hide_name": True,
+    "light_css_variables": {
+        "color-background-primary": "#ffffff",
+        "color-background-secondary": "#ffffff",
+        "color-sidebar-background": "#ffffff",
+        "color-sidebar-background-border": "#e5e7eb",
+    },
+    "dark_css_variables": {
+        "color-background-primary": "#ffffff",
+        "color-background-secondary": "#ffffff",
+        "color-sidebar-background": "#ffffff",
+        "color-sidebar-background-border": "#e5e7eb",
+        "color-foreground-primary": "#172033",
+        "color-foreground-secondary": "#4b5563",
+        "color-foreground-muted": "#6b7280",
+        "color-brand-primary": "#0b67c2",
+        "color-brand-content": "#0b67c2",
+        "color-api-name": "#172033",
+        "color-api-pre-name": "#4b5563",
+        "color-inline-code-background": "#f3f4f6",
+        "color-inline-code-foreground": "#1f2937",
+        "color-highlighted-background": "#eef6ff",
+    },
+}
 
 myst_heading_anchors = 3
 napoleon_google_docstring = False

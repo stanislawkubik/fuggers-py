@@ -16,15 +16,10 @@ Use the root package for the first-layer curve API:
 from fuggers_py.curves import CurveSpec, YieldCurve
 ```
 
-Advanced fit instruction records live one level below the root:
-
-```python
-from fuggers_py.curves.calibrators import CalibrationSpec
-from fuggers_py.curves.kernels import KernelSpec
-```
-
-Most users do not need those advanced records. `YieldCurve.fit(...)` accepts
-plain strings for the common path.
+Most users do not need deeper curve imports. `YieldCurve.fit(...)` accepts plain
+strings and dictionaries for the common path, including global-fit settings.
+The deeper `calibrators` and `kernels` modules expose small instruction records
+for code that wants to store, validate, or pass fit configuration as objects.
 
 ```{figure} ../_static/api/curves-main-workflow.svg
 :alt: Curve fitting workflow
@@ -160,20 +155,20 @@ Main inputs:
 | `regressors` | Optional bond regressor names used by global fit. |
 | `kernel_params` | Optional shape-specific settings, such as spline knots. |
 
-Advanced callers may pass `KernelSpec` as `kernel` and `CalibrationSpec` as
-`method`. This is for code that already owns the lower-level records:
+The object form is optional. This call:
 
 ```python
-from fuggers_py.curves.calibrators import CalibrationSpec
-from fuggers_py.curves.kernels import KernelSpec
-
 curve = YieldCurve.fit(
     quotes,
     spec=spec,
-    kernel=KernelSpec(kind="cubic_spline", parameters={"knots": (1.0, 2.0, 5.0)}),
-    method=CalibrationSpec(method="global_fit", bond_target="clean_price"),
+    kernel="cubic_spline",
+    method="global_fit",
+    bond_target="clean_price",
+    kernel_params={"knots": (1.0, 2.0, 5.0)},
 )
 ```
+
+is equivalent to passing `KernelSpec` and `CalibrationSpec` objects.
 
 ## Quote Inputs
 
@@ -279,17 +274,59 @@ than a fitted `YieldCurve`.
 
 ## Advanced Submodules
 
-Advanced code may import these directly:
+The root package is enough for fitting, moving, and querying curves. The
+advanced submodules are for code that needs reusable fit settings, custom
+extension points, or lower-level utilities.
+
+| Import | Use it when |
+| --- | --- |
+| `fuggers_py.curves.calibrators.CalibrationSpec` | You want one object that stores the fit route, objective, bond target, and regressor order. |
+| `fuggers_py.curves.kernels.KernelSpec` | You want one object that stores the kernel family and its parameters. |
+| `fuggers_py.curves.conversion.ValueConverter` | You need low-level rate, discount-factor, or forward-rate conversions outside a fitted curve. |
+| `fuggers_py.curves.multicurve` | You are working with multi-curve or index lookup helpers rather than one fitted discount curve. |
+
+Example: keep a reusable global-fit setup in one object.
 
 ```python
 from fuggers_py.curves.calibrators import CalibrationSpec
-from fuggers_py.curves.conversion import ValueConverter
 from fuggers_py.curves.kernels import KernelSpec
-from fuggers_py.curves.multicurve import CurrencyPair, RateIndex
+
+fit_method = CalibrationSpec(
+    method="global_fit",
+    bond_target="clean_price",
+    regressors=("liquidity", "specialness"),
+)
+
+fit_shape = KernelSpec(
+    kind="cubic_spline",
+    parameters={"knots": (1.0, 2.0, 5.0, 10.0)},
+)
+
+curve = YieldCurve.fit(
+    quotes,
+    spec=spec,
+    method=fit_method,
+    kernel=fit_shape,
+)
+```
+
+Example: use conversion helpers without building a curve.
+
+```python
+from fuggers_py.curves.conversion import ValueConverter
+
+discount_factor = ValueConverter.zero_to_df(0.0425, 5.0)
+zero_rate = ValueConverter.df_to_zero(discount_factor, 5.0)
 ```
 
 Concrete kernel classes live in their implementation modules under
-`fuggers_py.curves.kernels`. They are not root exports.
+`fuggers_py.curves.kernels`. They are not root exports. Most users should not
+instantiate them directly; `YieldCurve.fit(...)` builds them and returns a
+`YieldCurve`.
+
+At the moment, the public fitting workflows do not require deeper imports. The
+main practical reasons to use them are configuration reuse, validating fit
+instructions early, or writing lower-level extension code.
 
 ## API Reference
 

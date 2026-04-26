@@ -1,14 +1,5 @@
 # Project Status
 
-This page is the plain-language status note for `fuggers-py`.
-
-It answers four questions:
-
-- what is solid today
-- what is usable but still moving
-- what is only scaffolding so far
-- what we still want to finish before `1.x`
-
 ## Stability policy
 
 - `fuggers-py` is still pre-`1.0`.

@@ -1,32 +1,41 @@
-# fuggers-py docs
-
 ```{image} _static/fuggers-py-logo.png
 :alt: fuggers-py logo
 :width: 420px
 :align: center
 ```
 
-`fuggers-py` is a fixed-income analytics library with responsibility-first
-package boundaries and explicit unit conventions.
+`fuggers-py` is a fixed-income analytics library for fitting yield curves and
+working with bonds, rates, credit, funding, inflation, and portfolios.
 
-Start with [Project Status](STATUS.md) for the current readiness and
-pre-`1.0` compatibility policy. Then read the shared unit and sign rules in
-[Conventions](conventions.md).
-Use [Docstring Standard](docstring_standard.md) for the house style that feeds
-the generated API docs. Then use the package API pages for the curated public
-surface instead of browsing a flat module dump.
-Use [Developer internal modules](dev/internal_modules.md) when changing code
-that is not exposed through the public API.
+**Important note:** this is still a pre-`1.0` release, so some APIs may change
+without backward compatibility. See [Project Status](STATUS.md) for what is
+ready today and what is still moving.
 
 ```{toctree}
-:maxdepth: 2
+:maxdepth: 1
+:caption: Library Status
+:hidden:
 
 STATUS
 conventions
-docstring_standard
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: API Guide
+:hidden:
+
 api/index
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Dev Docs
+:hidden:
+
 dev/internal_modules
 SRC_STRUCTURE
 validation_strategy
+docstring_standard
 MODULE_REFERENCE
 ```

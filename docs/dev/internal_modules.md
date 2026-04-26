@@ -29,23 +29,52 @@ whose only job is to keep an old import path alive.
 Use the smallest owner that matches the code:
 
 - Put shared fixed-income language in `_core`.
+  Examples: `Date`, `Currency`, `Tenor`, `InstrumentId`, `Price`, `Yield`,
+  `Spread`, calendars, day-count rules, and the shared exception root.
 - Put generic numerical routines in `_math`.
+  Examples: interpolation, extrapolation, root solvers, least-squares helpers,
+  and small linear-system solvers.
 - Put engine coordination and market-data runtime code in `_runtime`.
+  Examples: pricing requests, pricing-router outputs, schedulers, market
+  snapshots, source interfaces, and market state containers.
 - Put persistence, codecs, and transport helpers in `_storage`.
+  Examples: file-backed sources, JSON codecs, SQLite storage, portfolio stores,
+  and transport/cache interfaces.
 - Put product-specific helpers inside the public package that owns the product.
+  Examples: bond cash-flow generation in `bonds`, swap pricing in `rates`, CDS
+  pricing in `credit`, repo analytics in `funding`, and CPI helpers in
+  `inflation`.
 - Put portfolio-only helpers inside `portfolio/`.
+  Examples: holdings, portfolio metrics, benchmark comparison, bucketing, ETF
+  NAV, liquidity, stress, and attribution.
 
 When a name becomes public, expose it through one public package only:
 
 - `fuggers_py` for shared language used across the whole library.
+  Examples: `Date`, `Currency`, `Price`, `Yield`, `Spread`, and `Tenor`.
 - `fuggers_py.curves` for curve objects and curve fitting.
+  Examples: `CurveSpec`, `YieldCurve`, `CalibrationReport`, and
+  `STANDARD_KEY_RATE_TENORS`.
 - `fuggers_py.vol_surfaces` for volatility surface records and sources.
+  Examples: volatility points, surface snapshots, and in-memory surface sources.
 - `fuggers_py.bonds` for bond instruments, reference data, analytics, and risk.
-- `fuggers_py.rates` for rates instruments, rates quotes, fixing data, pricing, and risk.
-- `fuggers_py.inflation` for CPI data, inflation products, and inflation analytics.
+  Examples: `FixedBondBuilder`, `BondQuote`, `BondPricer`, YAS helpers, spread
+  helpers, and bond risk helpers.
+- `fuggers_py.rates` for rates instruments, rates quotes, fixing data, pricing,
+  and risk. Examples: swaps, FRAs, futures, rates options, `SwapQuote`, fixing
+  stores, and `swap_dv01`.
+- `fuggers_py.inflation` for CPI data, inflation products, and inflation
+  analytics. Examples: CPI history, reference CPI, index ratios, TIPS helpers,
+  and inflation swaps.
 - `fuggers_py.credit` for CDS and bond-CDS analytics.
+  Examples: CDS instruments, CDS quotes, CDS pricing, CDS risk, and basis
+  helpers.
 - `fuggers_py.funding` for repo, haircut, and financing analytics.
-- `fuggers_py.portfolio` for holdings, portfolio analytics, and portfolio workflows.
+  Examples: repo trades, repo quotes, haircut quotes, carry, implied repo, and
+  specialness helpers.
+- `fuggers_py.portfolio` for holdings, portfolio analytics, and portfolio
+  workflows. Examples: `Portfolio`, holdings, benchmark comparison,
+  contribution, bucketing, ETF, liquidity, and stress helpers.
 
 ## Module Hardening Standard
 

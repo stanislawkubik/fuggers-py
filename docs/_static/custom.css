@@ -1,0 +1,110 @@
+.sidebar-brand-text {
+  display: none;
+}
+
+body,
+.page,
+.main,
+.content,
+.article-container,
+.toc-drawer,
+.sidebar-drawer,
+.sidebar-container,
+.sidebar-sticky {
+  background: #ffffff !important;
+}
+
+body {
+  color: #172033;
+}
+
+.sidebar-logo {
+  background: #ffffff;
+}
+
+.sidebar-tree .caption-text {
+  color: #172033;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sidebar-tree a {
+  border-radius: 0;
+  color: #0b67c2;
+}
+
+.sidebar-tree a:hover,
+.sidebar-tree a:focus,
+.sidebar-tree a:focus-visible,
+.sidebar-tree a.current,
+.sidebar-tree li.current > a,
+.sidebar-tree li.current-page > a,
+.sidebar-tree li.toctree-l1.current > a,
+.sidebar-tree li.toctree-l2.current > a,
+.sidebar-tree label:hover,
+.sidebar-tree label:focus,
+.sidebar-tree label:focus-visible {
+  background: #f3f4f6 !important;
+  color: #073b73;
+  outline: 1px solid #e5e7eb;
+  outline-offset: -1px;
+}
+
+.sidebar-tree a:active,
+.sidebar-tree label:active {
+  background: #e5e7eb !important;
+  color: #073b73;
+}
+
+.sidebar-tree .reference.current,
+.sidebar-tree .current > .reference {
+  background: #eef6ff !important;
+  color: #073b73;
+  font-weight: 700;
+}
+
+.theme-toggle-container {
+  display: none;
+}
+
+div.highlight,
+pre,
+.highlight pre,
+.highlight-python pre {
+  background: #f8fafc !important;
+  color: #172033 !important;
+}
+
+.highlight .kn,
+.highlight .k {
+  color: #7c3aed !important;
+}
+
+.highlight .nn,
+.highlight .n {
+  color: #172033 !important;
+}
+
+.highlight .s,
+.highlight .s1,
+.highlight .s2 {
+  color: #0f766e !important;
+}
+
+.highlight .mi,
+.highlight .mf,
+.highlight .m {
+  color: #b45309 !important;
+}
+
+.highlight .c,
+.highlight .c1 {
+  color: #64748b !important;
+}
+
+.highlight .o,
+.highlight .p {
+  color: #334155 !important;
+}
