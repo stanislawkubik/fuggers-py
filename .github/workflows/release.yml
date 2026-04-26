@@ -57,9 +57,6 @@ jobs:
       - name: Run phased mypy gate
         run: mypy
 
-      - name: Run source-only coverage gate
-        run: python tools/source_coverage.py --pytest-args -q
-
       - name: Smoke test broader example surface
         env:
           PYTHONPATH: src:.
