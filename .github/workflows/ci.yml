@@ -8,6 +8,7 @@ on:
 
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   test:
@@ -167,7 +168,7 @@ jobs:
         run: python -m build
 
       - name: Install package for version-provenance checks
-        run: python -m pip install -e . --no-deps
+        run: python -m pip install -e .
 
       - name: Check distribution metadata
         run: python -m twine check dist/*
