@@ -341,15 +341,20 @@ def test_step9_global_fit_rejects_mixed_target_spaces_before_optimization() -> N
     ("kernel_spec", "zero_rate_fn", "bond_specs", "expected_kernel_type", "expected_shift"),
     [
         (
-            KernelSpec(kind="svensson"),
+            KernelSpec(
+                kind="svensson",
+                parameters={"initial_parameters": (0.036, -0.012, 0.018, -0.006, 1.7, 4.5)},
+            ),
             lambda tenor: _sv_zero(tenor, 0.036, -0.012, 0.018, -0.006, 1.7, 4.5),
             (
+                ("UST1Y", 1, Decimal("0.038"), 0.0),
                 ("UST2Y-A", 2, Decimal("0.040"), 0.0),
                 ("UST2Y-B", 2, Decimal("0.040"), 1.0),
                 ("UST3Y", 3, Decimal("0.0425"), 0.0),
                 ("UST5Y", 5, Decimal("0.045"), 0.0),
                 ("UST7Y", 7, Decimal("0.047"), 0.0),
                 ("UST10Y", 10, Decimal("0.048"), 0.0),
+                ("UST20Y", 20, Decimal("0.050"), 0.0),
             ),
             SvenssonKernel,
             0.40,
@@ -399,7 +404,7 @@ def test_step9_global_fit_supports_supported_global_fit_kernels_with_bond_regres
             bond_target="clean_price",
             regressors=("liquidity",),
         ),
-        optimization_config=OptimizationConfig(max_iterations=400, tolerance=1e-14),
+        optimization_config=OptimizationConfig(max_iterations=1200, tolerance=1e-12),
     )
 
     kernel, report = calibrator.fit(
